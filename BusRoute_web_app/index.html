@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bussruta</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bree+Serif&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="bg-shape bg-shape-a"></div>
+  <div class="bg-shape bg-shape-b"></div>
+  <header class="page-header">
+    <h1>Bussruta</h1>
+    <p>Warmup rounds, pyramid showdown, and the bus route finale.</p>
+  </header>
+
+  <main class="layout">
+    <aside class="panel status-panel">
+      <h2 id="statusHeading">Status</h2>
+      <div id="phaseLabel" class="phase-label">Setup</div>
+      <div id="deckLabel" class="deck-label">Deck: 52 cards</div>
+      <div id="playerBoard" class="player-board"></div>
+    </aside>
+
+    <section class="panel game-panel">
+      <div id="controls" class="controls"></div>
+      <div id="board" class="board"></div>
+    </section>
+
+    <aside class="panel log-panel">
+      <h2 id="logHeading">Game Log</h2>
+      <div id="log" class="log"></div>
+    </aside>
+  </main>
+
+  <template id="setupTemplate">
+    <div class="btn-row">
+      <button id="startGameBtn" class="btn btn-primary" type="button">Start game</button>
+    </div>
+    <p>Choose players, then edit names (1-9 players).</p>
+    <label class="toggle">
+      <span id="langLabel">Language</span>
+      <select id="langSelect">
+        <option value="en">English</option>
+        <option value="no">Norsk</option>
+      </select>
+    </label>
+    <label class="toggle">
+      <span id="playerCountLabel">Players</span>
+      <select id="playerCountSelect">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4" selected>4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+        <option value="8">8</option>
+        <option value="9">9</option>
+      </select>
+    </label>
+    <div id="playerList" class="setup-player-list"></div>
+    <div class="btn-row">
+      <button id="addPlayerBtn" class="btn btn-neutral" type="button">Add player</button>
+      <button id="removePlayerBtn" class="btn btn-neutral" type="button">Remove player</button>
+      <button id="randomizeNamesBtn" class="btn btn-neutral" type="button">Randomize</button>
+      <button id="resetSetupBtn" class="btn btn-neutral" type="button">Reset setup</button>
+    </div>
+    <label class="toggle">
+      <input type="checkbox" id="reversePyramid">
+      <span id="reverseLabel">Reverse pyramid drinks (bottom = 5, top = 1)</span>
+    </label>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
