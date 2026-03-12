@@ -84,10 +84,7 @@ class PlayingCard {
   }
 
   Map<String, dynamic> toJson() {
-    return <String, dynamic>{
-      'suit': suit.name,
-      'rank': rank,
-    };
+    return <String, dynamic>{'suit': suit.name, 'rank': rank};
   }
 
   static PlayingCard fromJson(Map<String, dynamic> json) {
@@ -104,14 +101,8 @@ class PlayerState {
   final String name;
   final List<PlayingCard> hand;
 
-  PlayerState copyWith({
-    String? name,
-    List<PlayingCard>? hand,
-  }) {
-    return PlayerState(
-      name: name ?? this.name,
-      hand: hand ?? this.hand,
-    );
+  PlayerState copyWith({String? name, List<PlayingCard>? hand}) {
+    return PlayerState(name: name ?? this.name, hand: hand ?? this.hand);
   }
 
   Map<String, dynamic> toJson() {
@@ -126,8 +117,10 @@ class PlayerState {
     return PlayerState(
       name: json['name'] as String,
       hand: rawHand
-          .map((dynamic item) =>
-              PlayingCard.fromJson(item as Map<String, dynamic>))
+          .map(
+            (dynamic item) =>
+                PlayingCard.fromJson(item as Map<String, dynamic>),
+          )
           .toList(),
     );
   }
@@ -174,18 +167,12 @@ class SetupDraft {
 }
 
 class AutoPlayState {
-  const AutoPlayState({
-    required this.enabled,
-    required this.delayMs,
-  });
+  const AutoPlayState({required this.enabled, required this.delayMs});
 
   final bool enabled;
   final int delayMs;
 
-  AutoPlayState copyWith({
-    bool? enabled,
-    int? delayMs,
-  }) {
+  AutoPlayState copyWith({bool? enabled, int? delayMs}) {
     return AutoPlayState(
       enabled: enabled ?? this.enabled,
       delayMs: delayMs ?? this.delayMs,
@@ -193,10 +180,7 @@ class AutoPlayState {
   }
 
   Map<String, dynamic> toJson() {
-    return <String, dynamic>{
-      'enabled': enabled,
-      'delayMs': delayMs,
-    };
+    return <String, dynamic>{'enabled': enabled, 'delayMs': delayMs};
   }
 
   static AutoPlayState fromJson(Map<String, dynamic> json) {
@@ -208,19 +192,13 @@ class AutoPlayState {
 }
 
 class TieBreakDraw {
-  const TieBreakDraw({
-    required this.playerIndex,
-    required this.card,
-  });
+  const TieBreakDraw({required this.playerIndex, required this.card});
 
   final int playerIndex;
   final PlayingCard card;
 
   Map<String, dynamic> toJson() {
-    return <String, dynamic>{
-      'playerIndex': playerIndex,
-      'card': card.toJson(),
-    };
+    return <String, dynamic>{'playerIndex': playerIndex, 'card': card.toJson()};
   }
 
   static TieBreakDraw fromJson(Map<String, dynamic> json) {
@@ -273,13 +251,17 @@ class TieBreakState {
     return TieBreakState(
       contenders: (json['contenders'] as List<dynamic>).cast<int>(),
       deck: rawDeck
-          .map((dynamic item) =>
-              PlayingCard.fromJson(item as Map<String, dynamic>))
+          .map(
+            (dynamic item) =>
+                PlayingCard.fromJson(item as Map<String, dynamic>),
+          )
           .toList(),
       round: json['round'] as int,
       lastDraws: rawLastDraws
-          .map((dynamic item) =>
-              TieBreakDraw.fromJson(item as Map<String, dynamic>))
+          .map(
+            (dynamic item) =>
+                TieBreakDraw.fromJson(item as Map<String, dynamic>),
+          )
           .toList(),
     );
   }
@@ -320,8 +302,10 @@ class BusZoneStack {
     List<PlayingCard> parse(String key) {
       final List<dynamic> raw = json[key] as List<dynamic>;
       return raw
-          .map((dynamic item) =>
-              PlayingCard.fromJson(item as Map<String, dynamic>))
+          .map(
+            (dynamic item) =>
+                PlayingCard.fromJson(item as Map<String, dynamic>),
+          )
           .toList();
     }
 
@@ -344,16 +328,8 @@ class BusZoneTone {
   final BannerTone? low;
   final BannerTone? same;
 
-  BusZoneTone copyWith({
-    BannerTone? high,
-    BannerTone? low,
-    BannerTone? same,
-  }) {
-    return BusZoneTone(
-      high: high,
-      low: low,
-      same: same,
-    );
+  BusZoneTone copyWith({BannerTone? high, BannerTone? low, BannerTone? same}) {
+    return BusZoneTone(high: high, low: low, same: same);
   }
 
   Map<String, dynamic> toJson() {
@@ -469,7 +445,9 @@ class BusRouteState {
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
-      'routeCards': routeCards.map((PlayingCard card) => card.toJson()).toList(),
+      'routeCards': routeCards
+          .map((PlayingCard card) => card.toJson())
+          .toList(),
       'deck': deck.map((PlayingCard card) => card.toJson()).toList(),
       'overlays': overlays.map((BusZoneStack stack) => stack.toJson()).toList(),
       'zoneTone': zoneTone.map((BusZoneTone tone) => tone.toJson()).toList(),
@@ -477,7 +455,9 @@ class BusRouteState {
       'order': order,
       'progress': progress,
       'firstTry': firstTry,
-      'history': history.map((BusHistoryEntry entry) => entry.toJson()).toList(),
+      'history': history
+          .map((BusHistoryEntry entry) => entry.toJson())
+          .toList(),
     };
   }
 
@@ -485,8 +465,10 @@ class BusRouteState {
     List<PlayingCard> parseCardList(String key) {
       final List<dynamic> raw = json[key] as List<dynamic>;
       return raw
-          .map((dynamic item) =>
-              PlayingCard.fromJson(item as Map<String, dynamic>))
+          .map(
+            (dynamic item) =>
+                PlayingCard.fromJson(item as Map<String, dynamic>),
+          )
           .toList();
     }
 
@@ -498,12 +480,16 @@ class BusRouteState {
       routeCards: parseCardList('routeCards'),
       deck: parseCardList('deck'),
       overlays: rawOverlays
-          .map((dynamic item) =>
-              BusZoneStack.fromJson(item as Map<String, dynamic>))
+          .map(
+            (dynamic item) =>
+                BusZoneStack.fromJson(item as Map<String, dynamic>),
+          )
           .toList(),
       zoneTone: rawZoneTone
-          .map((dynamic item) =>
-              BusZoneTone.fromJson(item as Map<String, dynamic>))
+          .map(
+            (dynamic item) =>
+                BusZoneTone.fromJson(item as Map<String, dynamic>),
+          )
           .toList(),
       startSide: json['startSide'] == null
           ? null
@@ -512,8 +498,10 @@ class BusRouteState {
       progress: json['progress'] as int,
       firstTry: json['firstTry'] as bool,
       history: rawHistory
-          .map((dynamic item) =>
-              BusHistoryEntry.fromJson(item as Map<String, dynamic>))
+          .map(
+            (dynamic item) =>
+                BusHistoryEntry.fromJson(item as Map<String, dynamic>),
+          )
           .toList(),
     );
   }
@@ -651,8 +639,9 @@ class GameState {
       currentPlayerIndex: currentPlayerIndex ?? this.currentPlayerIndex,
       pyramidCards: pyramidCards ?? this.pyramidCards,
       pyramidRevealIndex: pyramidRevealIndex ?? this.pyramidRevealIndex,
-      busRunnerIndex:
-          clearBusRunnerIndex ? null : (busRunnerIndex ?? this.busRunnerIndex),
+      busRunnerIndex: clearBusRunnerIndex
+          ? null
+          : (busRunnerIndex ?? this.busRunnerIndex),
       tieBreak: clearTieBreak ? null : (tieBreak ?? this.tieBreak),
       busRoute: clearBusRoute ? null : (busRoute ?? this.busRoute),
       pendingWarmupGuess: clearPendingWarmupGuess
@@ -680,7 +669,7 @@ class GameState {
       'warmupRound': warmupRound,
       'currentPlayerIndex': currentPlayerIndex,
       'pyramidCards': pyramidCards
-          .map((PlayingCard? card) => card == null ? null : card.toJson())
+          .map((PlayingCard? card) => card?.toJson())
           .toList(),
       'pyramidRevealIndex': pyramidRevealIndex,
       'busRunnerIndex': busRunnerIndex,
@@ -700,8 +689,10 @@ class GameState {
     List<PlayingCard> parseCards(String key) {
       final List<dynamic> raw = json[key] as List<dynamic>;
       return raw
-          .map((dynamic item) =>
-              PlayingCard.fromJson(item as Map<String, dynamic>))
+          .map(
+            (dynamic item) =>
+                PlayingCard.fromJson(item as Map<String, dynamic>),
+          )
           .toList();
     }
 
@@ -711,10 +702,14 @@ class GameState {
     return GameState(
       phase: GamePhase.values.byName(json['phase'] as String),
       language: AppLanguage.values.byName(json['language'] as String),
-      setupDraft: SetupDraft.fromJson(json['setupDraft'] as Map<String, dynamic>),
+      setupDraft: SetupDraft.fromJson(
+        json['setupDraft'] as Map<String, dynamic>,
+      ),
       players: rawPlayers
           .map(
-              (dynamic item) => PlayerState.fromJson(item as Map<String, dynamic>))
+            (dynamic item) =>
+                PlayerState.fromJson(item as Map<String, dynamic>),
+          )
           .toList(),
       deck: parseCards('deck'),
       reversePyramid: json['reversePyramid'] as bool,
@@ -741,7 +736,9 @@ class GameState {
       bannerTone: BannerTone.values.byName(json['bannerTone'] as String),
       pyramidHighlightPlayers:
           (json['pyramidHighlightPlayers'] as List<dynamic>).cast<int>(),
-      autoPlay: AutoPlayState.fromJson(json['autoPlay'] as Map<String, dynamic>),
+      autoPlay: AutoPlayState.fromJson(
+        json['autoPlay'] as Map<String, dynamic>,
+      ),
       banner: json['banner'] as String,
       log: (json['log'] as List<dynamic>).cast<String>(),
       interactionLocked: json['interactionLocked'] as bool,
@@ -758,4 +755,3 @@ class GameState {
     return fromJson(decoded);
   }
 }
-
