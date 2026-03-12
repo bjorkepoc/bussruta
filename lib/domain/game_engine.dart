@@ -68,8 +68,9 @@ class GameEngine {
     required AppLanguage language,
   }) {
     final int total = count.clamp(minPlayers, maxPlayers);
-    final String fallbackPrefix =
-        language == AppLanguage.no ? 'Spiller' : 'Player';
+    final String fallbackPrefix = language == AppLanguage.no
+        ? 'Spiller'
+        : 'Player';
     final Set<String> used = <String>{};
     final List<String> generated = <String>[];
 
@@ -77,7 +78,8 @@ class GameEngine {
       int tries = 0;
       String candidate = '';
       while (tries < 40) {
-        final String start = _randomStarts[_random.nextInt(_randomStarts.length)];
+        final String start =
+            _randomStarts[_random.nextInt(_randomStarts.length)];
         final String end = _randomEnds[_random.nextInt(_randomEnds.length)];
         candidate = '$start $end';
         if (!used.contains(candidate.toLowerCase())) {
@@ -144,12 +146,16 @@ class GameEngine {
       );
     }
 
-    final List<String> dedupedNames = dedupePlayerNames(normalizedNames, language);
+    final List<String> dedupedNames = dedupePlayerNames(
+      normalizedNames,
+      language,
+    );
     final List<PlayerState> players = dedupedNames
         .map(
-          (String name) =>
-              const PlayerState(name: '', hand: <PlayingCard>[])
-                  .copyWith(name: name),
+          (String name) => const PlayerState(
+            name: '',
+            hand: <PlayingCard>[],
+          ).copyWith(name: name),
         )
         .toList();
     final List<PlayingCard> deck = createDeck();
@@ -210,10 +216,7 @@ class GameEngine {
       clearPendingWarmupGuess: true,
       bannerTone: BannerTone.info,
       pyramidHighlightPlayers: <int>[],
-      autoPlay: AutoPlayState(
-        enabled: false,
-        delayMs: state.autoPlay.delayMs,
-      ),
+      autoPlay: AutoPlayState(enabled: false, delayMs: state.autoPlay.delayMs),
       banner: '',
       log: logs,
       interactionLocked: false,
@@ -256,7 +259,10 @@ class GameEngine {
       return state;
     }
     final PlayerState currentPlayer = state.players[state.currentPlayerIndex];
-    final _DeckDraw mainDeckDraw = _drawFromMainDeck(state.deck, state.language);
+    final _DeckDraw mainDeckDraw = _drawFromMainDeck(
+      state.deck,
+      state.language,
+    );
     final WarmupEvaluation evaluation = _evaluateWarmupRound(
       round: state.warmupRound,
       guess: guess,
@@ -351,8 +357,9 @@ class GameEngine {
       reversePyramid: state.reversePyramid,
     );
 
-    final List<PlayingCard?> pyramidCards =
-        List<PlayingCard?>.from(state.pyramidCards);
+    final List<PlayingCard?> pyramidCards = List<PlayingCard?>.from(
+      state.pyramidCards,
+    );
     pyramidCards[targetIndex] = draw.card;
 
     final List<PlayerState> players = state.players
@@ -371,8 +378,7 @@ class GameEngine {
     if (matches.isNotEmpty) {
       for (final PyramidMatch match in matches) {
         players[match.playerIndex] = players[match.playerIndex].copyWith(
-          hand: players[match.playerIndex]
-              .hand
+          hand: players[match.playerIndex].hand
               .where((PlayingCard handCard) => handCard.rank != draw.card.rank)
               .toList(),
         );
@@ -434,8 +440,9 @@ class GameEngine {
       deck: draw.deck,
       pyramidCards: pyramidCards,
       pyramidRevealIndex: state.pyramidRevealIndex + 1,
-      pyramidHighlightPlayers:
-          matches.map((PyramidMatch match) => match.playerIndex).toList(),
+      pyramidHighlightPlayers: matches
+          .map((PyramidMatch match) => match.playerIndex)
+          .toList(),
       banner: banner,
       bannerTone: bannerTone,
       log: logs,
@@ -449,8 +456,9 @@ class GameEngine {
   }
 
   GameState _finalizePyramid(GameState state) {
-    final List<int> counts =
-        state.players.map((PlayerState player) => player.hand.length).toList();
+    final List<int> counts = state.players
+        .map((PlayerState player) => player.hand.length)
+        .toList();
     int maxCount = 0;
     for (final int count in counts) {
       if (count > maxCount) {
@@ -476,12 +484,7 @@ class GameEngine {
           '${state.players[winner].name} har flest kort ($maxCount) og ma ta bussruta.',
         ),
       );
-      return _startBusRoute(
-        state.copyWith(
-          busRunnerIndex: winner,
-          log: logs,
-        ),
-      );
+      return _startBusRoute(state.copyWith(busRunnerIndex: winner, log: logs));
     }
 
     return _startTieBreak(state, contenders: contenders, maxCount: maxCount);
@@ -587,11 +590,7 @@ class GameEngine {
         ),
       );
       return _startBusRoute(
-        state.copyWith(
-          busRunnerIndex: winner,
-          clearTieBreak: true,
-          log: logs,
-        ),
+        state.copyWith(busRunnerIndex: winner, clearTieBreak: true, log: logs),
       );
     }
 
@@ -812,11 +811,15 @@ class GameEngine {
 
     BusZoneTone tone = const BusZoneTone(high: null, low: null, same: null);
     if (placement == 'high') {
-      tone = tone.copyWith(high: correct ? BannerTone.success : BannerTone.fail);
+      tone = tone.copyWith(
+        high: correct ? BannerTone.success : BannerTone.fail,
+      );
     } else if (placement == 'low') {
       tone = tone.copyWith(low: correct ? BannerTone.success : BannerTone.fail);
     } else {
-      tone = tone.copyWith(same: correct ? BannerTone.success : BannerTone.fail);
+      tone = tone.copyWith(
+        same: correct ? BannerTone.success : BannerTone.fail,
+      );
     }
     tones[activeStep] = tone;
 
@@ -832,17 +835,17 @@ class GameEngine {
     logs.insertAll(0, busDraw.logs.reversed);
     _pushLog(logs, message);
 
-    final List<BusHistoryEntry> history = List<BusHistoryEntry>.from(bus.history)
-      ..add(
-        BusHistoryEntry(
-          step: activeStep,
-          guess: guess,
-          target: target,
-          draw: draw,
-          message: message,
-          correct: correct,
-        ),
-      );
+    final List<BusHistoryEntry> history =
+        List<BusHistoryEntry>.from(bus.history)..add(
+          BusHistoryEntry(
+            step: activeStep,
+            guess: guess,
+            target: target,
+            draw: draw,
+            message: message,
+            correct: correct,
+          ),
+        );
 
     GameState next = state.copyWith(
       busRoute: bus.copyWith(
@@ -881,6 +884,432 @@ class GameEngine {
     }
 
     return next;
+  }
+
+  WarmupGuess chooseWarmupGuessByStats(GameState state) {
+    if (state.deck.isEmpty) {
+      return _warmupRoundOptions(state.warmupRound).first;
+    }
+    final PlayerState player = state.players[state.currentPlayerIndex];
+
+    if (state.warmupRound == 1) {
+      final Map<WarmupGuess, int> stats = <WarmupGuess, int>{
+        WarmupGuess.black: 0,
+        WarmupGuess.red: 0,
+      };
+      for (final PlayingCard card in state.deck) {
+        if (card.suit.isBlack) {
+          stats[WarmupGuess.black] = stats[WarmupGuess.black]! + 1;
+        } else {
+          stats[WarmupGuess.red] = stats[WarmupGuess.red]! + 1;
+        }
+      }
+      return _pickBestGuess(stats);
+    }
+
+    if (state.warmupRound == 2 && player.hand.isNotEmpty) {
+      final int ref = player.hand.first.rank;
+      final Map<WarmupGuess, int> stats = <WarmupGuess, int>{
+        WarmupGuess.above: 0,
+        WarmupGuess.below: 0,
+        WarmupGuess.same: 0,
+      };
+      for (final PlayingCard card in state.deck) {
+        if (card.rank > ref) {
+          stats[WarmupGuess.above] = stats[WarmupGuess.above]! + 1;
+        } else if (card.rank < ref) {
+          stats[WarmupGuess.below] = stats[WarmupGuess.below]! + 1;
+        } else {
+          stats[WarmupGuess.same] = stats[WarmupGuess.same]! + 1;
+        }
+      }
+      return _pickBestGuess(stats);
+    }
+
+    if (state.warmupRound == 3 && player.hand.length >= 2) {
+      final int low = min(player.hand[0].rank, player.hand[1].rank);
+      final int high = max(player.hand[0].rank, player.hand[1].rank);
+      final Map<WarmupGuess, int> stats = <WarmupGuess, int>{
+        WarmupGuess.between: 0,
+        WarmupGuess.outside: 0,
+        WarmupGuess.same: 0,
+      };
+      for (final PlayingCard card in state.deck) {
+        if (card.rank == low || card.rank == high) {
+          stats[WarmupGuess.same] = stats[WarmupGuess.same]! + 1;
+        } else if (card.rank > low && card.rank < high) {
+          stats[WarmupGuess.between] = stats[WarmupGuess.between]! + 1;
+        } else {
+          stats[WarmupGuess.outside] = stats[WarmupGuess.outside]! + 1;
+        }
+      }
+      return _pickBestGuess(stats);
+    }
+
+    final Map<WarmupGuess, int> suitStats = <WarmupGuess, int>{
+      WarmupGuess.clubs: 0,
+      WarmupGuess.diamonds: 0,
+      WarmupGuess.hearts: 0,
+      WarmupGuess.spades: 0,
+    };
+    for (final PlayingCard card in state.deck) {
+      suitStats[card.suit.warmupGuess] = suitStats[card.suit.warmupGuess]! + 1;
+    }
+    return _pickBestGuess(suitStats);
+  }
+
+  BusGuess chooseBusGuessByStats(GameState state) {
+    final BusRouteState? bus = state.busRoute;
+    if (bus == null ||
+        bus.progress >= bus.routeCards.length ||
+        bus.deck.isEmpty) {
+      return BusGuess.above;
+    }
+    final int activeIndex = bus.order[bus.progress];
+    final PlayingCard target = bus.routeCards[activeIndex];
+
+    final Map<BusGuess, int> stats = <BusGuess, int>{
+      BusGuess.above: 0,
+      BusGuess.below: 0,
+      BusGuess.same: 0,
+    };
+    for (final PlayingCard card in bus.deck) {
+      if (card.rank > target.rank) {
+        stats[BusGuess.above] = stats[BusGuess.above]! + 1;
+      } else if (card.rank < target.rank) {
+        stats[BusGuess.below] = stats[BusGuess.below]! + 1;
+      } else {
+        stats[BusGuess.same] = stats[BusGuess.same]! + 1;
+      }
+    }
+    return _pickBestBusGuess(stats);
+  }
+
+  int pyramidDrinksForIndex({
+    required int index,
+    required bool reversePyramid,
+  }) {
+    int base = 1;
+    if (index >= 5) {
+      base = 2;
+    }
+    if (index >= 9) {
+      base = 3;
+    }
+    if (index >= 12) {
+      base = 4;
+    }
+    if (index == 14) {
+      base = 5;
+    }
+    return reversePyramid ? 6 - base : base;
+  }
+
+  int pyramidSlotForStep({required int step, required bool reversePyramid}) {
+    final int normalized = step.clamp(0, 14);
+    return reversePyramid ? 14 - normalized : normalized;
+  }
+
+  List<WarmupGuess> _warmupRoundOptions(int round) {
+    if (round == 1) {
+      return const <WarmupGuess>[WarmupGuess.black, WarmupGuess.red];
+    }
+    if (round == 2) {
+      return const <WarmupGuess>[
+        WarmupGuess.above,
+        WarmupGuess.below,
+        WarmupGuess.same,
+      ];
+    }
+    if (round == 3) {
+      return const <WarmupGuess>[
+        WarmupGuess.between,
+        WarmupGuess.outside,
+        WarmupGuess.same,
+      ];
+    }
+    return const <WarmupGuess>[
+      WarmupGuess.clubs,
+      WarmupGuess.diamonds,
+      WarmupGuess.hearts,
+      WarmupGuess.spades,
+    ];
+  }
+
+  WarmupGuess _pickBestGuess(Map<WarmupGuess, int> stats) {
+    int best = -1;
+    for (final int value in stats.values) {
+      if (value > best) {
+        best = value;
+      }
+    }
+    final List<WarmupGuess> candidates = stats.entries
+        .where((MapEntry<WarmupGuess, int> entry) => entry.value == best)
+        .map((MapEntry<WarmupGuess, int> entry) => entry.key)
+        .toList();
+    return candidates[_random.nextInt(candidates.length)];
+  }
+
+  BusGuess _pickBestBusGuess(Map<BusGuess, int> stats) {
+    int best = -1;
+    for (final int value in stats.values) {
+      if (value > best) {
+        best = value;
+      }
+    }
+    final List<BusGuess> candidates = stats.entries
+        .where((MapEntry<BusGuess, int> entry) => entry.value == best)
+        .map((MapEntry<BusGuess, int> entry) => entry.key)
+        .toList();
+    return candidates[_random.nextInt(candidates.length)];
+  }
+
+  String _busGuessPlacement(BusGuess guess) {
+    switch (guess) {
+      case BusGuess.above:
+        return 'high';
+      case BusGuess.below:
+        return 'low';
+      case BusGuess.same:
+        return 'same';
+    }
+  }
+
+  WarmupEvaluation _evaluateWarmupRound({
+    required int round,
+    required WarmupGuess guess,
+    required PlayerState player,
+    required PlayingCard drawnCard,
+    required AppLanguage language,
+  }) {
+    if (round == 1) {
+      final WarmupGuess actual = drawnCard.suit.isBlack
+          ? WarmupGuess.black
+          : WarmupGuess.red;
+      final bool correct = guess == actual;
+      return WarmupEvaluation(
+        correct: correct,
+        message: correct
+            ? _tr(
+                language,
+                '${player.name} drew ${drawnCard.shortLabel()}. Correct, give out 1 drink.',
+                '${player.name} trakk ${drawnCard.shortLabel()}. Riktig, del ut 1.',
+              )
+            : _tr(
+                language,
+                '${player.name} drew ${drawnCard.shortLabel()}. Wrong, drink 1.',
+                '${player.name} trakk ${drawnCard.shortLabel()}. Feil, drikk 1.',
+              ),
+      );
+    }
+
+    if (round == 2) {
+      final int firstRank = player.hand[0].rank;
+      final int relation = _compareCardRanks(drawnCard.rank, firstRank);
+      if (relation > 0 && guess == WarmupGuess.above) {
+        return WarmupEvaluation(
+          correct: true,
+          message: _tr(
+            language,
+            '${player.name} drew ${drawnCard.shortLabel()} over ${player.hand[0].shortLabel()}. Correct, give out 2 drinks.',
+            '${player.name} trakk ${drawnCard.shortLabel()} over ${player.hand[0].shortLabel()}. Riktig, del ut 2.',
+          ),
+        );
+      }
+      if (relation < 0 && guess == WarmupGuess.below) {
+        return WarmupEvaluation(
+          correct: true,
+          message: _tr(
+            language,
+            '${player.name} drew ${drawnCard.shortLabel()} under ${player.hand[0].shortLabel()}. Correct, give out 2 drinks.',
+            '${player.name} trakk ${drawnCard.shortLabel()} under ${player.hand[0].shortLabel()}. Riktig, del ut 2.',
+          ),
+        );
+      }
+      if (relation == 0 && guess == WarmupGuess.same) {
+        return WarmupEvaluation(
+          correct: true,
+          message: _tr(
+            language,
+            '${player.name} drew ${drawnCard.shortLabel()} equal to ${player.hand[0].shortLabel()}. Perfect, give out 4 drinks.',
+            '${player.name} trakk ${drawnCard.shortLabel()} lik ${player.hand[0].shortLabel()}. Perfekt, del ut 4.',
+          ),
+        );
+      }
+      if (relation == 0) {
+        return WarmupEvaluation(
+          correct: false,
+          message: _tr(
+            language,
+            '${player.name} drew ${drawnCard.shortLabel()} equal to ${player.hand[0].shortLabel()}. Wrong, drink 4.',
+            '${player.name} trakk ${drawnCard.shortLabel()} lik ${player.hand[0].shortLabel()}. Feil, drikk 4.',
+          ),
+        );
+      }
+      return WarmupEvaluation(
+        correct: false,
+        message: _tr(
+          language,
+          '${player.name} drew ${drawnCard.shortLabel()}. Wrong, drink 2.',
+          '${player.name} trakk ${drawnCard.shortLabel()}. Feil, drikk 2.',
+        ),
+      );
+    }
+
+    if (round == 3) {
+      final int first = player.hand[0].rank;
+      final int second = player.hand[1].rank;
+      final int low = min(first, second);
+      final int high = max(first, second);
+
+      if (guess == WarmupGuess.same) {
+        if (drawnCard.rank == low || drawnCard.rank == high) {
+          return WarmupEvaluation(
+            correct: true,
+            message: _tr(
+              language,
+              '${player.name} drew ${drawnCard.shortLabel()} matching edge cards. Correct, give out 6 drinks.',
+              '${player.name} trakk ${drawnCard.shortLabel()} pa kantkort. Riktig, del ut 6.',
+            ),
+          );
+        }
+        return WarmupEvaluation(
+          correct: false,
+          message: _tr(
+            language,
+            '${player.name} drew ${drawnCard.shortLabel()} without edge match. Wrong, drink 3.',
+            '${player.name} trakk ${drawnCard.shortLabel()} uten kanttreff. Feil, drikk 3.',
+          ),
+        );
+      }
+
+      if (drawnCard.rank == low || drawnCard.rank == high) {
+        return WarmupEvaluation(
+          correct: false,
+          message: _tr(
+            language,
+            '${player.name} drew ${drawnCard.shortLabel()} equal to an edge card. Wrong, drink 6.',
+            '${player.name} trakk ${drawnCard.shortLabel()} lik et kantkort. Feil, drikk 6.',
+          ),
+        );
+      }
+
+      if (guess == WarmupGuess.between) {
+        final bool correct = drawnCard.rank > low && drawnCard.rank < high;
+        return WarmupEvaluation(
+          correct: correct,
+          message: correct
+              ? _tr(
+                  language,
+                  '${player.name} drew ${drawnCard.shortLabel()} between cards. Correct, give out 3 drinks.',
+                  '${player.name} trakk ${drawnCard.shortLabel()} mellom kortene. Riktig, del ut 3.',
+                )
+              : _tr(
+                  language,
+                  '${player.name} drew ${drawnCard.shortLabel()} outside cards. Wrong, drink 3.',
+                  '${player.name} trakk ${drawnCard.shortLabel()} utenfor kortene. Feil, drikk 3.',
+                ),
+        );
+      }
+
+      final bool correct = drawnCard.rank < low || drawnCard.rank > high;
+      return WarmupEvaluation(
+        correct: correct,
+        message: correct
+            ? _tr(
+                language,
+                '${player.name} drew ${drawnCard.shortLabel()} outside cards. Correct, give out 3 drinks.',
+                '${player.name} trakk ${drawnCard.shortLabel()} utenfor kortene. Riktig, del ut 3.',
+              )
+            : _tr(
+                language,
+                '${player.name} drew ${drawnCard.shortLabel()} between cards. Wrong, drink 3.',
+                '${player.name} trakk ${drawnCard.shortLabel()} mellom kortene. Feil, drikk 3.',
+              ),
+      );
+    }
+
+    final bool correct = guess == drawnCard.suit.warmupGuess;
+    return WarmupEvaluation(
+      correct: correct,
+      message: correct
+          ? _tr(
+              language,
+              '${player.name} drew ${drawnCard.shortLabel()}. Correct suit, give out 4 drinks.',
+              '${player.name} trakk ${drawnCard.shortLabel()}. Riktig sort, del ut 4.',
+            )
+          : _tr(
+              language,
+              '${player.name} drew ${drawnCard.shortLabel()}. Wrong suit, drink 4.',
+              '${player.name} trakk ${drawnCard.shortLabel()}. Feil sort, drikk 4.',
+            ),
+    );
+  }
+
+  List<PyramidMatch> _collectPyramidMatches({
+    required List<PlayerState> players,
+    required PlayingCard card,
+    required int drinksBase,
+  }) {
+    final List<PyramidMatch> matches = <PyramidMatch>[];
+    for (int idx = 0; idx < players.length; idx += 1) {
+      final PlayerState player = players[idx];
+      final List<PlayingCard> playerMatches = player.hand
+          .where((PlayingCard handCard) => handCard.rank == card.rank)
+          .toList();
+      if (playerMatches.isEmpty) {
+        continue;
+      }
+      matches.add(
+        PyramidMatch(
+          playerIndex: idx,
+          playerName: player.name,
+          count: playerMatches.length,
+          drinks: drinksBase * playerMatches.length,
+        ),
+      );
+    }
+    return matches;
+  }
+
+  _DeckDraw _drawFromMainDeck(
+    List<PlayingCard> currentDeck,
+    AppLanguage language,
+  ) {
+    List<PlayingCard> deck = List<PlayingCard>.from(currentDeck);
+    final List<String> logs = <String>[];
+    if (deck.isEmpty) {
+      deck = createDeck();
+      logs.add(
+        _tr(
+          language,
+          'Deck was empty and has been reshuffled.',
+          'Stokken var tom og ble stokket pa nytt.',
+        ),
+      );
+    }
+    final PlayingCard card = deck.removeLast();
+    return _DeckDraw(card: card, deck: deck, logs: logs);
+  }
+
+  _DeckDraw _drawFromBusDeck(
+    List<PlayingCard> currentDeck,
+    AppLanguage language,
+  ) {
+    List<PlayingCard> deck = List<PlayingCard>.from(currentDeck);
+    final List<String> logs = <String>[];
+    if (deck.isEmpty) {
+      deck = createDeck();
+      logs.add(
+        _tr(
+          language,
+          'Bus route deck was empty and has been reshuffled.',
+          'Bussruta-stokken var tom og ble stokket pa nytt.',
+        ),
+      );
+    }
+    final PlayingCard card = deck.removeLast();
+    return _DeckDraw(card: card, deck: deck, logs: logs);
   }
 
   List<PlayingCard> createDeck() {
@@ -923,4 +1352,33 @@ class GameEngine {
       logs.removeRange(maxLogItems, logs.length);
     }
   }
+}
+
+class WarmupEvaluation {
+  const WarmupEvaluation({required this.correct, required this.message});
+
+  final bool correct;
+  final String message;
+}
+
+class PyramidMatch {
+  const PyramidMatch({
+    required this.playerIndex,
+    required this.playerName,
+    required this.count,
+    required this.drinks,
+  });
+
+  final int playerIndex;
+  final String playerName;
+  final int count;
+  final int drinks;
+}
+
+class _DeckDraw {
+  const _DeckDraw({required this.card, required this.deck, required this.logs});
+
+  final PlayingCard card;
+  final List<PlayingCard> deck;
+  final List<String> logs;
 }
