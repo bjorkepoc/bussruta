@@ -73,12 +73,16 @@ class _GameTableViewState extends State<GameTableView> {
               _TableShell(rect: tableRect),
               if (_showSeats(state.phase))
                 ...List<Widget>.generate(state.players.length, (int index) {
+                  final bool pyramidDock = state.phase == GamePhase.pyramid;
                   final bool compact =
-                      state.phase == GamePhase.pyramid ||
+                      pyramidDock ||
                       (state.phase == GamePhase.warmup
                           ? state.players.length >= 5
                           : state.players.length >= 6);
-                  final Size seatFootprint = _seatFootprint(compact);
+                  final Size seatFootprint = _seatFootprint(
+                    compact,
+                    phase: state.phase,
+                  );
                   final Offset position = _seatCenter(
                     index: index,
                     total: state.players.length,
@@ -99,6 +103,7 @@ class _GameTableViewState extends State<GameTableView> {
                         visibleCards: state.players[index].hand
                             .take(_visibleHandCounts[index] ?? 0)
                             .toList(),
+                        dockMode: pyramidDock,
                         compact: compact,
                         active:
                             state.phase == GamePhase.warmup &&
@@ -273,43 +278,69 @@ class _GameTableViewState extends State<GameTableView> {
   Widget _buildPyramidOverlay(Rect tableRect) {
     final GameState state = widget.state;
     final AppLanguage lang = state.language;
-    final List<Rect> slotRects = _pyramidSlotRects(tableRect);
+    final _PyramidLayout layout = _pyramidLayout(tableRect);
+    final List<Rect> slotRects = layout.slotRects;
     final int nextSlot = state.pyramidRevealIndex >= 15
         ? -1
         : (state.reversePyramid
               ? 14 - state.pyramidRevealIndex.clamp(0, 14)
               : state.pyramidRevealIndex.clamp(0, 14));
-    final Rect deckRect = Rect.fromCenter(
-      center: _pyramidDeckCenter(tableRect),
-      width: _CardMetrics.small.width,
-      height: _CardMetrics.small.height,
-    );
 
     return Stack(
       children: <Widget>[
         Positioned.fromRect(
-          rect: deckRect,
+          rect: layout.boardRect,
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(28),
+                gradient: const LinearGradient(
+                  colors: <Color>[Color(0x1A102E23), Color(0x121D4B3A)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+                border: Border.all(color: const Color(0x56FFD89A)),
+                boxShadow: const <BoxShadow>[
+                  BoxShadow(
+                    color: Color(0x33000000),
+                    blurRadius: 20,
+                    offset: Offset(0, 10),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Positioned.fromRect(
+          rect: layout.deckRect,
           child: _DeckStack(
             label: tr(lang, 'PYR', 'PYR'),
             deckCount: state.deck.length,
             ready: false,
           ),
         ),
-        Positioned(
-          left: tableRect.left + 20,
-          top: deckRect.bottom + 12,
-          child: Text(
-            tr(
-              lang,
-              'Tap the glowing next card',
-              'Trykk pa det glodende kortet',
+        Positioned.fromRect(
+          rect: layout.hintRect,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              color: const Color(0xA61A3B2D),
+              border: Border.all(color: const Color(0x5BFFE4A7)),
             ),
-            style: const TextStyle(
-              color: Color(0xFFF7EDDF),
-              fontWeight: FontWeight.w700,
-              shadows: <Shadow>[
-                Shadow(color: Color(0x66000000), blurRadius: 6),
-              ],
+            child: Center(
+              child: Text(
+                tr(
+                  lang,
+                  'Reveal the glowing next pyramid card',
+                  'Avslor det glodende neste pyramidekortet',
+                ),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Color(0xFFF8F1E3),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12.5,
+                ),
+              ),
             ),
           ),
         ),
@@ -1134,8 +1165,14 @@ class _GameTableViewState extends State<GameTableView> {
     return phase == GamePhase.warmup || phase == GamePhase.pyramid;
   }
 
-  Size _seatFootprint(bool compact) {
-    return compact ? const Size(102, 108) : const Size(142, 144);
+  Size _seatFootprint(bool compact, {required GamePhase phase}) {
+    if (!compact) {
+      return const Size(142, 144);
+    }
+    if (phase == GamePhase.pyramid) {
+      return const Size(94, 96);
+    }
+    return const Size(102, 108);
   }
 
   Offset _seatCenter({
@@ -1144,34 +1181,48 @@ class _GameTableViewState extends State<GameTableView> {
     required GamePhase phase,
     required Rect rect,
   }) {
-    if (phase == GamePhase.pyramid) {
-      final int leftCount = (total / 2).ceil();
-      final bool leftSide = index < leftCount;
-      final int sideIndex = leftSide ? index : index - leftCount;
-      final int sideTotal = leftSide ? leftCount : total - leftCount;
-      final double fraction = sideTotal <= 1
-          ? 0.5
-          : sideIndex / (sideTotal - 1);
-      final double x = leftSide ? rect.left + 68 : rect.right - 68;
-      final double y = rect.top + 76 + fraction * (rect.height - 152);
-      return Offset(x, y);
-    }
-
     final bool compact = phase == GamePhase.pyramid || total >= 5;
-    final Size seatFootprint = _seatFootprint(compact);
-    final double rimInsetX = seatFootprint.width / 2 + 10;
-    final double rimInsetY = seatFootprint.height / 2 + 12;
+    final Size seatFootprint = _seatFootprint(compact, phase: phase);
+    final bool oddCount = total.isOdd;
+    final int sideSlots = oddCount ? (total - 1) ~/ 2 : total ~/ 2;
+    final double edgeInsetX = seatFootprint.width / 2 + 10;
+    final double leftX = rect.left + edgeInsetX;
+    final double rightX = rect.right - edgeInsetX;
+    final double bottomCenterY =
+        rect.bottom -
+        seatFootprint.height / 2 -
+        (phase == GamePhase.pyramid ? 10 : 14);
 
-    final double angleStep = math.pi * 2 / total;
-    final double angle = -math.pi / 2 + angleStep * index;
-    final double radiusX = math.max(70, rect.width / 2 - rimInsetX);
-    final double radiusY = math.max(62, rect.height / 2 - rimInsetY);
-
-    double y = rect.center.dy + math.sin(angle) * radiusY;
-    if (phase == GamePhase.warmup && math.sin(angle) > 0.75) {
-      y += 6;
+    if (oddCount && index == 0) {
+      return Offset(rect.center.dx, bottomCenterY);
     }
-    return Offset(rect.center.dx + math.cos(angle) * radiusX, y);
+    if (sideSlots <= 0) {
+      return Offset(rect.center.dx, bottomCenterY);
+    }
+
+    final bool leftSide;
+    final int sideIndex;
+    if (oddCount) {
+      leftSide = index <= sideSlots;
+      sideIndex = leftSide ? index - 1 : index - sideSlots - 1;
+    } else {
+      leftSide = index < sideSlots;
+      sideIndex = leftSide ? index : index - sideSlots;
+    }
+
+    final double topRail = phase == GamePhase.pyramid
+        ? _pyramidLayout(rect).hintRect.bottom + seatFootprint.height / 2
+        : rect.top + seatFootprint.height / 2 + 14;
+    final double bottomRail =
+        rect.bottom -
+        seatFootprint.height / 2 -
+        (phase == GamePhase.pyramid ? 30 : 18);
+    final double safeTop = math.min(topRail, bottomRail);
+    final double safeBottom = math.max(topRail, bottomRail);
+    final double fraction = sideSlots == 1 ? 0.5 : sideIndex / (sideSlots - 1);
+    final double y = safeTop + (safeBottom - safeTop) * fraction;
+
+    return Offset(leftSide ? leftX : rightX, y);
   }
 
   Offset _seatCardTarget({
@@ -1180,16 +1231,21 @@ class _GameTableViewState extends State<GameTableView> {
     required GamePhase phaseHint,
     required Rect rect,
   }) {
-    final bool compact =
-        phaseHint == GamePhase.pyramid ||
-        (phaseHint == GamePhase.warmup ? total >= 5 : total >= 6);
     final Offset center = _seatCenter(
       index: index,
       total: total,
       phase: phaseHint,
       rect: rect,
     );
-    return center + Offset(0, compact ? 18 : 26);
+    final bool compact =
+        phaseHint == GamePhase.pyramid ||
+        (phaseHint == GamePhase.warmup ? total >= 5 : total >= 6);
+    final double offsetY = phaseHint == GamePhase.pyramid
+        ? 12
+        : compact
+        ? 18
+        : 26;
+    return center + Offset(0, offsetY);
   }
 
   Offset _warmupDeckCenter(Rect rect) {
@@ -1197,7 +1253,7 @@ class _GameTableViewState extends State<GameTableView> {
   }
 
   Offset _pyramidDeckCenter(Rect rect) {
-    return Offset(rect.center.dx, rect.top + 96);
+    return _pyramidLayout(rect).deckRect.center;
   }
 
   Offset _tieDeckCenter(Rect rect) {
@@ -1209,6 +1265,10 @@ class _GameTableViewState extends State<GameTableView> {
   }
 
   List<Rect> _pyramidSlotRects(Rect rect) {
+    return _pyramidLayout(rect).slotRects;
+  }
+
+  _PyramidLayout _pyramidLayout(Rect rect) {
     const List<List<int>> rows = <List<int>>[
       <int>[14],
       <int>[12, 13],
@@ -1216,13 +1276,32 @@ class _GameTableViewState extends State<GameTableView> {
       <int>[5, 6, 7, 8],
       <int>[0, 1, 2, 3, 4],
     ];
+    final Rect deckRect = Rect.fromCenter(
+      center: Offset(rect.center.dx, rect.top + 96),
+      width: _CardMetrics.medium.width,
+      height: _CardMetrics.medium.height,
+    );
+    final double hintWidth = math.min(rect.width - 32, 316);
+    final Rect hintRect = Rect.fromCenter(
+      center: Offset(rect.center.dx, deckRect.bottom + 23),
+      width: hintWidth,
+      height: 36,
+    );
+
     final List<Rect> slotRects = List<Rect>.filled(15, Rect.zero);
-    const double gapX = 8;
-    const double gapY = 10;
+    const double gapX = 14;
+    const double gapY = 12;
     final Size cardSize = _CardMetrics.small;
     final double totalHeight =
         rows.length * cardSize.height + (rows.length - 1) * gapY;
-    double top = rect.center.dy - totalHeight / 2 + 24;
+    final double baseRowWidth =
+        rows.last.length * cardSize.width + (rows.last.length - 1) * gapX;
+    final double minTop = hintRect.bottom + 14;
+    final double maxTop = math.max(minTop, rect.bottom - totalHeight - 26);
+    final double preferredTop = rect.center.dy - totalHeight / 2 + 24;
+    final double slotTop = (preferredTop.clamp(minTop, maxTop) as num)
+        .toDouble();
+    double top = slotTop;
 
     for (final List<int> row in rows) {
       final double rowWidth =
@@ -1239,7 +1318,18 @@ class _GameTableViewState extends State<GameTableView> {
       }
       top += cardSize.height + gapY;
     }
-    return slotRects;
+    final Rect boardRect = Rect.fromCenter(
+      center: Offset(rect.center.dx, slotTop + totalHeight / 2),
+      width: baseRowWidth + 52,
+      height: totalHeight + 44,
+    );
+
+    return _PyramidLayout(
+      deckRect: deckRect,
+      hintRect: hintRect,
+      boardRect: boardRect,
+      slotRects: slotRects,
+    );
   }
 
   List<Rect> _tieSlotRects(Rect rect, int total) {
@@ -1452,6 +1542,7 @@ class _SeatChip extends StatelessWidget {
     required this.player,
     required this.language,
     required this.visibleCards,
+    required this.dockMode,
     required this.compact,
     required this.active,
     required this.winner,
@@ -1461,6 +1552,7 @@ class _SeatChip extends StatelessWidget {
   final PlayerState player;
   final AppLanguage language;
   final List<PlayingCard> visibleCards;
+  final bool dockMode;
   final bool compact;
   final bool active;
   final bool winner;
@@ -1480,6 +1572,14 @@ class _SeatChip extends StatelessWidget {
       '${player.hand.length} cards',
       '${player.hand.length} kort',
     );
+    final double compactChipWidth = dockMode ? 92 : 102;
+    final double compactHandWidth = dockMode ? 84 : 96;
+    final double compactHandCanvasWidth = dockMode ? 76 : 88;
+    final double compactHandHeight = visibleCards.isEmpty
+        ? (dockMode ? 30 : 34)
+        : (dockMode ? 52 : 58);
+    final double compactNameSize = dockMode ? 11 : 12;
+    final double compactCountSize = dockMode ? 9 : 10;
 
     if (compact) {
       return AnimatedScale(
@@ -1490,8 +1590,11 @@ class _SeatChip extends StatelessWidget {
           children: <Widget>[
             AnimatedContainer(
               duration: const Duration(milliseconds: 240),
-              width: 102,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              width: compactChipWidth,
+              padding: EdgeInsets.symmetric(
+                horizontal: dockMode ? 8 : 10,
+                vertical: dockMode ? 7 : 8,
+              ),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
@@ -1521,18 +1624,18 @@ class _SeatChip extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 12,
+                    style: TextStyle(
+                      fontSize: compactNameSize,
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFF4A2D20),
+                      color: const Color(0xFF4A2D20),
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  SizedBox(height: dockMode ? 1.5 : 2),
                   Text(
                     handCountLabel,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      color: Color(0xFF6B5445),
+                    style: TextStyle(
+                      fontSize: compactCountSize,
+                      color: const Color(0xFF6B5445),
                     ),
                   ),
                 ],
@@ -1541,8 +1644,8 @@ class _SeatChip extends StatelessWidget {
             const SizedBox(height: 6),
             AnimatedContainer(
               duration: const Duration(milliseconds: 240),
-              width: 96,
-              height: visibleCards.isEmpty ? 34 : 58,
+              width: compactHandWidth,
+              height: compactHandHeight,
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(18),
@@ -1572,12 +1675,12 @@ class _SeatChip extends StatelessWidget {
                       ),
                     )
                   : SizedBox(
-                      width: 88,
-                      height: 48,
+                      width: compactHandCanvasWidth,
+                      height: dockMode ? 42 : 48,
                       child: _OverlappedHand(
                         cards: visibleCards,
                         size: _CardVisualSize.small,
-                        canvasWidth: 88,
+                        canvasWidth: compactHandCanvasWidth,
                       ),
                     ),
             ),
@@ -1814,7 +1917,6 @@ class _PyramidSlotCard extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 220),
         curve: Curves.easeOut,
-        clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           borderRadius: radius,
           boxShadow: active
@@ -1847,39 +1949,34 @@ class _PyramidRevealTarget extends StatelessWidget {
     final BorderRadius radius = BorderRadius.circular(
       _CardMetrics.small.width * 0.18,
     );
-    return ClipRRect(
-      borderRadius: radius,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          customBorder: RoundedRectangleBorder(borderRadius: radius),
-          child: Ink(
-            decoration: BoxDecoration(
-              borderRadius: radius,
-              border: Border.all(color: const Color(0xAAFFE4A7), width: 1.6),
-              gradient: const LinearGradient(
-                colors: <Color>[Color(0x33FFE4A7), Color(0x11FFFFFF)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              boxShadow: const <BoxShadow>[
-                BoxShadow(
-                  color: Color(0x66FFE4A7),
-                  blurRadius: 14,
-                  spreadRadius: 1,
-                ),
-              ],
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+        decoration: BoxDecoration(
+          borderRadius: radius,
+          border: Border.all(color: const Color(0xAAFFE4A7), width: 1.6),
+          gradient: const LinearGradient(
+            colors: <Color>[Color(0x44FFE4A7), Color(0x16FFFFFF)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: const <BoxShadow>[
+            BoxShadow(
+              color: Color(0x66FFE4A7),
+              blurRadius: 14,
+              spreadRadius: 1,
             ),
-            child: const Center(
-              child: Text(
-                '?',
-                style: TextStyle(
-                  color: Color(0xFFF7F1E2),
-                  fontWeight: FontWeight.w900,
-                  fontSize: 24,
-                ),
-              ),
+          ],
+        ),
+        child: const Center(
+          child: Text(
+            '?',
+            style: TextStyle(
+              color: Color(0xFFF7F1E2),
+              fontWeight: FontWeight.w900,
+              fontSize: 24,
             ),
           ),
         ),
@@ -2503,6 +2600,20 @@ class _FlightCard {
         return _CardMetrics.medium;
     }
   }
+}
+
+class _PyramidLayout {
+  const _PyramidLayout({
+    required this.deckRect,
+    required this.hintRect,
+    required this.boardRect,
+    required this.slotRects,
+  });
+
+  final Rect deckRect;
+  final Rect hintRect;
+  final Rect boardRect;
+  final List<Rect> slotRects;
 }
 
 class _BusLayout {
