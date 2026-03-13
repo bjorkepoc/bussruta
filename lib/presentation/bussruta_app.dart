@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:bussruta_app/application/game_controller.dart';
 import 'package:bussruta_app/application/hosted_session_controller.dart';
 import 'package:bussruta_app/domain/game_models.dart';
 import 'package:bussruta_app/presentation/game_table_view.dart';
+import 'package:bussruta_app/presentation/help_view.dart';
 import 'package:bussruta_app/presentation/hosted_session_view.dart';
 import 'package:bussruta_app/presentation/strings.dart';
 import 'package:flutter/material.dart';
@@ -19,6 +22,7 @@ class BussrutaApp extends StatefulWidget {
 class _BussrutaAppState extends State<BussrutaApp> {
   String _lastBanner = '';
   _AppMode? _selectedMode;
+  bool _onboardingLaunchQueued = false;
   late final HostedSessionController _hostedController =
       HostedSessionController();
 
@@ -38,6 +42,18 @@ class _BussrutaAppState extends State<BussrutaApp> {
 
         if (_selectedMode != _AppMode.hosted) {
           _maybeShowTransient(state);
+        }
+        if (widget.controller.initialized &&
+            !_onboardingLaunchQueued &&
+            !widget.controller.onboardingSeen &&
+            _selectedMode == null &&
+            state.phase == GamePhase.setup) {
+          _onboardingLaunchQueued = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            unawaited(
+              _openIntro(language: state.language, markSeenOnExit: true),
+            );
+          });
         }
 
         return MaterialApp(
@@ -63,6 +79,9 @@ class _BussrutaAppState extends State<BussrutaApp> {
       return _StartModeScreen(
         language: state.language,
         onLanguageSelected: widget.controller.setLanguage,
+        onOpenRules: () => _openRules(language: state.language),
+        onOpenIntro: () =>
+            _openIntro(language: state.language, markSeenOnExit: true),
         onSelectLocal: () {
           setState(() {
             _selectedMode = _AppMode.local;
@@ -99,7 +118,12 @@ class _BussrutaAppState extends State<BussrutaApp> {
       );
     }
 
-    return _GameScreen(controller: widget.controller);
+    return _GameScreen(
+      controller: widget.controller,
+      onOpenRules: () => _openRules(language: state.language),
+      onOpenIntro: () =>
+          _openIntro(language: state.language, markSeenOnExit: true),
+    );
   }
 
   void _maybeShowTransient(GameState state) {
@@ -127,6 +151,39 @@ class _BussrutaAppState extends State<BussrutaApp> {
           context,
         ).showSnackBar(SnackBar(content: Text(error)));
       });
+    }
+  }
+
+  Future<void> _openRules({required AppLanguage language}) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (BuildContext context) {
+          return RulesHelpScreen(
+            language: language,
+            onOpenIntro: () {
+              unawaited(_openIntro(language: language, markSeenOnExit: true));
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _openIntro({
+    required AppLanguage language,
+    required bool markSeenOnExit,
+  }) async {
+    if (!mounted) {
+      return;
+    }
+    final bool? completed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (BuildContext context) =>
+            OnboardingIntroScreen(language: language),
+      ),
+    );
+    if (markSeenOnExit && completed == true) {
+      widget.controller.markOnboardingSeen();
     }
   }
 
@@ -333,9 +390,15 @@ class _SetupScreen extends StatelessWidget {
 }
 
 class _GameScreen extends StatelessWidget {
-  const _GameScreen({required this.controller});
+  const _GameScreen({
+    required this.controller,
+    required this.onOpenRules,
+    required this.onOpenIntro,
+  });
 
   final GameController controller;
+  final VoidCallback onOpenRules;
+  final VoidCallback onOpenIntro;
 
   @override
   Widget build(BuildContext context) {
@@ -357,6 +420,12 @@ class _GameScreen extends StatelessWidget {
                 case _GameMenuAction.log:
                   _showLogSheet(context, state);
                   break;
+                case _GameMenuAction.rules:
+                  onOpenRules();
+                  break;
+                case _GameMenuAction.intro:
+                  onOpenIntro();
+                  break;
                 case _GameMenuAction.newGame:
                   controller.resetToSetup();
                   break;
@@ -371,6 +440,14 @@ class _GameScreen extends StatelessWidget {
                   PopupMenuItem<_GameMenuAction>(
                     value: _GameMenuAction.log,
                     child: Text(tr(lang, 'Game log', 'Spilllogg')),
+                  ),
+                  PopupMenuItem<_GameMenuAction>(
+                    value: _GameMenuAction.rules,
+                    child: Text(tr(lang, 'Rules', 'Regler')),
+                  ),
+                  PopupMenuItem<_GameMenuAction>(
+                    value: _GameMenuAction.intro,
+                    child: Text(tr(lang, 'Quick intro', 'Rask intro')),
                   ),
                   PopupMenuItem<_GameMenuAction>(
                     value: _GameMenuAction.newGame,
@@ -650,7 +727,7 @@ class _BannerCard extends StatelessWidget {
   }
 }
 
-enum _GameMenuAction { autoPlay, log, newGame }
+enum _GameMenuAction { autoPlay, log, rules, intro, newGame }
 
 enum _AppMode { local, hosted }
 
@@ -658,12 +735,16 @@ class _StartModeScreen extends StatelessWidget {
   const _StartModeScreen({
     required this.language,
     required this.onLanguageSelected,
+    required this.onOpenRules,
+    required this.onOpenIntro,
     required this.onSelectLocal,
     required this.onSelectHosted,
   });
 
   final AppLanguage language;
   final ValueChanged<AppLanguage> onLanguageSelected;
+  final VoidCallback onOpenRules;
+  final VoidCallback onOpenIntro;
   final VoidCallback onSelectLocal;
   final VoidCallback onSelectHosted;
 
@@ -718,6 +799,30 @@ class _StartModeScreen extends StatelessWidget {
                     ),
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: onOpenRules,
+                          icon: const Icon(Icons.menu_book),
+                          label: Text(
+                            tr(language, 'How to play', 'Hvordan spille'),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: FilledButton.tonalIcon(
+                          onPressed: onOpenIntro,
+                          icon: const Icon(Icons.slideshow),
+                          label: Text(
+                            tr(language, 'Quick intro', 'Rask intro'),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
