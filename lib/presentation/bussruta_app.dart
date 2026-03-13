@@ -1,5 +1,6 @@
 import 'package:bussruta_app/application/game_controller.dart';
 import 'package:bussruta_app/domain/game_models.dart';
+import 'package:bussruta_app/presentation/game_table_view.dart';
 import 'package:bussruta_app/presentation/strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -28,8 +29,12 @@ class _BussrutaAppState extends State<BussrutaApp> {
           title: 'Bussruta',
           debugShowCheckedModeBanner: false,
           theme: ThemeData(
-            colorSchemeSeed: const Color(0xFFB3541E),
             useMaterial3: true,
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFF9A4726),
+              brightness: Brightness.light,
+            ),
+            scaffoldBackgroundColor: const Color(0xFFF3EBDD),
           ),
           home: state.phase == GamePhase.setup
               ? _SetupScreen(controller: widget.controller)
@@ -100,14 +105,14 @@ class _SetupScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     SegmentedButton<AppLanguage>(
-                      segments: <ButtonSegment<AppLanguage>>[
+                      segments: const <ButtonSegment<AppLanguage>>[
                         ButtonSegment<AppLanguage>(
                           value: AppLanguage.en,
-                          label: const Text('EN'),
+                          label: Text('EN'),
                         ),
                         ButtonSegment<AppLanguage>(
                           value: AppLanguage.no,
-                          label: const Text('NO'),
+                          label: Text('NO'),
                         ),
                       ],
                       selected: <AppLanguage>{lang},
@@ -212,8 +217,9 @@ class _SetupScreen extends StatelessWidget {
                                       '${tr(lang, 'Player', 'Spiller')} ${i + 1}',
                                   border: const OutlineInputBorder(),
                                 ),
-                                onChanged: (String value) =>
-                                    controller.setPlayerName(i, value),
+                                onChanged: (String value) {
+                                  controller.setPlayerName(i, value);
+                                },
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -262,52 +268,58 @@ class _GameScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Bussruta'),
+        title: const Text('Bussruta'),
         actions: <Widget>[
-          IconButton(
-            onPressed: controller.resetToSetup,
-            icon: const Icon(Icons.refresh),
-            tooltip: tr(lang, 'New game', 'Nytt spill'),
+          PopupMenuButton<_GameMenuAction>(
+            tooltip: tr(lang, 'More', 'Mer'),
+            onSelected: (_GameMenuAction action) {
+              switch (action) {
+                case _GameMenuAction.autoPlay:
+                  _showAutoPlaySheet(context, controller);
+                  break;
+                case _GameMenuAction.log:
+                  _showLogSheet(context, state);
+                  break;
+                case _GameMenuAction.newGame:
+                  controller.resetToSetup();
+                  break;
+              }
+            },
+            itemBuilder: (BuildContext context) =>
+                <PopupMenuEntry<_GameMenuAction>>[
+                  PopupMenuItem<_GameMenuAction>(
+                    value: _GameMenuAction.autoPlay,
+                    child: Text(tr(lang, 'Auto play', 'Autospill')),
+                  ),
+                  PopupMenuItem<_GameMenuAction>(
+                    value: _GameMenuAction.log,
+                    child: Text(tr(lang, 'Game log', 'Spilllogg')),
+                  ),
+                  PopupMenuItem<_GameMenuAction>(
+                    value: _GameMenuAction.newGame,
+                    child: Text(tr(lang, 'New game', 'Nytt spill')),
+                  ),
+                ],
+            icon: const Icon(Icons.more_vert),
           ),
         ],
       ),
       body: SafeArea(
         child: Column(
           children: <Widget>[
-            _PhaseHeader(state: state),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+              child: _StatusStrip(controller: controller),
+            ),
             if (state.banner.isNotEmpty)
-              Container(
-                width: double.infinity,
-                margin: const EdgeInsets.fromLTRB(12, 6, 12, 6),
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: _toneColor(
-                    context,
-                    state.bannerTone,
-                  ).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: _toneColor(context, state.bannerTone),
-                  ),
-                ),
-                child: Text(state.banner),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+                child: _BannerCard(state: state),
               ),
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    _PlayersPanel(state: state),
-                    const SizedBox(height: 8),
-                    _PhaseBoard(controller: controller),
-                    const SizedBox(height: 8),
-                    _AutoPlayPanel(controller: controller),
-                    const SizedBox(height: 8),
-                    _LogPanel(state: state),
-                    const SizedBox(height: 10),
-                  ],
-                ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: GameTableView(controller: controller, state: state),
               ),
             ),
           ],
@@ -316,632 +328,230 @@ class _GameScreen extends StatelessWidget {
     );
   }
 
-  Color _toneColor(BuildContext context, BannerTone tone) {
-    switch (tone) {
-      case BannerTone.info:
-        return Theme.of(context).colorScheme.primary;
-      case BannerTone.success:
-        return Colors.green.shade700;
-      case BannerTone.fail:
-        return Colors.red.shade700;
-    }
+  Future<void> _showLogSheet(BuildContext context, GameState state) {
+    return showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      useSafeArea: true,
+      builder: (BuildContext context) {
+        final AppLanguage lang = state.language;
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                tr(lang, 'Game log', 'Spilllogg'),
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: state.log.isEmpty
+                    ? Center(
+                        child: Text(
+                          tr(lang, 'No events yet.', 'Ingen hendelser ennå.'),
+                        ),
+                      )
+                    : ListView.separated(
+                        itemCount: state.log.length,
+                        separatorBuilder: (_, _) => const Divider(height: 1),
+                        itemBuilder: (BuildContext context, int index) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            child: Text(state.log[index]),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showAutoPlaySheet(
+    BuildContext context,
+    GameController controller,
+  ) {
+    return showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      useSafeArea: true,
+      builder: (BuildContext context) {
+        return AnimatedBuilder(
+          animation: controller,
+          builder: (BuildContext context, _) {
+            final GameState state = controller.state;
+            final AppLanguage lang = state.language;
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    tr(lang, 'Auto play', 'Autospill'),
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 12),
+                  SwitchListTile(
+                    value: state.autoPlay.enabled,
+                    onChanged: controller.toggleAutoPlay,
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      tr(lang, 'Enable auto play', 'Aktiver autospill'),
+                    ),
+                  ),
+                  Text(
+                    tr(
+                      lang,
+                      'Delay: ${(state.autoPlay.delayMs / 1000).toStringAsFixed(1)}s',
+                      'Forsinkelse: ${(state.autoPlay.delayMs / 1000).toStringAsFixed(1)}s',
+                    ),
+                  ),
+                  Slider(
+                    min: 350,
+                    max: 60000,
+                    divisions: 40,
+                    value: state.autoPlay.delayMs.toDouble(),
+                    onChanged: (double value) {
+                      controller.setAutoPlayDelayMs(value.round());
+                    },
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 }
 
-class _PhaseHeader extends StatelessWidget {
-  const _PhaseHeader({required this.state});
+class _StatusStrip extends StatelessWidget {
+  const _StatusStrip({required this.controller});
 
-  final GameState state;
+  final GameController controller;
 
   @override
   Widget build(BuildContext context) {
+    final GameState state = controller.state;
     final AppLanguage lang = state.language;
-    final int deckCount = switch (state.phase) {
-      GamePhase.setup => 52,
-      GamePhase.tiebreak => state.tieBreak?.deck.length ?? 0,
-      GamePhase.bussetup ||
-      GamePhase.bus ||
-      GamePhase.finished => state.busRoute?.deck.length ?? 0,
-      _ => state.deck.length,
-    };
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-      padding: const EdgeInsets.all(12),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(14),
+        color: Colors.white.withValues(alpha: 0.66),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.8)),
+        boxShadow: const <BoxShadow>[
+          BoxShadow(
+            color: Color(0x14000000),
+            blurRadius: 18,
+            offset: Offset(0, 10),
+          ),
+        ],
       ),
-      child: Row(
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: <Widget>[
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  phaseLabel(lang, state.phase, state.warmupRound),
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                Text(tr(lang, 'Deck: $deckCount', 'Kortstokk: $deckCount')),
-              ],
+          Chip(
+            avatar: const Icon(Icons.style, size: 18),
+            label: Text(phaseLabel(lang, state.phase, state.warmupRound)),
+          ),
+          Chip(
+            avatar: const Icon(Icons.layers, size: 18),
+            label: Text(
+              tr(
+                lang,
+                'Deck ${_deckCount(state)}',
+                'Stokk ${_deckCount(state)}',
+              ),
             ),
           ),
-          if (state.phase == GamePhase.bus && state.busRoute != null)
+          if (_focusLabel(state, lang) case final String focus)
             Chip(
-              label: Text(
-                tr(
-                  lang,
-                  'Stop ${state.busRoute!.progress + 1}/5',
-                  'Stopp ${state.busRoute!.progress + 1}/5',
-                ),
-              ),
+              avatar: const Icon(Icons.person, size: 18),
+              label: Text(focus),
             ),
         ],
       ),
     );
   }
-}
 
-class _PlayersPanel extends StatelessWidget {
-  const _PlayersPanel({required this.state});
-
-  final GameState state;
-
-  @override
-  Widget build(BuildContext context) {
-    final int? activeIndex = switch (state.phase) {
-      GamePhase.warmup => state.currentPlayerIndex,
-      GamePhase.bussetup ||
-      GamePhase.bus ||
-      GamePhase.finished => state.busRunnerIndex,
-      _ => null,
-    };
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(10),
-        child: Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: <Widget>[
-            for (int i = 0; i < state.players.length; i += 1)
-              Chip(
-                avatar: i == activeIndex
-                    ? const Icon(Icons.play_arrow, size: 18)
-                    : null,
-                label: Text(
-                  '${state.players[i].name} (${state.players[i].hand.length})',
-                ),
-                backgroundColor: state.pyramidHighlightPlayers.contains(i)
-                    ? Colors.amber.shade100
-                    : null,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PhaseBoard extends StatelessWidget {
-  const _PhaseBoard({required this.controller});
-
-  final GameController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final GameState state = controller.state;
+  static int _deckCount(GameState state) {
     switch (state.phase) {
-      case GamePhase.warmup:
-        return _WarmupBoard(controller: controller);
-      case GamePhase.pyramid:
-        return _PyramidBoard(controller: controller);
-      case GamePhase.tiebreak:
-        return _TieBreakBoard(controller: controller);
-      case GamePhase.bussetup:
-        return _BusSetupBoard(controller: controller);
-      case GamePhase.bus:
-        return _BusBoard(controller: controller);
-      case GamePhase.finished:
-        return _FinishedBoard(controller: controller);
       case GamePhase.setup:
-        return const SizedBox.shrink();
+        return 52;
+      case GamePhase.tiebreak:
+        return state.tieBreak?.deck.length ?? 0;
+      case GamePhase.bussetup:
+      case GamePhase.bus:
+      case GamePhase.finished:
+        return state.busRoute?.deck.length ?? 0;
+      case GamePhase.warmup:
+      case GamePhase.pyramid:
+        return state.deck.length;
     }
   }
-}
 
-class _WarmupBoard extends StatelessWidget {
-  const _WarmupBoard({required this.controller});
-
-  final GameController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final GameState state = controller.state;
-    final AppLanguage lang = state.language;
-    final PlayerState player = state.players[state.currentPlayerIndex];
-
-    final List<WarmupGuess> options = switch (state.warmupRound) {
-      1 => <WarmupGuess>[WarmupGuess.black, WarmupGuess.red],
-      2 => <WarmupGuess>[
-        WarmupGuess.above,
-        WarmupGuess.below,
-        WarmupGuess.same,
-      ],
-      3 => <WarmupGuess>[
-        WarmupGuess.between,
-        WarmupGuess.outside,
-        WarmupGuess.same,
-      ],
-      _ => <WarmupGuess>[
-        WarmupGuess.clubs,
-        WarmupGuess.diamonds,
-        WarmupGuess.hearts,
-        WarmupGuess.spades,
-      ],
-    };
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Text(
-              tr(lang, 'Active: ${player.name}', 'Aktiv: ${player.name}'),
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: options
-                  .map(
-                    (WarmupGuess guess) => FilledButton.tonal(
-                      onPressed: () {
-                        HapticFeedback.selectionClick();
-                        controller.playWarmupGuess(guess);
-                      },
-                      child: Text(warmupGuessLabel(lang, guess)),
-                    ),
-                  )
-                  .toList(),
-            ),
-            const SizedBox(height: 10),
-            _HandCards(hand: player.hand),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PyramidBoard extends StatelessWidget {
-  const _PyramidBoard({required this.controller});
-
-  final GameController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final GameState state = controller.state;
-    final int normalizedStep = state.pyramidRevealIndex.clamp(0, 14);
-    final int nextSlot = state.reversePyramid
-        ? 14 - normalizedStep
-        : normalizedStep;
-    final List<List<int>> rows = <List<int>>[
-      <int>[14],
-      <int>[12, 13],
-      <int>[9, 10, 11],
-      <int>[5, 6, 7, 8],
-      <int>[0, 1, 2, 3, 4],
-    ];
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          children: <Widget>[
-            for (final List<int> row in rows)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: row
-                      .map(
-                        (int index) => Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 3),
-                          child: _PyramidSlot(
-                            card: state.pyramidCards[index],
-                            isActive: index == nextSlot,
-                            onTap: index == nextSlot
-                                ? () {
-                                    HapticFeedback.selectionClick();
-                                    controller.revealPyramidNext();
-                                  }
-                                : null,
-                          ),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _TieBreakBoard extends StatelessWidget {
-  const _TieBreakBoard({required this.controller});
-
-  final GameController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final GameState state = controller.state;
-    final TieBreakState tie = state.tieBreak!;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Text('Round ${tie.round}'),
-            const SizedBox(height: 8),
-            for (final int contender in tie.contenders)
-              ListTile(
-                dense: true,
-                title: Text(state.players[contender].name),
-                trailing: Text(_drawForContender(tie, contender) ?? '--'),
-              ),
-            const SizedBox(height: 8),
-            FilledButton(
-              onPressed: () {
-                HapticFeedback.selectionClick();
-                controller.runTieBreakRound();
-              },
-              child: Text(
-                tr(
-                  state.language,
-                  'Draw tie-break cards',
-                  'Trekk tie-break kort',
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String? _drawForContender(TieBreakState tie, int contender) {
-    for (final TieBreakDraw draw in tie.lastDraws) {
-      if (draw.playerIndex == contender) {
-        return draw.card.shortLabel();
-      }
+  static String? _focusLabel(GameState state, AppLanguage lang) {
+    if (state.phase == GamePhase.warmup) {
+      return tr(
+        lang,
+        'Turn: ${state.players[state.currentPlayerIndex].name}',
+        'Tur: ${state.players[state.currentPlayerIndex].name}',
+      );
+    }
+    if ((state.phase == GamePhase.bussetup ||
+            state.phase == GamePhase.bus ||
+            state.phase == GamePhase.finished) &&
+        state.busRunnerIndex != null) {
+      return tr(
+        lang,
+        'Runner: ${state.players[state.busRunnerIndex!].name}',
+        'Kjorer: ${state.players[state.busRunnerIndex!].name}',
+      );
+    }
+    if (state.phase == GamePhase.tiebreak && state.tieBreak != null) {
+      return tr(
+        lang,
+        'Contenders: ${state.tieBreak!.contenders.length}',
+        'Deltakere: ${state.tieBreak!.contenders.length}',
+      );
     }
     return null;
   }
 }
 
-class _BusSetupBoard extends StatelessWidget {
-  const _BusSetupBoard({required this.controller});
-
-  final GameController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final GameState state = controller.state;
-    final BusRouteState bus = state.busRoute!;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: bus.routeCards
-                  .map(
-                    (PlayingCard card) => _CardFace(label: card.shortLabel()),
-                  )
-                  .toList(),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: FilledButton.tonal(
-                    onPressed: () =>
-                        controller.beginBusRoute(BusStartSide.left),
-                    child: Text(
-                      tr(state.language, 'Start Left', 'Start venstre'),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: FilledButton.tonal(
-                    onPressed: () =>
-                        controller.beginBusRoute(BusStartSide.right),
-                    child: Text(
-                      tr(state.language, 'Start Right', 'Start hoyre'),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _BusBoard extends StatelessWidget {
-  const _BusBoard({required this.controller});
-
-  final GameController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final GameState state = controller.state;
-    final AppLanguage lang = state.language;
-    final BusRouteState bus = state.busRoute!;
-    final int activeStep = bus.order[bus.progress];
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: List<Widget>.generate(bus.routeCards.length, (int i) {
-                final bool isActive = i == activeStep;
-                return Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: isActive
-                          ? Theme.of(context).colorScheme.primary
-                          : Colors.transparent,
-                      width: 2,
-                    ),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: _CardFace(label: bus.routeCards[i].shortLabel()),
-                );
-              }),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: BusGuess.values
-                  .map(
-                    (BusGuess guess) => Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        child: FilledButton(
-                          onPressed: () {
-                            HapticFeedback.selectionClick();
-                            controller.playBusGuess(guess);
-                          },
-                          child: Text(busGuessLabel(lang, guess)),
-                        ),
-                      ),
-                    ),
-                  )
-                  .toList(),
-            ),
-            const SizedBox(height: 8),
-            Text(tr(lang, 'Recent route events', 'Siste hendelser')),
-            const SizedBox(height: 4),
-            for (final BusHistoryEntry event in bus.history.reversed.take(5))
-              Text(
-                '- ${event.message}',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _FinishedBoard extends StatelessWidget {
-  const _FinishedBoard({required this.controller});
-
-  final GameController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLanguage lang = controller.state.language;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Text(
-              tr(lang, 'Game complete', 'Spill ferdig'),
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 10),
-            FilledButton.icon(
-              onPressed: controller.resetToSetup,
-              icon: const Icon(Icons.refresh),
-              label: Text(tr(lang, 'New game', 'Nytt spill')),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _AutoPlayPanel extends StatelessWidget {
-  const _AutoPlayPanel({required this.controller});
-
-  final GameController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final GameState state = controller.state;
-    final AppLanguage lang = state.language;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                Text(tr(lang, 'Auto play', 'Autospill')),
-                const Spacer(),
-                Switch(
-                  value: state.autoPlay.enabled,
-                  onChanged: controller.toggleAutoPlay,
-                ),
-              ],
-            ),
-            Slider(
-              value: state.autoPlay.delayMs.toDouble(),
-              min: 350,
-              max: 60000,
-              divisions: 40,
-              label: '${(state.autoPlay.delayMs / 1000).toStringAsFixed(1)}s',
-              onChanged: (double value) =>
-                  controller.setAutoPlayDelayMs(value.round()),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _LogPanel extends StatelessWidget {
-  const _LogPanel({required this.state});
+class _BannerCard extends StatelessWidget {
+  const _BannerCard({required this.state});
 
   final GameState state;
 
   @override
   Widget build(BuildContext context) {
-    final AppLanguage lang = state.language;
-    return ExpansionTile(
-      tilePadding: const EdgeInsets.symmetric(horizontal: 8),
-      title: Text(tr(lang, 'Game log', 'Spilllogg')),
-      children: <Widget>[
-        Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.all(8),
-          height: 180,
-          decoration: BoxDecoration(
-            border: Border.all(color: Theme.of(context).dividerColor),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: ListView.builder(
-            itemCount: state.log.length,
-            itemBuilder: (BuildContext context, int index) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Text(
-                  state.log[index],
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-}
+    final Color tone = switch (state.bannerTone) {
+      BannerTone.info => Theme.of(context).colorScheme.primary,
+      BannerTone.success => const Color(0xFF18824A),
+      BannerTone.fail => const Color(0xFFB93838),
+    };
 
-class _HandCards extends StatelessWidget {
-  const _HandCards({required this.hand});
-
-  final List<PlayingCard> hand;
-
-  @override
-  Widget build(BuildContext context) {
-    if (hand.isEmpty) {
-      return const Text('-');
-    }
-    return Wrap(
-      spacing: 6,
-      runSpacing: 6,
-      children: hand
-          .map((PlayingCard card) => _CardFace(label: card.shortLabel()))
-          .toList(),
-    );
-  }
-}
-
-class _PyramidSlot extends StatelessWidget {
-  const _PyramidSlot({
-    required this.card,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  final PlayingCard? card;
-  final bool isActive;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          width: 46,
-          height: 62,
-          decoration: BoxDecoration(
-            color: card == null ? Colors.blueGrey.shade50 : Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: isActive
-                  ? Theme.of(context).colorScheme.primary
-                  : Colors.grey.shade400,
-              width: isActive ? 2 : 1,
-            ),
-          ),
-          alignment: Alignment.center,
-          child: card == null
-              ? const Icon(Icons.style, size: 18)
-              : Text(card!.shortLabel()),
-        ),
-      ),
-    );
-  }
-}
-
-class _CardFace extends StatelessWidget {
-  const _CardFace({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
     return Container(
-      width: 48,
-      height: 66,
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.grey.shade400),
-        borderRadius: BorderRadius.circular(8),
+        color: tone.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: tone.withValues(alpha: 0.55)),
       ),
-      alignment: Alignment.center,
-      child: Text(label),
+      child: Text(state.banner),
     );
   }
 }
+
+enum _GameMenuAction { autoPlay, log, newGame }
