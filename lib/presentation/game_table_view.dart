@@ -1386,6 +1386,10 @@ class _GameTableViewState extends State<GameTableView> {
       final double fraction = sideSlots == 1 ? 0.5 : slot / (sideSlots - 1);
       return safeTop + (safeBottom - safeTop) * fraction;
     });
+    if (phase == GamePhase.warmup && oddCount && sideSlots > 1) {
+      final int lowermostIndex = sideYs.length - 1;
+      sideYs[lowermostIndex] = math.max(safeTop, sideYs[lowermostIndex] - 12);
+    }
     final List<Offset> leftTopToBottom = sideYs
         .map((double y) => Offset(leftX, y))
         .toList();
@@ -2440,7 +2444,7 @@ class _BusBase extends StatelessWidget {
             : const <BoxShadow>[],
       ),
       child: Stack(
-        clipBehavior: Clip.antiAlias,
+        clipBehavior: Clip.none,
         children: <Widget>[
           Positioned.fill(
             child: Padding(
@@ -2458,8 +2462,8 @@ class _BusBase extends StatelessWidget {
           Center(child: child),
           if (sameCount > 0)
             Positioned(
-              left: 6,
-              top: sameButtonLabel == null ? 6 : 34,
+              left: sameButtonLabel == null ? 10 : 16,
+              top: sameButtonLabel == null ? 6 : 32,
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(999),
@@ -2484,8 +2488,8 @@ class _BusBase extends StatelessWidget {
             ),
           if (sameButtonLabel != null)
             Positioned(
-              left: 6,
-              top: 6,
+              left: 16,
+              top: -4,
               child: FilledButton.tonal(
                 onPressed: onSame,
                 style: FilledButton.styleFrom(
