@@ -109,8 +109,13 @@ void main() {
       expect(afterRound1.tieBreak!.round, 2);
 
       final GameState afterRound2 = engine.runTieBreakRound(afterRound1);
-      expect(afterRound2.phase, GamePhase.bussetup);
+      expect(afterRound2.phase, GamePhase.tiebreak);
+      expect(afterRound2.tieBreak!.contenders, <int>[0]);
       expect(afterRound2.busRunnerIndex, 0);
+
+      final GameState afterRound3 = engine.runTieBreakRound(afterRound2);
+      expect(afterRound3.phase, GamePhase.bussetup);
+      expect(afterRound3.busRunnerIndex, 0);
     });
 
     test('tie-break treats ace as lowest card', () {
@@ -130,8 +135,13 @@ void main() {
       );
 
       final GameState next = engine.runTieBreakRound(state);
-      expect(next.phase, GamePhase.bussetup);
+      expect(next.phase, GamePhase.tiebreak);
+      expect(next.tieBreak!.contenders, <int>[0]);
       expect(next.busRunnerIndex, 0);
+
+      final GameState advanced = engine.runTieBreakRound(next);
+      expect(advanced.phase, GamePhase.bussetup);
+      expect(advanced.busRunnerIndex, 0);
     });
   });
 

@@ -25,12 +25,14 @@ class _GameTableViewState extends State<GameTableView> {
   final Map<int, int> _visibleHandCounts = <int, int>{};
   final Set<int> _revealedPyramidSlots = <int>{};
   final Set<int> _visibleTieSlots = <int>{};
+  final Set<int> _tieFaceUpSlots = <int>{};
   final Map<String, int> _visibleBusZoneCounts = <String, int>{};
   final List<_FlightCard> _flights = <_FlightCard>[];
 
   Size _stageSize = Size.zero;
   int _visibleRouteCards = 0;
   int _flightSeed = 0;
+  int _tieRevealToken = 0;
 
   @override
   void initState() {
@@ -187,8 +189,8 @@ class _GameTableViewState extends State<GameTableView> {
       math.max(112, 58 + optionRows * 52 + (optionRows - 1) * 8),
     );
     final double panelTop = math.min(
-      tableRect.bottom + 14,
-      _stageSize.height - panelHeight - 12,
+      tableRect.bottom + 28,
+      _stageSize.height - panelHeight - 8,
     );
 
     return Stack(
@@ -377,48 +379,78 @@ class _GameTableViewState extends State<GameTableView> {
     final GameState state = widget.state;
     final AppLanguage lang = state.language;
     final TieBreakState tie = state.tieBreak!;
-    final Rect deckRect = Rect.fromCenter(
-      center: _tieDeckCenter(tableRect),
-      width: _CardMetrics.medium.width,
-      height: _CardMetrics.medium.height,
-    );
-    final List<Rect> slotRects = _tieSlotRects(
-      tableRect,
-      tie.contenders.length,
-    );
+    final _TieLayout layout = _tieLayout(tableRect, tie.contenders.length);
+    final String instruction;
+    final bool winnerLocked =
+        tie.contenders.length == 1 && state.busRunnerIndex != null;
+    if (winnerLocked) {
+      instruction = tr(
+        lang,
+        '${state.players[state.busRunnerIndex!].name} wins tie-break',
+        '${state.players[state.busRunnerIndex!].name} vinner tie-break',
+      );
+    } else if (tie.lastDraws.isEmpty) {
+      instruction = tr(
+        lang,
+        'Tap deck to deal facedown cards',
+        'Trykk stokken for a dele ut kort med baksiden opp',
+      );
+    } else if (_tieFaceUpSlots.length < tie.lastDraws.length) {
+      instruction = tr(lang, 'Dealing cards...', 'Deler ut kort...');
+    } else {
+      instruction = tr(
+        lang,
+        'Reveal complete - next tie-break action incoming',
+        'Avsloring ferdig - neste tie-break handling kommer',
+      );
+    }
 
     return Stack(
       children: <Widget>[
         Positioned.fromRect(
-          rect: deckRect,
+          rect: layout.deckRect,
           child: GestureDetector(
-            onTap: () async {
-              await HapticFeedback.selectionClick();
-              widget.controller.runTieBreakRound();
-            },
+            onTap: winnerLocked
+                ? null
+                : () async {
+                    await HapticFeedback.selectionClick();
+                    widget.controller.runTieBreakRound();
+                  },
             child: _DeckStack(
               label: tr(lang, 'TIE', 'TIE'),
               deckCount: tie.deck.length,
-              ready: true,
+              ready: !winnerLocked,
             ),
           ),
         ),
-        Positioned(
-          left: tableRect.center.dx - 110,
-          top: deckRect.bottom + 10,
-          width: 220,
-          child: Text(
-            tr(lang, 'Draw highest card', 'Trekk hoyeste kort'),
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Color(0xFFF8F2E9),
-              fontWeight: FontWeight.w700,
+        Positioned.fromRect(
+          rect: layout.instructionRect,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              color: const Color(0xA4203328),
+              border: Border.all(
+                color: winnerLocked
+                    ? const Color(0x88FFE4A7)
+                    : const Color(0x55FFFFFF),
+              ),
+            ),
+            child: Center(
+              child: Text(
+                instruction,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Color(0xFFF8F2E9),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12.5,
+                ),
+              ),
             ),
           ),
         ),
         for (int index = 0; index < tie.contenders.length; index += 1)
           ..._buildTieContenderWidgets(
-            rect: slotRects[index],
+            rect: layout.slotRects[index],
             playerIndex: tie.contenders[index],
             tie: tie,
           ),
@@ -439,21 +471,31 @@ class _GameTableViewState extends State<GameTableView> {
         break;
       }
     }
-    final bool showCard =
-        _visibleTieSlots.contains(playerIndex) && draw != null;
+    final bool dealt = _visibleTieSlots.contains(playerIndex) && draw != null;
+    final bool faceUp = dealt && _tieFaceUpSlots.contains(playerIndex);
 
     return <Widget>[
       Positioned(
         left: rect.left - 10,
-        top: rect.top - 28,
+        top: rect.top - 34,
         width: rect.width + 20,
-        child: Text(
-          state.players[playerIndex].name,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: Color(0xFFF8F2E9),
-            fontWeight: FontWeight.w700,
-            shadows: <Shadow>[Shadow(color: Color(0x66000000), blurRadius: 6)],
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            color: const Color(0x90203328),
+            border: Border.all(color: const Color(0x55FFE4A7)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+            child: Text(
+              state.players[playerIndex].name,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0xFFF8F2E9),
+                fontWeight: FontWeight.w700,
+                fontSize: 11.5,
+              ),
+            ),
           ),
         ),
       ),
@@ -466,11 +508,24 @@ class _GameTableViewState extends State<GameTableView> {
             border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
           ),
           child: Center(
-            child: _PlayingCardView(
-              card: showCard ? draw.card : null,
-              faceUp: showCard,
-              size: _CardVisualSize.medium,
-            ),
+            child: dealt
+                ? _PlayingCardView(
+                    card: faceUp ? draw.card : null,
+                    faceUp: faceUp,
+                    size: _CardVisualSize.medium,
+                  )
+                : DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: SizedBox(
+                      width: _CardMetrics.medium.width - 4,
+                      height: _CardMetrics.medium.height - 4,
+                    ),
+                  ),
           ),
         ),
       ),
@@ -481,7 +536,7 @@ class _GameTableViewState extends State<GameTableView> {
     final GameState state = widget.state;
     final AppLanguage lang = state.language;
     final BusRouteState bus = state.busRoute!;
-    final _BusLayout layout = _busLayout(tableRect);
+    final _BusLayout layout = _busLayout(tableRect, phase: state.phase);
     final int activeIndex = state.phase == GamePhase.bus
         ? bus.order[bus.progress]
         : -1;
@@ -497,26 +552,34 @@ class _GameTableViewState extends State<GameTableView> {
           ),
         ),
         if (state.phase != GamePhase.finished)
-          Positioned(
-            left: tableRect.center.dx - 120,
-            top: layout.deckRect.bottom + 8,
-            width: 240,
-            child: Text(
-              state.phase == GamePhase.bussetup
-                  ? tr(
-                      lang,
-                      'Choose which side to start from',
-                      'Velg hvilken side ruten starter fra',
-                    )
-                  : tr(
-                      lang,
-                      'Tap above, below, or same on the active stop',
-                      'Trykk over, under eller samme pa aktivt stopp',
-                    ),
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Color(0xFFF8F2E9),
-                fontWeight: FontWeight.w700,
+          Positioned.fromRect(
+            rect: layout.instructionRect,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(18),
+                color: const Color(0xA5203328),
+                border: Border.all(color: const Color(0x55FFFFFF)),
+              ),
+              child: Center(
+                child: Text(
+                  state.phase == GamePhase.bussetup
+                      ? tr(
+                          lang,
+                          'Choose which side to start from',
+                          'Velg hvilken side ruten starter fra',
+                        )
+                      : tr(
+                          lang,
+                          'Play above, below, or same on active card',
+                          'Spill over, under eller samme pa aktivt kort',
+                        ),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0xFFF8F2E9),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12.5,
+                  ),
+                ),
               ),
             ),
           ),
@@ -590,7 +653,7 @@ class _GameTableViewState extends State<GameTableView> {
                 : null,
             child: _StackPile(
               cards: lane.high.take(highCount).toList(),
-              size: _CardVisualSize.extraSmall,
+              size: _CardVisualSize.medium,
             ),
           ),
         ),
@@ -604,6 +667,7 @@ class _GameTableViewState extends State<GameTableView> {
           active: active,
           tone: active ? tone.same : null,
           sameButtonLabel: active ? tr(lang, 'Same', 'Samme') : null,
+          sameCount: sameCount,
           onSame: active
               ? () async {
                   await HapticFeedback.selectionClick();
@@ -620,15 +684,6 @@ class _GameTableViewState extends State<GameTableView> {
                   card: step < visibleRouteCount ? bus.routeCards[step] : null,
                   faceUp: step < visibleRouteCount,
                   size: _CardVisualSize.medium,
-                ),
-              ),
-              Positioned(
-                right: 8,
-                bottom: 6,
-                child: _StackPile(
-                  cards: lane.same.take(sameCount).toList(),
-                  size: _CardVisualSize.extraSmall,
-                  samePile: true,
                 ),
               ),
             ],
@@ -653,7 +708,7 @@ class _GameTableViewState extends State<GameTableView> {
                 : null,
             child: _StackPile(
               cards: lane.low.take(lowCount).toList(),
-              size: _CardVisualSize.extraSmall,
+              size: _CardVisualSize.medium,
             ),
           ),
         ),
@@ -665,7 +720,7 @@ class _GameTableViewState extends State<GameTableView> {
 
   Widget _buildCelebration(Rect tableRect) {
     final AppLanguage lang = widget.state.language;
-    final _BusLayout layout = _busLayout(tableRect);
+    final _BusLayout layout = _busLayout(tableRect, phase: GamePhase.finished);
     final double width = math.min(320, tableRect.width - 24);
     final double targetCenterY =
         (layout.deckRect.center.dy + layout.baseRects[2].center.dy) / 2;
@@ -791,6 +846,9 @@ class _GameTableViewState extends State<GameTableView> {
                 .toSet() ??
             <int>{},
       );
+    _tieFaceUpSlots
+      ..clear()
+      ..addAll(_visibleTieSlots);
 
     _visibleRouteCards = state.busRoute?.routeCards.length ?? 0;
     _visibleBusZoneCounts.clear();
@@ -823,6 +881,9 @@ class _GameTableViewState extends State<GameTableView> {
         <int>{};
     _visibleTieSlots.removeWhere((int playerIndex) {
       return !visibleTiePlayers.contains(playerIndex);
+    });
+    _tieFaceUpSlots.removeWhere((int playerIndex) {
+      return !_visibleTieSlots.contains(playerIndex);
     });
 
     if (state.busRoute == null) {
@@ -941,6 +1002,7 @@ class _GameTableViewState extends State<GameTableView> {
   void _animateTieBreak(GameState previous, GameState next) {
     if (next.tieBreak == null || next.tieBreak!.lastDraws.isEmpty) {
       _visibleTieSlots.clear();
+      _tieFaceUpSlots.clear();
       return;
     }
 
@@ -952,23 +1014,65 @@ class _GameTableViewState extends State<GameTableView> {
       return;
     }
 
+    final int revealToken = ++_tieRevealToken;
+    _visibleTieSlots.clear();
+    _tieFaceUpSlots.clear();
+
     final Rect tableRect = _tableRect(_stageSize, GamePhase.tiebreak);
-    for (int index = 0; index < nextTie.lastDraws.length; index += 1) {
+    final _TieLayout layout = _tieLayout(tableRect, nextTie.contenders.length);
+    int landedCount = 0;
+    final int total = nextTie.lastDraws.length;
+    final List<int> revealedPlayers = nextTie.lastDraws
+        .map((TieBreakDraw draw) => draw.playerIndex)
+        .toList();
+
+    for (int index = 0; index < total; index += 1) {
       final TieBreakDraw draw = nextTie.lastDraws[index];
       _visibleTieSlots.remove(draw.playerIndex);
       _queueFlight(
         card: draw.card,
-        faceUp: true,
-        from: _tieDeckCenter(tableRect),
-        to: _tieSlotCenter(draw.playerIndex, nextTie.contenders, tableRect),
+        faceUp: false,
+        from: layout.deckRect.center,
+        to: layout.slotRects[index].center,
         size: _CardVisualSize.medium,
-        delay: Duration(milliseconds: 120 * index),
+        delay: Duration(milliseconds: 220 * index),
+        duration: const Duration(milliseconds: 680),
         onDone: () {
           if (!mounted) {
             return;
           }
           setState(() {
             _visibleTieSlots.add(draw.playerIndex);
+          });
+          landedCount += 1;
+          if (landedCount != total || revealToken != _tieRevealToken) {
+            return;
+          }
+          Future<void>.delayed(const Duration(milliseconds: 720), () {
+            if (!mounted || revealToken != _tieRevealToken) {
+              return;
+            }
+            HapticFeedback.mediumImpact();
+            setState(() {
+              _tieFaceUpSlots
+                ..clear()
+                ..addAll(revealedPlayers);
+            });
+            if (nextTie.contenders.length == 1 &&
+                next.busRunnerIndex != null &&
+                next.phase == GamePhase.tiebreak) {
+              Future<void>.delayed(const Duration(milliseconds: 900), () {
+                if (!mounted || revealToken != _tieRevealToken) {
+                  return;
+                }
+                final GameState current = widget.state;
+                if (current.phase == GamePhase.tiebreak &&
+                    current.tieBreak?.contenders.length == 1 &&
+                    current.busRunnerIndex != null) {
+                  widget.controller.runTieBreakRound();
+                }
+              });
+            }
           });
         },
       );
@@ -988,7 +1092,7 @@ class _GameTableViewState extends State<GameTableView> {
     _visibleRouteCards = 0;
     _visibleBusZoneCounts.clear();
     final Rect tableRect = _tableRect(_stageSize, GamePhase.bus);
-    final _BusLayout layout = _busLayout(tableRect);
+    final _BusLayout layout = _busLayout(tableRect, phase: GamePhase.bus);
     for (int index = 0; index < next.busRoute!.routeCards.length; index += 1) {
       final PlayingCard card = next.busRoute!.routeCards[index];
       _queueFlight(
@@ -1016,7 +1120,7 @@ class _GameTableViewState extends State<GameTableView> {
     }
 
     final Rect tableRect = _tableRect(_stageSize, GamePhase.bus);
-    final _BusLayout layout = _busLayout(tableRect);
+    final _BusLayout layout = _busLayout(tableRect, phase: GamePhase.bus);
     for (int step = 0; step < next.busRoute!.overlays.length; step += 1) {
       _animateBusZoneDelta(
         previousCards: previous.busRoute!.overlays[step].high,
@@ -1034,7 +1138,7 @@ class _GameTableViewState extends State<GameTableView> {
         previousCards: previous.busRoute!.overlays[step].same,
         nextCards: next.busRoute!.overlays[step].same,
         zoneKey: '$step-same',
-        target: layout.baseRects[step].center + const Offset(18, 20),
+        target: layout.baseRects[step].topLeft + const Offset(14, 18),
       );
     }
   }
@@ -1057,12 +1161,14 @@ class _GameTableViewState extends State<GameTableView> {
       index += 1
     ) {
       final PlayingCard card = nextCards[index];
+      final bool laneCard =
+          zoneKey.endsWith('-high') || zoneKey.endsWith('-low');
       _queueFlight(
         card: card,
         faceUp: true,
         from: _busDeckCenter(_tableRect(_stageSize, GamePhase.bus)),
         to: target,
-        size: _CardVisualSize.extraSmall,
+        size: laneCard ? _CardVisualSize.medium : _CardVisualSize.extraSmall,
         onDone: () {
           if (!mounted) {
             return;
@@ -1228,26 +1334,6 @@ class _GameTableViewState extends State<GameTableView> {
       return Offset(rect.center.dx, bottomCenterY);
     }
 
-    final bool leftSide;
-    final int sideIndex;
-    if (oddCount) {
-      if (index <= sideSlots) {
-        leftSide = false;
-        sideIndex = sideSlots - index;
-      } else {
-        leftSide = true;
-        sideIndex = index - sideSlots - 1;
-      }
-    } else {
-      if (index < sideSlots) {
-        leftSide = true;
-        sideIndex = sideSlots - 1 - index;
-      } else {
-        leftSide = false;
-        sideIndex = index - sideSlots;
-      }
-    }
-
     final double topRail = phase == GamePhase.pyramid
         ? _pyramidLayout(rect).hintRect.bottom + seatFootprint.height / 2
         : rect.top + seatFootprint.height / 2 + 14;
@@ -1257,10 +1343,31 @@ class _GameTableViewState extends State<GameTableView> {
         (phase == GamePhase.pyramid ? 30 : 18);
     final double safeTop = math.min(topRail, bottomRail);
     final double safeBottom = math.max(topRail, bottomRail);
-    final double fraction = sideSlots == 1 ? 0.5 : sideIndex / (sideSlots - 1);
-    final double y = safeTop + (safeBottom - safeTop) * fraction;
+    final List<double> sideYs = List<double>.generate(sideSlots, (int slot) {
+      final double fraction = sideSlots == 1 ? 0.5 : slot / (sideSlots - 1);
+      return safeTop + (safeBottom - safeTop) * fraction;
+    });
+    final List<Offset> leftTopToBottom = sideYs
+        .map((double y) => Offset(leftX, y))
+        .toList();
+    final List<Offset> rightTopToBottom = sideYs
+        .map((double y) => Offset(rightX, y))
+        .toList();
+    final List<Offset> clockwiseFromTopLeft = <Offset>[];
 
-    return Offset(leftSide ? leftX : rightX, y);
+    clockwiseFromTopLeft.add(leftTopToBottom.first);
+    clockwiseFromTopLeft.addAll(rightTopToBottom);
+    if (oddCount) {
+      clockwiseFromTopLeft.add(Offset(rect.center.dx, bottomCenterY));
+    }
+    for (int slot = leftTopToBottom.length - 1; slot >= 1; slot -= 1) {
+      clockwiseFromTopLeft.add(leftTopToBottom[slot]);
+    }
+
+    if (clockwiseFromTopLeft.isEmpty) {
+      return Offset(rect.center.dx, bottomCenterY);
+    }
+    return clockwiseFromTopLeft[index % clockwiseFromTopLeft.length];
   }
 
   Offset _seatCardTarget({
@@ -1295,7 +1402,7 @@ class _GameTableViewState extends State<GameTableView> {
   }
 
   Offset _tieDeckCenter(Rect rect) {
-    return Offset(rect.center.dx, rect.top + 112);
+    return Offset(rect.center.dx, rect.top + 108);
   }
 
   Offset _busDeckCenter(Rect rect) {
@@ -1370,35 +1477,61 @@ class _GameTableViewState extends State<GameTableView> {
     );
   }
 
-  List<Rect> _tieSlotRects(Rect rect, int total) {
+  _TieLayout _tieLayout(Rect rect, int total) {
+    final Rect deckRect = Rect.fromCenter(
+      center: _tieDeckCenter(rect),
+      width: _CardMetrics.medium.width,
+      height: _CardMetrics.medium.height,
+    );
+    final Rect instructionRect = Rect.fromCenter(
+      center: Offset(rect.center.dx, deckRect.bottom + 28),
+      width: math.min(rect.width - 32, 332),
+      height: 40,
+    );
+    final List<Rect> slotRects = _tieSlotRects(
+      rect,
+      total,
+      startY: instructionRect.bottom + 18,
+    );
+    return _TieLayout(
+      deckRect: deckRect,
+      instructionRect: instructionRect,
+      slotRects: slotRects,
+    );
+  }
+
+  List<Rect> _tieSlotRects(Rect rect, int total, {double? startY}) {
     final Size cardSize = _CardMetrics.medium;
     final int columns = total <= 3 ? total : (total <= 6 ? 3 : 4);
     final int rows = (total / columns).ceil();
     const double gapX = 12;
-    const double gapY = 30;
+    double gapY = 30;
     final double gridWidth = columns * cardSize.width + (columns - 1) * gapX;
-    final double gridHeight = rows * cardSize.height + (rows - 1) * gapY;
+    double gridHeight = rows * cardSize.height + (rows - 1) * gapY;
     final double startX = rect.center.dx - gridWidth / 2;
-    final double startY = rect.center.dy - gridHeight / 2 + 54;
+    final double top = startY ?? (rect.center.dy - gridHeight / 2 + 54);
+    final double maxHeight = rect.bottom - 22 - top;
+    if (rows > 1 && gridHeight > maxHeight) {
+      gapY = ((maxHeight - rows * cardSize.height) / (rows - 1)).clamp(14, 30);
+      gridHeight = rows * cardSize.height + (rows - 1) * gapY;
+    }
+    final double adjustedTop = startY == null
+        ? top
+        : top + math.max(0, (maxHeight - gridHeight) / 2);
 
     return List<Rect>.generate(total, (int index) {
       final int row = index ~/ columns;
       final int column = index % columns;
       return Rect.fromLTWH(
         startX + column * (cardSize.width + gapX),
-        startY + row * (cardSize.height + gapY),
+        adjustedTop + row * (cardSize.height + gapY),
         cardSize.width,
         cardSize.height,
       );
     });
   }
 
-  Offset _tieSlotCenter(int playerIndex, List<int> contenders, Rect rect) {
-    final int slotIndex = contenders.indexOf(playerIndex);
-    return _tieSlotRects(rect, contenders.length)[slotIndex].center;
-  }
-
-  _BusLayout _busLayout(Rect rect) {
+  _BusLayout _busLayout(Rect rect, {required GamePhase phase}) {
     const int columns = 5;
     const double minGap = 2;
     const double maxGap = 11;
@@ -1420,18 +1553,30 @@ class _GameTableViewState extends State<GameTableView> {
     }
 
     final double zoneWidth = (columnWidth - 10).clamp(
-      _CardMetrics.small.width + 4,
-      _CardMetrics.small.width + 14,
+      _CardMetrics.medium.width + 2,
+      _CardMetrics.medium.width + 16,
     );
-    final double zoneHeight = 52;
+    final double zoneHeight = _CardMetrics.medium.height + 22;
     final double baseHeight = _CardMetrics.medium.height + 14;
+    const double laneGap = 12;
     final double startX = rect.center.dx - totalWidth / 2;
-    final double minBaseTop = rect.top + 208;
+    final Rect deckRect = Rect.fromCenter(
+      center: _busDeckCenter(rect),
+      width: _CardMetrics.medium.width,
+      height: _CardMetrics.medium.height,
+    );
+    final Rect instructionRect = Rect.fromCenter(
+      center: Offset(rect.center.dx, deckRect.bottom + 30),
+      width: math.min(rect.width - 28, 340),
+      height: 40,
+    );
+    final double minBaseTop = instructionRect.bottom + zoneHeight + laneGap + 8;
+    final double bottomPad = phase == GamePhase.bussetup ? 74 : 22;
     final double maxBaseTop = math.max(
       minBaseTop,
-      rect.bottom - baseHeight - zoneHeight - 28,
+      rect.bottom - baseHeight - zoneHeight - laneGap - bottomPad,
     );
-    final double baseTop = (rect.top + 238).clamp(minBaseTop, maxBaseTop);
+    final double baseTop = (minBaseTop + 24).clamp(minBaseTop, maxBaseTop);
 
     final List<Rect> highRects = <Rect>[];
     final List<Rect> baseRects = <Rect>[];
@@ -1443,7 +1588,7 @@ class _GameTableViewState extends State<GameTableView> {
       highRects.add(
         Rect.fromLTWH(
           zoneLeft,
-          baseTop - zoneHeight - 18,
+          baseTop - zoneHeight - laneGap,
           zoneWidth,
           zoneHeight,
         ),
@@ -1452,7 +1597,7 @@ class _GameTableViewState extends State<GameTableView> {
       lowRects.add(
         Rect.fromLTWH(
           zoneLeft,
-          baseTop + baseHeight + 18,
+          baseTop + baseHeight + laneGap,
           zoneWidth,
           zoneHeight,
         ),
@@ -1460,15 +1605,12 @@ class _GameTableViewState extends State<GameTableView> {
     }
 
     return _BusLayout(
-      deckRect: Rect.fromCenter(
-        center: _busDeckCenter(rect),
-        width: _CardMetrics.medium.width,
-        height: _CardMetrics.medium.height,
-      ),
+      deckRect: deckRect,
+      instructionRect: instructionRect,
       highRects: highRects,
       baseRects: baseRects,
       lowRects: lowRects,
-      controlsTop: lowRects.first.bottom + 18,
+      controlsTop: lowRects.first.bottom + 16,
     );
   }
 
@@ -2204,6 +2346,7 @@ class _BusBase extends StatelessWidget {
     required this.tone,
     required this.child,
     required this.sameButtonLabel,
+    required this.sameCount,
     required this.onSame,
   });
 
@@ -2211,6 +2354,7 @@ class _BusBase extends StatelessWidget {
   final BannerTone? tone;
   final Widget child;
   final String? sameButtonLabel;
+  final int sameCount;
   final VoidCallback? onSame;
 
   @override
@@ -2266,21 +2410,51 @@ class _BusBase extends StatelessWidget {
             ),
           ),
           Center(child: child),
+          if (sameCount > 0)
+            Positioned(
+              left: 6,
+              top: sameButtonLabel == null ? 6 : 34,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(999),
+                  color: const Color(0xA01D3B2F),
+                  border: Border.all(color: const Color(0x66FFE4A7)),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 3,
+                  ),
+                  child: Text(
+                    '$sameCount',
+                    style: const TextStyle(
+                      color: Color(0xFFF8F2E9),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+            ),
           if (sameButtonLabel != null)
             Positioned(
-              right: 6,
+              left: 6,
               top: 6,
               child: FilledButton.tonal(
                 onPressed: onSame,
                 style: FilledButton.styleFrom(
                   minimumSize: Size.zero,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
+                    horizontal: 8,
+                    vertical: 4,
                   ),
                   visualDensity: VisualDensity.compact,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                child: Text(sameButtonLabel!),
+                child: Text(
+                  sameButtonLabel!,
+                  style: const TextStyle(fontSize: 11),
+                ),
               ),
             ),
         ],
@@ -2290,27 +2464,33 @@ class _BusBase extends StatelessWidget {
 }
 
 class _StackPile extends StatelessWidget {
-  const _StackPile({
-    required this.cards,
-    required this.size,
-    this.samePile = false,
-  });
+  const _StackPile({required this.cards, required this.size});
 
   final List<PlayingCard> cards;
   final _CardVisualSize size;
-  final bool samePile;
 
   @override
   Widget build(BuildContext context) {
     final List<PlayingCard> visible = cards.length <= 4
         ? cards
         : cards.sublist(cards.length - 4);
-    final double offsetX = samePile ? 5 : 4;
-    final double offsetY = samePile ? 1 : 4;
+    final Size metrics = switch (size) {
+      _CardVisualSize.extraSmall => _CardMetrics.extraSmall,
+      _CardVisualSize.small => _CardMetrics.small,
+      _CardVisualSize.medium => _CardMetrics.medium,
+    };
+    final double offsetX = math.max(2, metrics.width * 0.08);
+    final double offsetY = size == _CardVisualSize.medium
+        ? math.max(9, metrics.height * 0.2)
+        : math.max(4, metrics.height * 0.12);
+    final double width =
+        metrics.width + (visible.length - 1).clamp(0, 8) * offsetX;
+    final double height =
+        metrics.height + (visible.length - 1).clamp(0, 8) * offsetY;
 
     return SizedBox(
-      width: samePile ? 28 : 38,
-      height: samePile ? 20 : 44,
+      width: width,
+      height: height,
       child: Stack(
         clipBehavior: Clip.none,
         children: <Widget>[
@@ -2678,9 +2858,22 @@ class _PyramidLayout {
   final List<Rect> slotRects;
 }
 
+class _TieLayout {
+  const _TieLayout({
+    required this.deckRect,
+    required this.instructionRect,
+    required this.slotRects,
+  });
+
+  final Rect deckRect;
+  final Rect instructionRect;
+  final List<Rect> slotRects;
+}
+
 class _BusLayout {
   const _BusLayout({
     required this.deckRect,
+    required this.instructionRect,
     required this.highRects,
     required this.baseRects,
     required this.lowRects,
@@ -2688,6 +2881,7 @@ class _BusLayout {
   });
 
   final Rect deckRect;
+  final Rect instructionRect;
   final List<Rect> highRects;
   final List<Rect> baseRects;
   final List<Rect> lowRects;

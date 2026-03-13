@@ -515,8 +515,8 @@ class GameEngine {
       bannerTone: BannerTone.info,
       banner: _tr(
         state.language,
-        'Tie-break: highest card wins. Tap deck to draw.',
-        'Tie-break: hoyeste kort vinner. Trykk stokken for trekk.',
+        'Tie-break: deal facedown, then reveal highest card.',
+        'Tie-break: del ut med baksiden opp, sa avslor hoyeste kort.',
       ),
       log: logs,
     );
@@ -529,6 +529,9 @@ class GameEngine {
 
     final TieBreakState tie = state.tieBreak!;
     if (tie.contenders.length < 2) {
+      if (tie.contenders.length == 1 && state.busRunnerIndex != null) {
+        return _startBusRoute(state.copyWith(clearTieBreak: true));
+      }
       return state;
     }
 
@@ -592,8 +595,22 @@ class GameEngine {
           '${state.players[winner].name} vant tie-break og tar bussruta.',
         ),
       );
-      return _startBusRoute(
-        state.copyWith(busRunnerIndex: winner, clearTieBreak: true, log: logs),
+      return state.copyWith(
+        phase: GamePhase.tiebreak,
+        busRunnerIndex: winner,
+        tieBreak: tie.copyWith(
+          contenders: nextContenders,
+          deck: deck,
+          round: tie.round + 1,
+          lastDraws: draws,
+        ),
+        bannerTone: BannerTone.success,
+        banner: _tr(
+          state.language,
+          '${state.players[winner].name} wins tie-break. Revealing all cards...',
+          '${state.players[winner].name} vinner tie-break. Avslorer alle kort...',
+        ),
+        log: logs,
       );
     }
 
@@ -607,8 +624,8 @@ class GameEngine {
       bannerTone: BannerTone.info,
       banner: _tr(
         state.language,
-        '${nextContenders.length} players are still tied. Draw next tie-break round.',
-        '${nextContenders.length} spillere er fortsatt likt. Trekk neste tie-break-runde.',
+        '${nextContenders.length} players are still tied. Reveal done, tap deck for next round.',
+        '${nextContenders.length} spillere er fortsatt likt. Avsloring ferdig, trykk stokken for neste runde.',
       ),
       log: logs,
     );
