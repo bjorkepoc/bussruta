@@ -73,6 +73,8 @@ void main() {
         viewerPlayerId: 102,
       );
       expect(otherView.canControlBusRoute, isFalse);
+      expect(otherView.publicView.busRoute, isNotNull);
+      expect(otherView.publicView.busRoute!.routeCards.length, 5);
     });
   });
 }
