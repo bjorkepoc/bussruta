@@ -62,6 +62,7 @@ class _BussrutaAppState extends State<BussrutaApp> {
     if (selectedMode == null && state.phase == GamePhase.setup) {
       return _StartModeScreen(
         language: state.language,
+        onLanguageSelected: widget.controller.setLanguage,
         onSelectLocal: () {
           setState(() {
             _selectedMode = _AppMode.local;
@@ -158,6 +159,9 @@ class _SetupScreen extends StatelessWidget {
                 icon: const Icon(Icons.arrow_back),
               ),
         title: Text(tr(lang, 'Bussruta Setup', 'Bussruta Oppsett')),
+        actions: <Widget>[
+          _LanguageMenu(language: lang, onSelected: controller.setLanguage),
+        ],
       ),
       body: SafeArea(
         child: ListView(
@@ -197,38 +201,6 @@ class _SetupScreen extends StatelessWidget {
                           style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      tr(lang, 'Language', 'Sprak'),
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    SegmentedButton<AppLanguage>(
-                      segments: const <ButtonSegment<AppLanguage>>[
-                        ButtonSegment<AppLanguage>(
-                          value: AppLanguage.en,
-                          label: Text('EN'),
-                        ),
-                        ButtonSegment<AppLanguage>(
-                          value: AppLanguage.no,
-                          label: Text('NO'),
-                        ),
-                      ],
-                      selected: <AppLanguage>{lang},
-                      onSelectionChanged: (Set<AppLanguage> selected) {
-                        controller.setLanguage(selected.first);
-                      },
                     ),
                   ],
                 ),
@@ -374,6 +346,7 @@ class _GameScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Bussruta'),
         actions: <Widget>[
+          _LanguageMenu(language: lang, onSelected: controller.setLanguage),
           PopupMenuButton<_GameMenuAction>(
             tooltip: tr(lang, 'More', 'Mer'),
             onSelected: (_GameMenuAction action) {
@@ -639,18 +612,25 @@ enum _AppMode { local, hosted }
 class _StartModeScreen extends StatelessWidget {
   const _StartModeScreen({
     required this.language,
+    required this.onLanguageSelected,
     required this.onSelectLocal,
     required this.onSelectHosted,
   });
 
   final AppLanguage language;
+  final ValueChanged<AppLanguage> onLanguageSelected;
   final VoidCallback onSelectLocal;
   final VoidCallback onSelectHosted;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Bussruta')),
+      appBar: AppBar(
+        title: const Text('Bussruta'),
+        actions: <Widget>[
+          _LanguageMenu(language: language, onSelected: onLanguageSelected),
+        ],
+      ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -698,6 +678,63 @@ class _StartModeScreen extends StatelessWidget {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LanguageMenu extends StatelessWidget {
+  const _LanguageMenu({required this.language, required this.onSelected});
+
+  final AppLanguage language;
+  final ValueChanged<AppLanguage> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<AppLanguage>(
+      tooltip: tr(language, 'Language', 'Sprak'),
+      onSelected: onSelected,
+      itemBuilder: (BuildContext context) => <PopupMenuEntry<AppLanguage>>[
+        PopupMenuItem<AppLanguage>(
+          value: AppLanguage.en,
+          child: Row(
+            children: <Widget>[
+              Icon(
+                language == AppLanguage.en ? Icons.check : Icons.language,
+                size: 18,
+              ),
+              const SizedBox(width: 10),
+              const Text('English (EN)'),
+            ],
+          ),
+        ),
+        PopupMenuItem<AppLanguage>(
+          value: AppLanguage.no,
+          child: Row(
+            children: <Widget>[
+              Icon(
+                language == AppLanguage.no ? Icons.check : Icons.language,
+                size: 18,
+              ),
+              const SizedBox(width: 10),
+              const Text('Norsk (NO)'),
+            ],
+          ),
+        ),
+      ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            const Icon(Icons.language),
+            const SizedBox(width: 6),
+            Text(
+              language == AppLanguage.no ? 'NO' : 'EN',
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ],
         ),
       ),
     );
