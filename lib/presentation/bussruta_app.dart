@@ -16,6 +16,7 @@ class BussrutaApp extends StatefulWidget {
 
 class _BussrutaAppState extends State<BussrutaApp> {
   String _lastBanner = '';
+  _AppMode? _selectedMode;
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +24,17 @@ class _BussrutaAppState extends State<BussrutaApp> {
       animation: widget.controller,
       builder: (BuildContext context, _) {
         final GameState state = widget.controller.state;
-        _maybeShowTransient(state);
+        if (_selectedMode == _AppMode.hosted &&
+            state.phase != GamePhase.setup) {
+          _selectedMode = _AppMode.local;
+        }
+        if (_selectedMode == null && state.phase != GamePhase.setup) {
+          _selectedMode = _AppMode.local;
+        }
+
+        if (_selectedMode != _AppMode.hosted) {
+          _maybeShowTransient(state);
+        }
 
         return MaterialApp(
           title: 'Bussruta',
@@ -36,12 +47,53 @@ class _BussrutaAppState extends State<BussrutaApp> {
             ),
             scaffoldBackgroundColor: const Color(0xFFF3EBDD),
           ),
-          home: state.phase == GamePhase.setup
-              ? _SetupScreen(controller: widget.controller)
-              : _GameScreen(controller: widget.controller),
+          home: _buildHome(state),
         );
       },
     );
+  }
+
+  Widget _buildHome(GameState state) {
+    final _AppMode? selectedMode = _selectedMode;
+    if (selectedMode == null && state.phase == GamePhase.setup) {
+      return _StartModeScreen(
+        language: state.language,
+        onSelectLocal: () {
+          setState(() {
+            _selectedMode = _AppMode.local;
+          });
+        },
+        onSelectHosted: () {
+          setState(() {
+            _selectedMode = _AppMode.hosted;
+          });
+        },
+      );
+    }
+
+    if (selectedMode == _AppMode.hosted && state.phase == GamePhase.setup) {
+      return _HostedEntryScreen(
+        language: state.language,
+        onBack: () {
+          setState(() {
+            _selectedMode = null;
+          });
+        },
+      );
+    }
+
+    if (state.phase == GamePhase.setup) {
+      return _SetupScreen(
+        controller: widget.controller,
+        onBackToModeChooser: () {
+          setState(() {
+            _selectedMode = null;
+          });
+        },
+      );
+    }
+
+    return _GameScreen(controller: widget.controller);
   }
 
   void _maybeShowTransient(GameState state) {
@@ -74,9 +126,10 @@ class _BussrutaAppState extends State<BussrutaApp> {
 }
 
 class _SetupScreen extends StatelessWidget {
-  const _SetupScreen({required this.controller});
+  const _SetupScreen({required this.controller, this.onBackToModeChooser});
 
   final GameController controller;
+  final VoidCallback? onBackToModeChooser;
 
   @override
   Widget build(BuildContext context) {
@@ -87,6 +140,12 @@ class _SetupScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
+        leading: onBackToModeChooser == null
+            ? null
+            : IconButton(
+                onPressed: onBackToModeChooser,
+                icon: const Icon(Icons.arrow_back),
+              ),
         title: Text(tr(lang, 'Bussruta Setup', 'Bussruta Oppsett')),
       ),
       body: SafeArea(
@@ -555,3 +614,106 @@ class _BannerCard extends StatelessWidget {
 }
 
 enum _GameMenuAction { autoPlay, log, newGame }
+
+enum _AppMode { local, hosted }
+
+class _StartModeScreen extends StatelessWidget {
+  const _StartModeScreen({
+    required this.language,
+    required this.onSelectLocal,
+    required this.onSelectHosted,
+  });
+
+  final AppLanguage language;
+  final VoidCallback onSelectLocal;
+  final VoidCallback onSelectHosted;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Bussruta')),
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  Text(
+                    tr(language, 'Choose game mode', 'Velg spillmodus'),
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 20),
+                  FilledButton.icon(
+                    onPressed: onSelectLocal,
+                    icon: const Icon(Icons.table_restaurant),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                    ),
+                    label: Text(tr(language, 'Local', 'Lokal')),
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton.icon(
+                    onPressed: onSelectHosted,
+                    icon: const Icon(Icons.hub),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                    ),
+                    label: Text(tr(language, 'Hosted', 'Hostet')),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    tr(
+                      language,
+                      'Local: everyone plays on one device. Hosted: one player per device.',
+                      'Lokal: alle spiller pa en enhet. Hostet: en spiller per enhet.',
+                    ),
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HostedEntryScreen extends StatelessWidget {
+  const _HostedEntryScreen({required this.language, required this.onBack});
+
+  final AppLanguage language;
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          onPressed: onBack,
+          icon: const Icon(Icons.arrow_back),
+        ),
+        title: Text(tr(language, 'Hosted setup', 'Hostet oppsett')),
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            tr(
+              language,
+              'Hosted mode foundation is being added in this implementation.',
+              'Hostet modus bygges ut i denne implementasjonen.',
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    );
+  }
+}
