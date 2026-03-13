@@ -388,15 +388,26 @@ class _GameScreen extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
               child: _StatusStrip(controller: controller),
             ),
-            if (state.banner.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
-                child: _BannerCard(state: state),
-              ),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(12),
-                child: GameTableView(controller: controller, state: state),
+                child: Stack(
+                  children: <Widget>[
+                    Positioned.fill(
+                      child: GameTableView(
+                        controller: controller,
+                        state: state,
+                      ),
+                    ),
+                    if (state.banner.isNotEmpty)
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        top: 0,
+                        child: _BannerCard(state: state),
+                      ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -599,8 +610,15 @@ class _BannerCard extends StatelessWidget {
         color: tone.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: tone.withValues(alpha: 0.55)),
+        boxShadow: const <BoxShadow>[
+          BoxShadow(
+            color: Color(0x22000000),
+            blurRadius: 12,
+            offset: Offset(0, 6),
+          ),
+        ],
       ),
-      child: Text(state.banner),
+      child: Text(state.banner, maxLines: 2, overflow: TextOverflow.ellipsis),
     );
   }
 }
