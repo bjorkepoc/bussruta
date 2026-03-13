@@ -1,6 +1,8 @@
 import 'package:bussruta_app/application/game_controller.dart';
+import 'package:bussruta_app/application/hosted_session_controller.dart';
 import 'package:bussruta_app/domain/game_models.dart';
 import 'package:bussruta_app/presentation/game_table_view.dart';
+import 'package:bussruta_app/presentation/hosted_session_view.dart';
 import 'package:bussruta_app/presentation/strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -17,6 +19,8 @@ class BussrutaApp extends StatefulWidget {
 class _BussrutaAppState extends State<BussrutaApp> {
   String _lastBanner = '';
   _AppMode? _selectedMode;
+  late final HostedSessionController _hostedController =
+      HostedSessionController();
 
   @override
   Widget build(BuildContext context) {
@@ -72,9 +76,10 @@ class _BussrutaAppState extends State<BussrutaApp> {
     }
 
     if (selectedMode == _AppMode.hosted && state.phase == GamePhase.setup) {
-      return _HostedEntryScreen(
+      return HostedSessionView(
+        controller: _hostedController,
         language: state.language,
-        onBack: () {
+        onBackToModeChooser: () {
           setState(() {
             _selectedMode = null;
           });
@@ -122,6 +127,12 @@ class _BussrutaAppState extends State<BussrutaApp> {
         ).showSnackBar(SnackBar(content: Text(error)));
       });
     }
+  }
+
+  @override
+  void dispose() {
+    _hostedController.dispose();
+    super.dispose();
   }
 }
 
@@ -678,39 +689,6 @@ class _StartModeScreen extends StatelessWidget {
                 ],
               ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _HostedEntryScreen extends StatelessWidget {
-  const _HostedEntryScreen({required this.language, required this.onBack});
-
-  final AppLanguage language;
-  final VoidCallback onBack;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: onBack,
-          icon: const Icon(Icons.arrow_back),
-        ),
-        title: Text(tr(language, 'Hosted setup', 'Hostet oppsett')),
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            tr(
-              language,
-              'Hosted mode foundation is being added in this implementation.',
-              'Hostet modus bygges ut i denne implementasjonen.',
-            ),
-            textAlign: TextAlign.center,
           ),
         ),
       ),

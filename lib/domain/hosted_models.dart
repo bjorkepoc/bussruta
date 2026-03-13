@@ -358,6 +358,16 @@ class HostedPublicPlayer {
       'handCount': handCount,
     };
   }
+
+  static HostedPublicPlayer fromJson(Map<String, dynamic> json) {
+    return HostedPublicPlayer(
+      playerId: json['playerId'] as int,
+      name: json['name'] as String,
+      isHost: json['isHost'] as bool,
+      connected: json['connected'] as bool,
+      handCount: json['handCount'] as int,
+    );
+  }
 }
 
 class HostedPublicView {
@@ -376,6 +386,8 @@ class HostedPublicView {
     required this.banner,
     required this.bannerTone,
     required this.pendingDrinkDistribution,
+    required this.autoPlayEnabled,
+    required this.autoPlayDelayMs,
   });
 
   final String sessionPin;
@@ -392,6 +404,8 @@ class HostedPublicView {
   final String banner;
   final BannerTone bannerTone;
   final HostedPendingDrinkDistribution? pendingDrinkDistribution;
+  final bool autoPlayEnabled;
+  final int autoPlayDelayMs;
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
@@ -399,7 +413,9 @@ class HostedPublicView {
       'stage': stage.name,
       'phase': phase.name,
       'language': language.name,
-      'players': players.map((HostedPublicPlayer player) => player.toJson()),
+      'players': players
+          .map((HostedPublicPlayer player) => player.toJson())
+          .toList(),
       'currentTurnPlayerId': currentTurnPlayerId,
       'warmupRound': warmupRound,
       'pyramidCards': pyramidCards
@@ -411,7 +427,48 @@ class HostedPublicView {
       'banner': banner,
       'bannerTone': bannerTone.name,
       'pendingDrinkDistribution': pendingDrinkDistribution?.toJson(),
+      'autoPlayEnabled': autoPlayEnabled,
+      'autoPlayDelayMs': autoPlayDelayMs,
     };
+  }
+
+  static HostedPublicView fromJson(Map<String, dynamic> json) {
+    final List<dynamic> rawPlayers = json['players'] as List<dynamic>;
+    final List<dynamic> rawPyramidCards = json['pyramidCards'] as List<dynamic>;
+    return HostedPublicView(
+      sessionPin: json['sessionPin'] as String,
+      stage: HostedSessionStage.values.byName(json['stage'] as String),
+      phase: GamePhase.values.byName(json['phase'] as String),
+      language: AppLanguage.values.byName(json['language'] as String),
+      players: rawPlayers
+          .map(
+            (dynamic item) =>
+                HostedPublicPlayer.fromJson(item as Map<String, dynamic>),
+          )
+          .toList(),
+      currentTurnPlayerId: json['currentTurnPlayerId'] as int?,
+      warmupRound: json['warmupRound'] as int,
+      pyramidCards: rawPyramidCards.map((dynamic item) {
+        if (item == null) {
+          return null;
+        }
+        return PlayingCard.fromJson(item as Map<String, dynamic>);
+      }).toList(),
+      pyramidRevealIndex: json['pyramidRevealIndex'] as int,
+      busRunnerPlayerId: json['busRunnerPlayerId'] as int?,
+      busRoute: json['busRoute'] == null
+          ? null
+          : BusRouteState.fromJson(json['busRoute'] as Map<String, dynamic>),
+      banner: json['banner'] as String,
+      bannerTone: BannerTone.values.byName(json['bannerTone'] as String),
+      pendingDrinkDistribution: json['pendingDrinkDistribution'] == null
+          ? null
+          : HostedPendingDrinkDistribution.fromJson(
+              json['pendingDrinkDistribution'] as Map<String, dynamic>,
+            ),
+      autoPlayEnabled: json['autoPlayEnabled'] as bool? ?? false,
+      autoPlayDelayMs: json['autoPlayDelayMs'] as int? ?? 1500,
+    );
   }
 }
 
@@ -450,5 +507,27 @@ class HostedProjectedView {
       'canControlBusRoute': canControlBusRoute,
       'canUseHostTools': canUseHostTools,
     };
+  }
+
+  static HostedProjectedView fromJson(Map<String, dynamic> json) {
+    final List<dynamic> rawOwnHand = json['ownHand'] as List<dynamic>;
+    return HostedProjectedView(
+      viewerPlayerId: json['viewerPlayerId'] as int,
+      viewerName: json['viewerName'] as String,
+      isHost: json['isHost'] as bool,
+      publicView: HostedPublicView.fromJson(
+        json['publicView'] as Map<String, dynamic>,
+      ),
+      ownHand: rawOwnHand
+          .map(
+            (dynamic item) =>
+                PlayingCard.fromJson(item as Map<String, dynamic>),
+          )
+          .toList(),
+      giveOutPromptDrinks: json['giveOutPromptDrinks'] as int,
+      drinkPromptDrinks: json['drinkPromptDrinks'] as int,
+      canControlBusRoute: json['canControlBusRoute'] as bool,
+      canUseHostTools: json['canUseHostTools'] as bool,
+    );
   }
 }

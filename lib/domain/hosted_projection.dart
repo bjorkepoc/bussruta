@@ -50,6 +50,8 @@ HostedProjectedView projectHostedView({
       banner: session.gameState.banner,
       bannerTone: session.gameState.bannerTone,
       pendingDrinkDistribution: session.pendingDrinkDistribution,
+      autoPlayEnabled: session.gameState.autoPlay.enabled,
+      autoPlayDelayMs: session.gameState.autoPlay.delayMs,
     ),
     ownHand: ownHand,
     giveOutPromptDrinks: giveOutPromptDrinks,
