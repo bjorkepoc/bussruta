@@ -55,8 +55,8 @@ class _GameTableViewState extends State<GameTableView> {
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
         _stageSize = constraints.biggest;
-        final Rect tableRect = _tableRect(_stageSize);
         final GameState state = widget.state;
+        final Rect tableRect = _tableRect(_stageSize, state.phase);
 
         return DecoratedBox(
           decoration: const BoxDecoration(
@@ -73,6 +73,12 @@ class _GameTableViewState extends State<GameTableView> {
               _TableShell(rect: tableRect),
               if (_showSeats(state.phase))
                 ...List<Widget>.generate(state.players.length, (int index) {
+                  final bool compact =
+                      state.phase == GamePhase.pyramid ||
+                      (state.phase == GamePhase.warmup
+                          ? state.players.length >= 5
+                          : state.players.length >= 6);
+                  final Size seatFootprint = _seatFootprint(compact);
                   final Offset position = _seatCenter(
                     index: index,
                     total: state.players.length,
@@ -83,16 +89,17 @@ class _GameTableViewState extends State<GameTableView> {
                     left: position.dx,
                     top: position.dy,
                     child: Transform.translate(
-                      offset: const Offset(-48, -26),
+                      offset: Offset(
+                        -seatFootprint.width / 2,
+                        -seatFootprint.height / 2,
+                      ),
                       child: _SeatChip(
                         player: state.players[index],
                         language: state.language,
                         visibleCards: state.players[index].hand
                             .take(_visibleHandCounts[index] ?? 0)
                             .toList(),
-                        compact:
-                            state.phase == GamePhase.pyramid ||
-                            state.players.length >= 6,
+                        compact: compact,
                         active:
                             state.phase == GamePhase.warmup &&
                             state.currentPlayerIndex == index,
@@ -157,17 +164,26 @@ class _GameTableViewState extends State<GameTableView> {
   Widget _buildWarmupOverlay(Rect tableRect) {
     final GameState state = widget.state;
     final AppLanguage lang = state.language;
-    final PlayerState player = state.players[state.currentPlayerIndex];
     final List<WarmupGuess> options = _warmupOptions(state.warmupRound);
+    final int optionColumns = options.length == 4 ? 2 : options.length;
+    final int optionRows = (options.length / optionColumns).ceil();
     final Offset deckCenter = _warmupDeckCenter(tableRect);
     final Rect deckRect = Rect.fromCenter(
       center: deckCenter,
       width: _CardMetrics.medium.width,
       height: _CardMetrics.medium.height,
     );
+    final double panelWidth = math.min(
+      _stageSize.width - 20,
+      options.length == 4 ? 380 : 420,
+    );
     final double panelHeight = math.min(
-      200,
-      math.max(138, tableRect.height * 0.33),
+      188,
+      math.max(112, 58 + optionRows * 52 + (optionRows - 1) * 8),
+    );
+    final double panelTop = math.min(
+      tableRect.bottom + 14,
+      _stageSize.height - panelHeight - 12,
     );
 
     return Stack(
@@ -184,26 +200,9 @@ class _GameTableViewState extends State<GameTableView> {
           ),
         ),
         Positioned(
-          left: tableRect.center.dx - 140,
-          top: deckRect.top - 42,
-          width: 280,
-          child: Text(
-            tr(lang, 'Active: ${player.name}', 'Aktiv: ${player.name}'),
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Color(0xFFF8F2E9),
-              fontSize: 17,
-              fontWeight: FontWeight.w800,
-              shadows: <Shadow>[
-                Shadow(color: Color(0x66000000), blurRadius: 9),
-              ],
-            ),
-          ),
-        ),
-        Positioned(
-          left: tableRect.left + 10,
-          top: tableRect.bottom - panelHeight - 10,
-          width: tableRect.width - 20,
+          left: (_stageSize.width - panelWidth) / 2,
+          top: panelTop,
+          width: panelWidth,
           child: DecoratedBox(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(22),
@@ -222,7 +221,7 @@ class _GameTableViewState extends State<GameTableView> {
               ],
             ),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -236,22 +235,31 @@ class _GameTableViewState extends State<GameTableView> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: options.map((WarmupGuess guess) {
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: _WarmupActionCard(
-                            label: warmupGuessLabel(lang, guess),
-                            onTap: () async {
-                              await HapticFeedback.selectionClick();
-                              widget.controller.playWarmupGuess(guess);
-                            },
-                          ),
-                        );
-                      }).toList(),
-                    ),
+                  LayoutBuilder(
+                    builder:
+                        (BuildContext context, BoxConstraints constraints) {
+                          final double spacing = 8;
+                          final double itemWidth =
+                              (constraints.maxWidth -
+                                  spacing * (optionColumns - 1)) /
+                              optionColumns;
+                          return Wrap(
+                            spacing: spacing,
+                            runSpacing: spacing,
+                            children: options.map((WarmupGuess guess) {
+                              return SizedBox(
+                                width: itemWidth,
+                                child: _WarmupActionCard(
+                                  label: warmupGuessLabel(lang, guess),
+                                  onTap: () async {
+                                    await HapticFeedback.selectionClick();
+                                    widget.controller.playWarmupGuess(guess);
+                                  },
+                                ),
+                              );
+                            }).toList(),
+                          );
+                        },
                   ),
                 ],
               ),
@@ -811,7 +819,7 @@ class _GameTableViewState extends State<GameTableView> {
   }
 
   void _animateWarmupDeals(GameState previous, GameState next) {
-    final Rect tableRect = _tableRect(_stageSize);
+    final Rect tableRect = _tableRect(_stageSize, GamePhase.warmup);
     for (int index = 0; index < next.players.length; index += 1) {
       final int previousCount = previous.players[index].hand.length;
       final int nextCount = next.players[index].hand.length;
@@ -856,7 +864,7 @@ class _GameTableViewState extends State<GameTableView> {
   }
 
   void _animatePyramidReveal(GameState previous, GameState next) {
-    final Rect tableRect = _tableRect(_stageSize);
+    final Rect tableRect = _tableRect(_stageSize, GamePhase.pyramid);
     final List<Rect> slotRects = _pyramidSlotRects(tableRect);
     for (int index = 0; index < next.pyramidCards.length; index += 1) {
       if (previous.pyramidCards[index] == null &&
@@ -895,7 +903,7 @@ class _GameTableViewState extends State<GameTableView> {
       return;
     }
 
-    final Rect tableRect = _tableRect(_stageSize);
+    final Rect tableRect = _tableRect(_stageSize, GamePhase.tiebreak);
     for (int index = 0; index < nextTie.lastDraws.length; index += 1) {
       final TieBreakDraw draw = nextTie.lastDraws[index];
       _visibleTieSlots.remove(draw.playerIndex);
@@ -930,7 +938,7 @@ class _GameTableViewState extends State<GameTableView> {
 
     _visibleRouteCards = 0;
     _visibleBusZoneCounts.clear();
-    final Rect tableRect = _tableRect(_stageSize);
+    final Rect tableRect = _tableRect(_stageSize, GamePhase.bus);
     final _BusLayout layout = _busLayout(tableRect);
     for (int index = 0; index < next.busRoute!.routeCards.length; index += 1) {
       final PlayingCard card = next.busRoute!.routeCards[index];
@@ -958,7 +966,7 @@ class _GameTableViewState extends State<GameTableView> {
       return;
     }
 
-    final Rect tableRect = _tableRect(_stageSize);
+    final Rect tableRect = _tableRect(_stageSize, GamePhase.bus);
     final _BusLayout layout = _busLayout(tableRect);
     for (int step = 0; step < next.busRoute!.overlays.length; step += 1) {
       _animateBusZoneDelta(
@@ -1003,7 +1011,7 @@ class _GameTableViewState extends State<GameTableView> {
       _queueFlight(
         card: card,
         faceUp: true,
-        from: _busDeckCenter(_tableRect(_stageSize)),
+        from: _busDeckCenter(_tableRect(_stageSize, GamePhase.bus)),
         to: target,
         size: _CardVisualSize.extraSmall,
         onDone: () {
@@ -1106,14 +1114,17 @@ class _GameTableViewState extends State<GameTableView> {
     }
   }
 
-  Rect _tableRect(Size size) {
-    final double width = math.min(size.width - 12, 960);
-    final double height = math.min(
-      size.height - 12,
-      math.max(360, size.height * 0.94),
-    );
+  Rect _tableRect(Size size, [GamePhase? phase]) {
+    final bool warmup = phase == GamePhase.warmup;
+    final double width = math.min(size.width - (warmup ? 18 : 12), 960);
+    final double height = warmup
+        ? math.min(size.height - 136, math.max(352, size.height * 0.72))
+        : math.min(size.height - 12, math.max(360, size.height * 0.94));
     return Rect.fromCenter(
-      center: Offset(size.width / 2, size.height / 2),
+      center: Offset(
+        size.width / 2,
+        warmup ? (size.height / 2) - 30 : size.height / 2,
+      ),
       width: width,
       height: height,
     );
@@ -1121,6 +1132,10 @@ class _GameTableViewState extends State<GameTableView> {
 
   bool _showSeats(GamePhase phase) {
     return phase == GamePhase.warmup || phase == GamePhase.pyramid;
+  }
+
+  Size _seatFootprint(bool compact) {
+    return compact ? const Size(102, 108) : const Size(142, 144);
   }
 
   Offset _seatCenter({
@@ -1142,14 +1157,21 @@ class _GameTableViewState extends State<GameTableView> {
       return Offset(x, y);
     }
 
+    final bool compact = phase == GamePhase.pyramid || total >= 5;
+    final Size seatFootprint = _seatFootprint(compact);
+    final double rimInsetX = seatFootprint.width / 2 + 10;
+    final double rimInsetY = seatFootprint.height / 2 + 12;
+
     final double angleStep = math.pi * 2 / total;
     final double angle = -math.pi / 2 + angleStep * index;
-    final double radiusX = rect.width * (total >= 7 ? 0.41 : 0.42);
-    final double radiusY = rect.height * (total >= 7 ? 0.39 : 0.4);
-    return Offset(
-      rect.center.dx + math.cos(angle) * radiusX,
-      rect.center.dy + math.sin(angle) * radiusY,
-    );
+    final double radiusX = math.max(70, rect.width / 2 - rimInsetX);
+    final double radiusY = math.max(62, rect.height / 2 - rimInsetY);
+
+    double y = rect.center.dy + math.sin(angle) * radiusY;
+    if (phase == GamePhase.warmup && math.sin(angle) > 0.75) {
+      y += 6;
+    }
+    return Offset(rect.center.dx + math.cos(angle) * radiusX, y);
   }
 
   Offset _seatCardTarget({
@@ -1158,13 +1180,16 @@ class _GameTableViewState extends State<GameTableView> {
     required GamePhase phaseHint,
     required Rect rect,
   }) {
+    final bool compact =
+        phaseHint == GamePhase.pyramid ||
+        (phaseHint == GamePhase.warmup ? total >= 5 : total >= 6);
     final Offset center = _seatCenter(
       index: index,
       total: total,
       phase: phaseHint,
       rect: rect,
     );
-    return center + const Offset(0, 16);
+    return center + Offset(0, compact ? 18 : 26);
   }
 
   Offset _warmupDeckCenter(Rect rect) {
@@ -1246,29 +1271,36 @@ class _GameTableViewState extends State<GameTableView> {
   }
 
   _BusLayout _busLayout(Rect rect) {
-    final double stopWidth = math.min(72, (rect.width - 54) / 5);
-    const double gap = 6;
-    const double zoneHeight = 62;
-    final double baseHeight = _CardMetrics.medium.height + 16;
-    final double totalWidth = stopWidth * 5 + gap * 4;
+    final double columnWidth = _CardMetrics.medium.width + 22;
+    final double gap = math.min(14, rect.width * 0.024);
+    final double zoneWidth = _CardMetrics.small.width + 14;
+    const double zoneHeight = 54;
+    final double baseHeight = _CardMetrics.medium.height + 18;
+    final double totalWidth = columnWidth * 5 + gap * 4;
     final double startX = rect.center.dx - totalWidth / 2;
-    final double top = rect.top + 172;
+    final double baseTop = rect.top + 214;
 
     final List<Rect> highRects = <Rect>[];
     final List<Rect> baseRects = <Rect>[];
     final List<Rect> lowRects = <Rect>[];
 
     for (int index = 0; index < 5; index += 1) {
-      final double left = startX + index * (stopWidth + gap);
-      highRects.add(Rect.fromLTWH(left, top, stopWidth, zoneHeight));
-      baseRects.add(
-        Rect.fromLTWH(left, top + zoneHeight + 8, stopWidth, baseHeight),
+      final double left = startX + index * (columnWidth + gap);
+      final double zoneLeft = left + (columnWidth - zoneWidth) / 2;
+      highRects.add(
+        Rect.fromLTWH(
+          zoneLeft,
+          baseTop - zoneHeight - 18,
+          zoneWidth,
+          zoneHeight,
+        ),
       );
+      baseRects.add(Rect.fromLTWH(left, baseTop, columnWidth, baseHeight));
       lowRects.add(
         Rect.fromLTWH(
-          left,
-          top + zoneHeight + 8 + baseHeight + 8,
-          stopWidth,
+          zoneLeft,
+          baseTop + baseHeight + 18,
+          zoneWidth,
           zoneHeight,
         ),
       );
@@ -1283,7 +1315,7 @@ class _GameTableViewState extends State<GameTableView> {
       highRects: highRects,
       baseRects: baseRects,
       lowRects: lowRects,
-      controlsTop: lowRects.first.bottom + 18,
+      controlsTop: lowRects.first.bottom + 20,
     );
   }
 
@@ -1443,17 +1475,124 @@ class _SeatChip extends StatelessWidget {
         : runner
         ? const Color(0xFFD66F2D)
         : const Color(0x553B281E);
+    final String handCountLabel = tr(
+      language,
+      '${player.hand.length} cards',
+      '${player.hand.length} kort',
+    );
+
+    if (compact) {
+      return AnimatedScale(
+        scale: active ? 1.04 : 1,
+        duration: const Duration(milliseconds: 240),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 240),
+              width: 102,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: borderColor,
+                  width: active ? 1.8 : 1.1,
+                ),
+                gradient: const LinearGradient(
+                  colors: <Color>[Color(0xF8F4EBDD), Color(0xF0E6D8C2)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                boxShadow: <BoxShadow>[
+                  BoxShadow(
+                    color: active
+                        ? const Color(0x441F8262)
+                        : const Color(0x18000000),
+                    blurRadius: active ? 18 : 10,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                    player.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF4A2D20),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    handCountLabel,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: Color(0xFF6B5445),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 6),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 240),
+              width: 96,
+              height: visibleCards.isEmpty ? 34 : 58,
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(18),
+                gradient: LinearGradient(
+                  colors: <Color>[
+                    Colors.white.withValues(alpha: 0.18),
+                    Colors.white.withValues(alpha: 0.06),
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+                border: Border.all(
+                  color: active
+                      ? Colors.white.withValues(alpha: 0.44)
+                      : Colors.white.withValues(alpha: 0.22),
+                ),
+              ),
+              child: visibleCards.isEmpty
+                  ? Center(
+                      child: Text(
+                        tr(language, 'No cards', 'Ingen kort'),
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFFF1E7D8),
+                        ),
+                      ),
+                    )
+                  : SizedBox(
+                      width: 88,
+                      height: 48,
+                      child: _OverlappedHand(
+                        cards: visibleCards,
+                        size: _CardVisualSize.small,
+                        canvasWidth: 88,
+                      ),
+                    ),
+            ),
+          ],
+        ),
+      );
+    }
 
     return AnimatedScale(
       scale: active ? 1.04 : 1,
       duration: const Duration(milliseconds: 240),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 240),
-        width: compact ? 118 : 142,
-        padding: EdgeInsets.symmetric(
-          horizontal: compact ? 9 : 11,
-          vertical: compact ? 8 : 9,
-        ),
+        width: 142,
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: borderColor, width: active ? 1.8 : 1.1),
@@ -1478,43 +1617,31 @@ class _SeatChip extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: compact ? 12 : 14,
+              style: const TextStyle(
+                fontSize: 14,
                 fontWeight: FontWeight.w800,
-                color: const Color(0xFF4A2D20),
+                color: Color(0xFF4A2D20),
               ),
             ),
             const SizedBox(height: 2),
             Text(
-              tr(
-                language,
-                '${player.hand.length} cards',
-                '${player.hand.length} kort',
-              ),
-              style: TextStyle(
-                fontSize: compact ? 10 : 12,
-                color: const Color(0xFF6B5445),
-              ),
+              handCountLabel,
+              style: const TextStyle(fontSize: 12, color: Color(0xFF6B5445)),
             ),
             const SizedBox(height: 8),
             if (visibleCards.isEmpty)
               Text(
                 tr(language, 'No cards', 'Ingen kort'),
-                style: TextStyle(
-                  fontSize: compact ? 10 : 11,
-                  color: const Color(0xFF806A5A),
-                ),
+                style: const TextStyle(fontSize: 11, color: Color(0xFF806A5A)),
               )
             else
               SizedBox(
-                width: compact ? 108 : 130,
-                height: compact ? 66 : 84,
+                width: 130,
+                height: 84,
                 child: _OverlappedHand(
                   cards: visibleCards,
-                  size: compact
-                      ? _CardVisualSize.small
-                      : _CardVisualSize.medium,
-                  canvasWidth: compact ? 108 : 130,
+                  size: _CardVisualSize.medium,
+                  canvasWidth: 130,
                 ),
               ),
           ],
@@ -1679,13 +1806,17 @@ class _PyramidSlotCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final BorderRadius radius = BorderRadius.circular(
+      _CardMetrics.small.width * 0.18,
+    );
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 220),
         curve: Curves.easeOut,
+        clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: radius,
           boxShadow: active
               ? const <BoxShadow>[
                   BoxShadow(
@@ -1713,35 +1844,41 @@ class _PyramidRevealTarget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Ink(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xAAFFE4A7), width: 1.6),
-            gradient: const LinearGradient(
-              colors: <Color>[Color(0x33FFE4A7), Color(0x11FFFFFF)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            boxShadow: const <BoxShadow>[
-              BoxShadow(
-                color: Color(0x66FFE4A7),
-                blurRadius: 14,
-                spreadRadius: 1,
+    final BorderRadius radius = BorderRadius.circular(
+      _CardMetrics.small.width * 0.18,
+    );
+    return ClipRRect(
+      borderRadius: radius,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          customBorder: RoundedRectangleBorder(borderRadius: radius),
+          child: Ink(
+            decoration: BoxDecoration(
+              borderRadius: radius,
+              border: Border.all(color: const Color(0xAAFFE4A7), width: 1.6),
+              gradient: const LinearGradient(
+                colors: <Color>[Color(0x33FFE4A7), Color(0x11FFFFFF)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-            ],
-          ),
-          child: const Center(
-            child: Text(
-              '?',
-              style: TextStyle(
-                color: Color(0xFFF7F1E2),
-                fontWeight: FontWeight.w900,
-                fontSize: 24,
+              boxShadow: const <BoxShadow>[
+                BoxShadow(
+                  color: Color(0x66FFE4A7),
+                  blurRadius: 14,
+                  spreadRadius: 1,
+                ),
+              ],
+            ),
+            child: const Center(
+              child: Text(
+                '?',
+                style: TextStyle(
+                  color: Color(0xFFF7F1E2),
+                  fontWeight: FontWeight.w900,
+                  fontSize: 24,
+                ),
               ),
             ),
           ),
@@ -1759,36 +1896,47 @@ class _WarmupActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Ink(
-          width: 120,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            gradient: const LinearGradient(
-              colors: <Color>[Color(0xFFF5D9B2), Color(0xFFE8B882)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            border: Border.all(color: const Color(0xB0684328)),
-            boxShadow: const <BoxShadow>[
-              BoxShadow(
-                color: Color(0x22000000),
-                blurRadius: 8,
-                offset: Offset(0, 4),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(18),
+          child: Ink(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              gradient: const LinearGradient(
+                colors: <Color>[Color(0xFFF8D89A), Color(0xFFE4B466)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-            ],
-          ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Color(0xFF422214),
-              fontWeight: FontWeight.w800,
+              border: Border.all(color: const Color(0xB0684328)),
+              boxShadow: const <BoxShadow>[
+                BoxShadow(
+                  color: Color(0x22000000),
+                  blurRadius: 8,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 52),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 14,
+                ),
+                child: Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0xFF422214),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
             ),
           ),
         ),
@@ -1815,44 +1963,79 @@ class _BusZone extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Color background = switch (tone) {
-      BannerTone.success => const Color(0x3D25A363),
-      BannerTone.fail => const Color(0x40B93838),
-      _ => active ? const Color(0x22FFF4D0) : const Color(0x18FFFFFF),
+      BannerTone.success => const Color(0x4425A363),
+      BannerTone.fail => const Color(0x48B93838),
+      _ => active ? const Color(0x20FFF4D0) : const Color(0x12FFFFFF),
     };
     final Color border = switch (tone) {
       BannerTone.success => const Color(0xAA23945B),
       BannerTone.fail => const Color(0xAAB93838),
-      _ => active ? const Color(0xAAFFE4A7) : const Color(0x44FFFFFF),
+      _ => active ? const Color(0xCCFFE4A7) : const Color(0x52FFFFFF),
     };
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Ink(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            color: background,
-            border: Border.all(color: border),
-          ),
-          child: Column(
-            children: <Widget>[
-              const SizedBox(height: 4),
-              if (label.isNotEmpty)
-                Text(
-                  label.toUpperCase(),
-                  style: const TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFFF8F2E9),
-                    letterSpacing: 0.8,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Ink(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              gradient: LinearGradient(
+                colors: <Color>[background, background.withValues(alpha: 0.7)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+              border: Border.all(color: border, width: active ? 1.4 : 1),
+              boxShadow: active
+                  ? const <BoxShadow>[
+                      BoxShadow(
+                        color: Color(0x32FFE69F),
+                        blurRadius: 14,
+                        spreadRadius: 1,
+                      ),
+                    ]
+                  : const <BoxShadow>[],
+            ),
+            child: Stack(
+              children: <Widget>[
+                Positioned.fill(
+                  child: Padding(
+                    padding: const EdgeInsets.all(5),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.14),
+                        ),
+                      ),
+                    ),
                   ),
-                )
-              else
-                const SizedBox(height: 12),
-              Expanded(child: Center(child: child)),
-            ],
+                ),
+                Padding(
+                  padding: EdgeInsets.fromLTRB(4, label.isEmpty ? 4 : 16, 4, 4),
+                  child: Center(child: child),
+                ),
+                if (label.isNotEmpty)
+                  Positioned(
+                    top: 5,
+                    left: 0,
+                    right: 0,
+                    child: Text(
+                      label.toUpperCase(),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 8.5,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFFF8F2E9),
+                        letterSpacing: 0.9,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1883,16 +2066,46 @@ class _BusBase extends StatelessWidget {
         ? const Color(0xAA23945B)
         : tone == BannerTone.fail
         ? const Color(0xAAB93838)
-        : Colors.transparent;
+        : const Color(0x26FFFFFF);
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: border, width: active ? 1.6 : 1.1),
-        color: active ? const Color(0x14FFF4D0) : Colors.transparent,
+        gradient: LinearGradient(
+          colors: <Color>[
+            active ? const Color(0x1FFFF4D0) : const Color(0x10FFFFFF),
+            const Color(0x0FFFFFFF),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+        boxShadow: active
+            ? const <BoxShadow>[
+                BoxShadow(
+                  color: Color(0x2EFFE69F),
+                  blurRadius: 16,
+                  spreadRadius: 1,
+                ),
+              ]
+            : const <BoxShadow>[],
       ),
       child: Stack(
+        clipBehavior: Clip.antiAlias,
         children: <Widget>[
+          Positioned.fill(
+            child: Padding(
+              padding: const EdgeInsets.all(6),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.12),
+                  ),
+                ),
+              ),
+            ),
+          ),
           Center(child: child),
           if (sameButtonLabel != null)
             Positioned(
@@ -1933,12 +2146,12 @@ class _StackPile extends StatelessWidget {
     final List<PlayingCard> visible = cards.length <= 4
         ? cards
         : cards.sublist(cards.length - 4);
-    final double offsetX = samePile ? 6 : 8;
-    final double offsetY = samePile ? 2 : 3;
+    final double offsetX = samePile ? 5 : 4;
+    final double offsetY = samePile ? 1 : 4;
 
     return SizedBox(
-      width: samePile ? 30 : 52,
-      height: samePile ? 26 : 34,
+      width: samePile ? 28 : 38,
+      height: samePile ? 20 : 44,
       child: Stack(
         clipBehavior: Clip.none,
         children: <Widget>[
@@ -1975,13 +2188,14 @@ class _PlayingCardView extends StatelessWidget {
       _CardVisualSize.small => _CardMetrics.small,
       _CardVisualSize.medium => _CardMetrics.medium,
     };
+    final double radius = metrics.width * 0.18;
 
     return SizedBox(
       width: metrics.width,
       height: metrics.height,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(metrics.width * 0.18),
+          borderRadius: BorderRadius.circular(radius),
           color: faceUp ? const Color(0xFFFFFCF7) : const Color(0xFF163E5A),
           border: Border.all(
             color: faceUp ? const Color(0xFFCEBCA8) : const Color(0xFFB8CBE0),
@@ -2000,16 +2214,16 @@ class _PlayingCardView extends StatelessWidget {
                   end: Alignment.bottomRight,
                 )
               : const LinearGradient(
-                  colors: <Color>[Color(0xFF244D70), Color(0xFF102C40)],
+                  colors: <Color>[Color(0xFF214B4A), Color(0xFF132B35)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(metrics.width * 0.18),
+          borderRadius: BorderRadius.circular(radius),
           child: faceUp && card != null
               ? _CardFace(card: card!, size: size)
-              : _CardBack(size: size),
+              : _CardBack(size: size, borderRadius: radius),
         ),
       ),
     );
@@ -2045,7 +2259,7 @@ class _CardFace extends StatelessWidget {
             alignment: Alignment.topLeft,
             child: _CornerMark(
               label: card.rankLabel,
-              suit: _suitGlyph(card.suit),
+              suit: _suitGlyphForDisplay(card.suit),
               color: ink,
               fontSize: cornerFont,
             ),
@@ -2053,7 +2267,7 @@ class _CardFace extends StatelessWidget {
           Align(
             alignment: Alignment.center,
             child: Text(
-              _suitGlyph(card.suit),
+              _suitGlyphForDisplay(card.suit),
               style: TextStyle(
                 color: ink,
                 fontSize: centerFont,
@@ -2067,7 +2281,7 @@ class _CardFace extends StatelessWidget {
               quarterTurns: 2,
               child: _CornerMark(
                 label: card.rankLabel,
-                suit: _suitGlyph(card.suit),
+                suit: _suitGlyphForDisplay(card.suit),
                 color: ink,
                 fontSize: cornerFont,
               ),
@@ -2078,6 +2292,20 @@ class _CardFace extends StatelessWidget {
     );
   }
 
+  static String _suitGlyphForDisplay(Suit suit) {
+    switch (suit) {
+      case Suit.clubs:
+        return '\u2663';
+      case Suit.diamonds:
+        return '\u2666';
+      case Suit.hearts:
+        return '\u2665';
+      case Suit.spades:
+        return '\u2660';
+    }
+  }
+
+  // ignore: unused_element
   static String _suitGlyph(Suit suit) {
     switch (suit) {
       case Suit.clubs:
@@ -2134,9 +2362,10 @@ class _CornerMark extends StatelessWidget {
 }
 
 class _CardBack extends StatelessWidget {
-  const _CardBack({required this.size});
+  const _CardBack({required this.size, required this.borderRadius});
 
   final _CardVisualSize size;
+  final double borderRadius;
 
   @override
   Widget build(BuildContext context) {
@@ -2144,6 +2373,11 @@ class _CardBack extends StatelessWidget {
       _CardVisualSize.extraSmall => 3,
       _CardVisualSize.small => 4,
       _CardVisualSize.medium => 5,
+    };
+    final double iconSize = switch (size) {
+      _CardVisualSize.extraSmall => 11,
+      _CardVisualSize.small => 16,
+      _CardVisualSize.medium => 22,
     };
 
     return Stack(
@@ -2153,11 +2387,27 @@ class _CardBack extends StatelessWidget {
           child: DecoratedBox(
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: <Color>[Color(0xFF315E89), Color(0xFF173852)],
+                colors: <Color>[Color(0xFF224F4E), Color(0xFF17313F)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(borderRadius),
+            ),
+          ),
+        ),
+        Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(borderRadius),
+              gradient: LinearGradient(
+                colors: <Color>[
+                  Colors.white.withValues(alpha: 0.06),
+                  Colors.transparent,
+                  Colors.black.withValues(alpha: 0.1),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
             ),
           ),
         ),
@@ -2168,19 +2418,44 @@ class _CardBack extends StatelessWidget {
           bottom: inset,
           child: DecoratedBox(
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
-              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.26)),
+              borderRadius: BorderRadius.circular(
+                math.max(2, borderRadius - 1.4),
+              ),
             ),
           ),
         ),
+        Positioned(
+          left: inset + 4,
+          right: inset + 4,
+          top: inset + 6,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(999),
+              color: const Color(0x33FFE08F),
+            ),
+            child: const SizedBox(height: 3),
+          ),
+        ),
+        Positioned(
+          left: inset + 8,
+          right: inset + 8,
+          bottom: inset + 8,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(999),
+              color: Colors.white.withValues(alpha: 0.18),
+            ),
+            child: const SizedBox(height: 2),
+          ),
+        ),
         Center(
-          child: Text(
-            'B',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.92),
-              fontWeight: FontWeight.w900,
-              fontSize: size == _CardVisualSize.extraSmall ? 12 : 18,
-              letterSpacing: 1.4,
+          child: Transform.translate(
+            offset: Offset(0, size == _CardVisualSize.extraSmall ? 0 : -1),
+            child: Icon(
+              Icons.directions_bus_filled_rounded,
+              color: const Color(0xFFFFD155),
+              size: iconSize,
             ),
           ),
         ),
