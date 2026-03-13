@@ -160,55 +160,105 @@ class _GameTableViewState extends State<GameTableView> {
     final PlayerState player = state.players[state.currentPlayerIndex];
     final List<WarmupGuess> options = _warmupOptions(state.warmupRound);
     final Offset deckCenter = _warmupDeckCenter(tableRect);
+    final Rect deckRect = Rect.fromCenter(
+      center: deckCenter,
+      width: _CardMetrics.medium.width,
+      height: _CardMetrics.medium.height,
+    );
+    final double panelHeight = math.min(
+      200,
+      math.max(138, tableRect.height * 0.33),
+    );
 
-    return Positioned(
-      left: tableRect.center.dx - math.min(tableRect.width * 0.44, 176),
-      top: deckCenter.dy - 72,
-      width: math.min(tableRect.width * 0.88, 352),
-      child: Column(
-        children: <Widget>[
-          Text(
-            tr(lang, 'Active: ${player.name}', 'Aktiv: ${player.name}'),
-            style: const TextStyle(
-              color: Color(0xFFF8F2E9),
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              shadows: <Shadow>[
-                Shadow(color: Color(0x66000000), blurRadius: 8),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          _DeckStack(
+    return Stack(
+      children: <Widget>[
+        Positioned(
+          left: deckRect.left,
+          top: deckRect.top - 8,
+          width: deckRect.width,
+          height: deckRect.height + 12,
+          child: _DeckStack(
             label: tr(lang, 'DEAL', 'TREKK'),
             deckCount: state.deck.length,
             ready: true,
           ),
-          const SizedBox(height: 14),
-          Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 10,
-            runSpacing: 10,
-            children: options.map((WarmupGuess guess) {
-              return FilledButton.tonal(
-                onPressed: () async {
-                  await HapticFeedback.selectionClick();
-                  widget.controller.playWarmupGuess(guess);
-                },
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFFF4D2C1),
-                  foregroundColor: const Color(0xFF53311E),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 14,
-                  ),
-                ),
-                child: Text(warmupGuessLabel(lang, guess)),
-              );
-            }).toList(),
+        ),
+        Positioned(
+          left: tableRect.center.dx - 140,
+          top: deckRect.top - 42,
+          width: 280,
+          child: Text(
+            tr(lang, 'Active: ${player.name}', 'Aktiv: ${player.name}'),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xFFF8F2E9),
+              fontSize: 17,
+              fontWeight: FontWeight.w800,
+              shadows: <Shadow>[
+                Shadow(color: Color(0x66000000), blurRadius: 9),
+              ],
+            ),
           ),
-        ],
-      ),
+        ),
+        Positioned(
+          left: tableRect.left + 10,
+          top: tableRect.bottom - panelHeight - 10,
+          width: tableRect.width - 20,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(22),
+              gradient: const LinearGradient(
+                colors: <Color>[Color(0xCC113726), Color(0xCC1D4D37)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              border: Border.all(color: const Color(0x66FFD89A)),
+              boxShadow: const <BoxShadow>[
+                BoxShadow(
+                  color: Color(0x33000000),
+                  blurRadius: 18,
+                  offset: Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    _warmupRoundPrompt(lang, state.warmupRound),
+                    style: const TextStyle(
+                      color: Color(0xFFF7EDDC),
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: options.map((WarmupGuess guess) {
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: _WarmupActionCard(
+                            label: warmupGuessLabel(lang, guess),
+                            onTap: () async {
+                              await HapticFeedback.selectionClick();
+                              widget.controller.playWarmupGuess(guess);
+                            },
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -1029,6 +1079,27 @@ class _GameTableViewState extends State<GameTableView> {
     }
   }
 
+  String _warmupRoundPrompt(AppLanguage language, int round) {
+    switch (round) {
+      case 1:
+        return tr(language, 'Round 1: guess color', 'Runde 1: gjett farge');
+      case 2:
+        return tr(
+          language,
+          'Round 2: compare with first card',
+          'Runde 2: sammenlign med forste kort',
+        );
+      case 3:
+        return tr(
+          language,
+          'Round 3: between, outside, or same',
+          'Runde 3: mellom, utenfor, eller samme',
+        );
+      default:
+        return tr(language, 'Round 4: guess suit', 'Runde 4: gjett sort');
+    }
+  }
+
   Rect _tableRect(Size size) {
     final double width = math.min(size.width - 12, 960);
     final double height = math.min(
@@ -1613,6 +1684,52 @@ class _PyramidSlotCard extends StatelessWidget {
           card: faceUp ? card : null,
           faceUp: faceUp,
           size: _CardVisualSize.small,
+        ),
+      ),
+    );
+  }
+}
+
+class _WarmupActionCard extends StatelessWidget {
+  const _WarmupActionCard({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Ink(
+          width: 120,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            gradient: const LinearGradient(
+              colors: <Color>[Color(0xFFF5D9B2), Color(0xFFE8B882)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            border: Border.all(color: const Color(0xB0684328)),
+            boxShadow: const <BoxShadow>[
+              BoxShadow(
+                color: Color(0x22000000),
+                blurRadius: 8,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xFF422214),
+              fontWeight: FontWeight.w800,
+            ),
+          ),
         ),
       ),
     );
