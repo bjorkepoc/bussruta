@@ -306,20 +306,26 @@ class _GameTableViewState extends State<GameTableView> {
           ),
         ),
         for (int index = 0; index < slotRects.length; index += 1)
-          Positioned.fromRect(
-            rect: slotRects[index],
-            child: _PyramidSlotCard(
-              card: state.pyramidCards[index],
-              faceUp: _revealedPyramidSlots.contains(index),
-              active: index == nextSlot,
-              onTap: index == nextSlot
-                  ? () async {
-                      await HapticFeedback.selectionClick();
-                      widget.controller.revealPyramidNext();
-                    }
-                  : null,
+          if (_revealedPyramidSlots.contains(index))
+            Positioned.fromRect(
+              rect: slotRects[index],
+              child: _PyramidSlotCard(
+                card: state.pyramidCards[index],
+                faceUp: true,
+                active: false,
+                onTap: null,
+              ),
+            )
+          else if (index == nextSlot)
+            Positioned.fromRect(
+              rect: slotRects[index],
+              child: _PyramidRevealTarget(
+                onTap: () async {
+                  await HapticFeedback.selectionClick();
+                  widget.controller.revealPyramidNext();
+                },
+              ),
             ),
-          ),
       ],
     );
   }
@@ -1138,8 +1144,8 @@ class _GameTableViewState extends State<GameTableView> {
 
     final double angleStep = math.pi * 2 / total;
     final double angle = -math.pi / 2 + angleStep * index;
-    final double radiusX = rect.width * (total >= 7 ? 0.38 : 0.4);
-    final double radiusY = rect.height * (total >= 7 ? 0.36 : 0.38);
+    final double radiusX = rect.width * (total >= 7 ? 0.41 : 0.42);
+    final double radiusY = rect.height * (total >= 7 ? 0.39 : 0.4);
     return Offset(
       rect.center.dx + math.cos(angle) * radiusX,
       rect.center.dy + math.sin(angle) * radiusY,
@@ -1443,10 +1449,10 @@ class _SeatChip extends StatelessWidget {
       duration: const Duration(milliseconds: 240),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 240),
-        width: compact ? 96 : 108,
+        width: compact ? 118 : 142,
         padding: EdgeInsets.symmetric(
-          horizontal: compact ? 8 : 10,
-          vertical: compact ? 7 : 8,
+          horizontal: compact ? 9 : 11,
+          vertical: compact ? 8 : 9,
         ),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
@@ -1473,7 +1479,7 @@ class _SeatChip extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: compact ? 12 : 13,
+                fontSize: compact ? 12 : 14,
                 fontWeight: FontWeight.w800,
                 color: const Color(0xFF4A2D20),
               ),
@@ -1486,11 +1492,11 @@ class _SeatChip extends StatelessWidget {
                 '${player.hand.length} kort',
               ),
               style: TextStyle(
-                fontSize: compact ? 10 : 11,
+                fontSize: compact ? 10 : 12,
                 color: const Color(0xFF6B5445),
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
             if (visibleCards.isEmpty)
               Text(
                 tr(language, 'No cards', 'Ingen kort'),
@@ -1501,13 +1507,14 @@ class _SeatChip extends StatelessWidget {
               )
             else
               SizedBox(
-                width: compact ? 76 : 84,
-                height: compact ? 50 : 56,
+                width: compact ? 108 : 130,
+                height: compact ? 66 : 84,
                 child: _OverlappedHand(
                   cards: visibleCards,
                   size: compact
-                      ? _CardVisualSize.extraSmall
-                      : _CardVisualSize.small,
+                      ? _CardVisualSize.small
+                      : _CardVisualSize.medium,
+                  canvasWidth: compact ? 108 : 130,
                 ),
               ),
           ],
@@ -1518,10 +1525,15 @@ class _SeatChip extends StatelessWidget {
 }
 
 class _OverlappedHand extends StatelessWidget {
-  const _OverlappedHand({required this.cards, required this.size});
+  const _OverlappedHand({
+    required this.cards,
+    required this.size,
+    required this.canvasWidth,
+  });
 
   final List<PlayingCard> cards;
   final _CardVisualSize size;
+  final double canvasWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -1530,12 +1542,16 @@ class _OverlappedHand extends StatelessWidget {
       _CardVisualSize.small => _CardMetrics.small,
       _CardVisualSize.medium => _CardMetrics.medium,
     };
-    final double overlap = size == _CardVisualSize.small ? 14 : 10;
-    final int count = cards.length.clamp(0, 4);
+    final double overlap = switch (size) {
+      _CardVisualSize.extraSmall => 11,
+      _CardVisualSize.small => 14,
+      _CardVisualSize.medium => 18,
+    };
+    final int count = cards.length.clamp(0, 5);
     final List<PlayingCard> display = cards.take(count).toList();
     final double totalWidth =
         metrics.width + (display.length - 1).clamp(0, 10) * overlap;
-    final double leftStart = math.max(0, (84 - totalWidth) / 2);
+    final double leftStart = math.max(0, (canvasWidth - totalWidth) / 2);
 
     return Stack(
       clipBehavior: Clip.none,
@@ -1684,6 +1700,51 @@ class _PyramidSlotCard extends StatelessWidget {
           card: faceUp ? card : null,
           faceUp: faceUp,
           size: _CardVisualSize.small,
+        ),
+      ),
+    );
+  }
+}
+
+class _PyramidRevealTarget extends StatelessWidget {
+  const _PyramidRevealTarget({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Ink(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xAAFFE4A7), width: 1.6),
+            gradient: const LinearGradient(
+              colors: <Color>[Color(0x33FFE4A7), Color(0x11FFFFFF)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: const <BoxShadow>[
+              BoxShadow(
+                color: Color(0x66FFE4A7),
+                blurRadius: 14,
+                spreadRadius: 1,
+              ),
+            ],
+          ),
+          child: const Center(
+            child: Text(
+              '?',
+              style: TextStyle(
+                color: Color(0xFFF7F1E2),
+                fontWeight: FontWeight.w900,
+                fontSize: 24,
+              ),
+            ),
+          ),
         ),
       ),
     );
