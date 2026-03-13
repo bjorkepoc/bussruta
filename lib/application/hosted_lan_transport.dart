@@ -131,8 +131,8 @@ class HostedLanDiscovery {
       }
       final String pin = (json['pin'] as String? ?? '').trim();
       final int port = json['port'] as int? ?? 0;
-      final String announcedAddress =
-          (json['hostAddress'] as String? ?? '').trim();
+      final String announcedAddress = (json['hostAddress'] as String? ?? '')
+          .trim();
       final String hostAddress = announcedAddress.isNotEmpty
           ? announcedAddress
           : datagram.address.address;
@@ -696,23 +696,24 @@ class HostedLanClientConnection {
         .transform(const LineSplitter())
         .listen(
           _handleLine,
-          onError: (_) {
+          onError: (Object error) {
             if (_closingLocally) {
               return;
             }
             final bool joinPending = !_joined.isCompleted;
+            final String details = error.toString();
             _emitIssue(
               HostedClientIssue(
                 code: joinPending
                     ? HostedClientIssueCode.hostUnavailable
                     : HostedClientIssueCode.disconnected,
                 message: joinPending
-                    ? 'Could not connect to host.'
-                    : 'Connection error.',
+                    ? 'Could not connect to host: $details'
+                    : 'Connection error: $details',
               ),
             );
             if (joinPending) {
-              _joined.completeError('Connection error.');
+              _joined.completeError('Connection error: $details');
             }
           },
           onDone: () {
@@ -726,7 +727,9 @@ class HostedLanClientConnection {
               ),
             );
             if (!_joined.isCompleted) {
-              _joined.completeError('Disconnected from host.');
+              _joined.completeError(
+                'Disconnected from host before join completed.',
+              );
             }
           },
           cancelOnError: true,

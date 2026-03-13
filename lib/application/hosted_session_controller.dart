@@ -39,6 +39,7 @@ class HostedSessionController extends ChangeNotifier {
   List<HostedDiscoveryEntry> _discoveries = const <HostedDiscoveryEntry>[];
   String? _errorMessage;
   String? _infoMessage;
+  String? _networkDiagnostic;
   AppLanguage _language = AppLanguage.en;
   StreamSubscription<List<HostedDiscoveryEntry>>? _discoverySub;
   StreamSubscription<HostedSessionState>? _hostStateSub;
@@ -69,6 +70,7 @@ class HostedSessionController extends ChangeNotifier {
   String? get sessionPin => _projection?.publicView.sessionPin;
   String? get hostAddress => _hostServer?.hostAddress;
   int? get hostPort => _hostServer?.port;
+  String? get networkDiagnostic => _networkDiagnostic;
   List<String> get hostGameLog =>
       _hostServer?.state.gameState.log ?? const <String>[];
   bool get hasActiveSession =>
@@ -147,12 +149,15 @@ class HostedSessionController extends ChangeNotifier {
     _lastPlayerToken = null;
     _lastPlayerId = host.playerId;
     _reconnectAttempt = 0;
-    final String hostHint =
-        server.hostAddress == null ? '' : ' ${server.hostAddress}:${server.port}';
+    final String hostHint = server.hostAddress == null
+        ? ''
+        : ' ${server.hostAddress}:${server.port}';
     _infoMessage = _tr(
       'Hosting started. Share PIN $pin.$hostHint',
       'Hosting startet. Del PIN $pin.$hostHint',
     );
+    _networkDiagnostic =
+        'Host listening at ${server.hostAddress ?? '-'}:${server.port}';
     _bindHostServer(server);
     _syncHostAutoPlay();
     notifyListeners();
@@ -196,7 +201,8 @@ class HostedSessionController extends ChangeNotifier {
     final String? address = hostAddress?.trim().isNotEmpty == true
         ? hostAddress!.trim()
         : match?.hostAddress;
-    final int? port = hostPort ??
+    final int? port =
+        hostPort ??
         match?.hostPort ??
         (address == null ? null : hostedSessionPort);
     if (address == null || port == null) {
@@ -230,41 +236,59 @@ class HostedSessionController extends ChangeNotifier {
     final String resolvedName = playerName.trim().isEmpty
         ? _fallbackGuestName()
         : playerName.trim();
-    try {
-      final HostedLanClientConnection client =
-          await HostedLanClientConnection.connect(
-            hostAddress: hostAddress,
-            hostPort: hostPort,
-            pin: pin,
-            playerName: resolvedName,
-            playerToken: playerToken,
-            requestedPlayerId: requestedPlayerId,
+    final List<String> addressCandidates = hostedJoinAddressCandidates(
+      hostAddress,
+    );
+    final List<String> failedTargets = <String>[];
+
+    for (final String candidateAddress in addressCandidates) {
+      try {
+        final HostedLanClientConnection client =
+            await HostedLanClientConnection.connect(
+              hostAddress: candidateAddress,
+              hostPort: hostPort,
+              pin: pin,
+              playerName: resolvedName,
+              playerToken: playerToken,
+              requestedPlayerId: requestedPlayerId,
+            );
+        _clientConnection = client;
+        _hostServer = null;
+        _isHost = false;
+        _localPlayerId = client.playerId;
+        _projection = client.projection;
+        _flowState = HostedFlowState.inGame;
+        _connectionStatus = HostedConnectionStatus.connected;
+        _lastHostAddress = candidateAddress;
+        _lastHostPort = hostPort;
+        _lastPin = pin;
+        _lastPlayerName = resolvedName;
+        _lastPlayerToken = client.playerToken;
+        _lastPlayerId = client.playerId;
+        _reconnectAttempt = 0;
+        _networkDiagnostic = 'Connected to $candidateAddress:$hostPort';
+        if (candidateAddress != hostAddress) {
+          _infoMessage = _tr(
+            'Connected using emulator fallback target $candidateAddress:$hostPort.',
+            'Koblet til med emulator-fallback $candidateAddress:$hostPort.',
           );
-      _clientConnection = client;
-      _hostServer = null;
-      _isHost = false;
-      _localPlayerId = client.playerId;
-      _projection = client.projection;
-      _flowState = HostedFlowState.inGame;
-      _connectionStatus = HostedConnectionStatus.connected;
-      _lastHostAddress = hostAddress;
-      _lastHostPort = hostPort;
-      _lastPin = pin;
-      _lastPlayerName = resolvedName;
-      _lastPlayerToken = client.playerToken;
-      _lastPlayerId = client.playerId;
-      _reconnectAttempt = 0;
-      _bindClient(client);
-      notifyListeners();
-    } catch (error) {
-      _flowState = HostedFlowState.idle;
-      _connectionStatus = HostedConnectionStatus.hostUnavailable;
-      _errorMessage = _tr(
-        'Could not join hosted game: $error',
-        'Kunne ikke bli med i hostet spill: $error',
-      );
-      notifyListeners();
+        }
+        _bindClient(client);
+        notifyListeners();
+        return;
+      } catch (error) {
+        failedTargets.add('$candidateAddress:$hostPort -> $error');
+      }
     }
+
+    _flowState = HostedFlowState.idle;
+    _connectionStatus = HostedConnectionStatus.hostUnavailable;
+    _networkDiagnostic = 'Join failed. Tried ${failedTargets.join(' | ')}';
+    _errorMessage = _tr(
+      'Could not join hosted game. ${failedTargets.join(' | ')}',
+      'Kunne ikke bli med i hostet spill. ${failedTargets.join(' | ')}',
+    );
+    notifyListeners();
   }
 
   void startHostedGame() {
@@ -474,6 +498,8 @@ class HostedSessionController extends ChangeNotifier {
       _reconnectAttempt = 0;
       _reconnectTimer?.cancel();
       _reconnectTimer = null;
+      _networkDiagnostic =
+          'Connected as player ${client.playerId} via ${_lastHostAddress ?? '-'}:${_lastHostPort ?? 0}';
       notifyListeners();
     });
     _clientIssuesSub = client.issues.listen((HostedClientIssue issue) {
@@ -496,6 +522,7 @@ class HostedSessionController extends ChangeNotifier {
           return;
         }
         _errorMessage = issue.message;
+        _networkDiagnostic = 'Issue: ${issue.message}';
         notifyListeners();
         return;
       case HostedClientIssueCode.disconnected:
@@ -505,17 +532,21 @@ class HostedSessionController extends ChangeNotifier {
           'Tilkoblingen falt ut. Prover a koble til igjen...',
         );
         _startReconnectLoop();
+        _networkDiagnostic =
+            'Disconnected from ${_lastHostAddress ?? '-'}:${_lastHostPort ?? 0}';
         notifyListeners();
         return;
       case HostedClientIssueCode.hostUnavailable:
         _connectionStatus = HostedConnectionStatus.hostUnavailable;
         _errorMessage = issue.message;
+        _networkDiagnostic = 'Host unavailable: ${issue.message}';
         unawaited(_clearRemoteSessionState());
         notifyListeners();
         return;
       case HostedClientIssueCode.sessionClosed:
         _connectionStatus = HostedConnectionStatus.sessionClosed;
         _infoMessage = issue.message;
+        _networkDiagnostic = 'Session closed: ${issue.message}';
         _resetReconnectIdentity();
         unawaited(_clearRemoteSessionState());
         notifyListeners();
@@ -613,6 +644,8 @@ class HostedSessionController extends ChangeNotifier {
       _bindClient(client);
       _connectionStatus = HostedConnectionStatus.connected;
       _infoMessage = _tr('Reconnected.', 'Koblet til igjen.');
+      _networkDiagnostic =
+          'Reconnected to ${_lastHostAddress!}:${_lastHostPort!}';
       _reconnectTimer?.cancel();
       _reconnectTimer = null;
       _reconnectAttempt = 0;
@@ -638,6 +671,7 @@ class HostedSessionController extends ChangeNotifier {
     _localPlayerId = null;
     _isHost = false;
     _flowState = HostedFlowState.idle;
+    _networkDiagnostic = null;
   }
 
   Future<void> leaveSession() async {
@@ -671,6 +705,7 @@ class HostedSessionController extends ChangeNotifier {
     _connectionStatus = HostedConnectionStatus.idle;
     _resetReconnectIdentity();
     _reconnectAttempt = 0;
+    _networkDiagnostic = null;
     _sessionCloseInProgress = false;
     notifyListeners();
   }
@@ -828,4 +863,21 @@ class HostedSessionController extends ChangeNotifier {
     }
     return null;
   }
+}
+
+List<String> hostedJoinAddressCandidates(String hostAddress) {
+  final String normalized = hostAddress.trim();
+  if (normalized.isEmpty) {
+    return const <String>[];
+  }
+  final List<String> addresses = <String>[normalized];
+  if (hostedAddressLooksLikeEmulatorNat(normalized) &&
+      normalized != '10.0.2.2') {
+    addresses.add('10.0.2.2');
+  }
+  return addresses;
+}
+
+bool hostedAddressLooksLikeEmulatorNat(String address) {
+  return address.startsWith('10.0.2.');
 }

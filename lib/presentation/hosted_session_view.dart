@@ -83,6 +83,7 @@ class _HostedSessionViewState extends State<HostedSessionView>
     final AppLanguage language = widget.language;
     final HostedConnectionStatus status = widget.controller.connectionStatus;
     final _ConnectionVisual statusVisual = _connectionVisual(status);
+    final String? networkDiagnostic = widget.controller.networkDiagnostic;
     final bool busy =
         status == HostedConnectionStatus.joining ||
         status == HostedConnectionStatus.reconnecting;
@@ -136,6 +137,18 @@ class _HostedSessionViewState extends State<HostedSessionView>
                         const SizedBox(height: 10),
                         LinearProgressIndicator(
                           borderRadius: BorderRadius.circular(99),
+                        ),
+                      ],
+                      if (networkDiagnostic != null &&
+                          networkDiagnostic.trim().isNotEmpty) ...<Widget>[
+                        const SizedBox(height: 10),
+                        SelectableText(
+                          networkDiagnostic,
+                          style: const TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF4B3524),
+                          ),
                         ),
                       ],
                     ],
@@ -311,6 +324,9 @@ class _HostedSessionViewState extends State<HostedSessionView>
         .length;
     final String? hostAddress = widget.controller.hostAddress;
     final int? hostPort = widget.controller.hostPort;
+    final bool emulatorAddress = hostAddress != null
+        ? hostedAddressLooksLikeEmulatorNat(hostAddress)
+        : false;
 
     return Scaffold(
       appBar: AppBar(
@@ -386,9 +402,7 @@ class _HostedSessionViewState extends State<HostedSessionView>
                         decoration: BoxDecoration(
                           color: const Color(0xFF174A36),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: const Color(0x66FFD89A),
-                          ),
+                          border: Border.all(color: const Color(0x66FFD89A)),
                         ),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
@@ -418,6 +432,32 @@ class _HostedSessionViewState extends State<HostedSessionView>
                                   letterSpacing: 0.5,
                                 ),
                               ),
+                              if (emulatorAddress) ...<Widget>[
+                                const SizedBox(height: 8),
+                                Text(
+                                  tr(
+                                    language,
+                                    'Emulator fallback target (after adb forward): 10.0.2.2:${hostPort ?? hostedSessionPort}',
+                                    'Emulator-fallback (etter adb forward): 10.0.2.2:${hostPort ?? hostedSessionPort}',
+                                  ),
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Color(0xFFF4E8D6),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                SelectableText(
+                                  'adb -s <host-emulator> forward tcp:${hostPort ?? hostedSessionPort} tcp:${hostPort ?? hostedSessionPort}',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Color(0xFFFFD06A),
+                                    fontFamily: 'monospace',
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         ),
@@ -614,7 +654,8 @@ class _HostedSessionViewState extends State<HostedSessionView>
                           ],
                         ),
                       ),
-                      if (status != HostedConnectionStatus.connected) ...<Widget>[
+                      if (status !=
+                          HostedConnectionStatus.connected) ...<Widget>[
                         const SizedBox(height: 8),
                         _surfaceCard(
                           color: const Color(0xFFFFF3DE),
@@ -647,7 +688,11 @@ class _HostedSessionViewState extends State<HostedSessionView>
                       if (projection.giveOutPromptDrinks > 0) ...<Widget>[
                         const SizedBox(height: 8),
                         _promptCard(
-                          label: tr(language, 'Give out drinks', 'Del ut drikker'),
+                          label: tr(
+                            language,
+                            'Give out drinks',
+                            'Del ut drikker',
+                          ),
                           amount: projection.giveOutPromptDrinks,
                           color: const Color(0xFF1A8B47),
                           action: null,
@@ -731,7 +776,12 @@ class _HostedSessionViewState extends State<HostedSessionView>
   }
 
   Widget _bannerCard(String message, BannerTone tone) {
-    final (Color fill, Color border, Color text, IconData icon) = switch (tone) {
+    final (
+      Color fill,
+      Color border,
+      Color text,
+      IconData icon,
+    ) = switch (tone) {
       BannerTone.success => (
         const Color(0xFFE0F0E0),
         const Color(0xFF2F9A57),
@@ -794,9 +844,14 @@ class _HostedSessionViewState extends State<HostedSessionView>
     final String sectionTitle = switch (view.phase) {
       GamePhase.warmup => tr(widget.language, 'Public table', 'Offentlig bord'),
       GamePhase.pyramid => tr(widget.language, 'Pyramid table', 'Pyramidebord'),
-      GamePhase.tiebreak => tr(widget.language, 'Tie-break table', 'Tie-break-bord'),
-      GamePhase.bussetup || GamePhase.bus || GamePhase.finished =>
-        tr(widget.language, 'Bus table', 'Bussbord'),
+      GamePhase.tiebreak => tr(
+        widget.language,
+        'Tie-break table',
+        'Tie-break-bord',
+      ),
+      GamePhase.bussetup ||
+      GamePhase.bus ||
+      GamePhase.finished => tr(widget.language, 'Bus table', 'Bussbord'),
       _ => tr(widget.language, 'Table', 'Bord'),
     };
 
@@ -845,8 +900,10 @@ class _HostedSessionViewState extends State<HostedSessionView>
               spacing: 8,
               runSpacing: 8,
               children: view.players.map((HostedPublicPlayer player) {
-                final bool activeTurn = view.currentTurnPlayerId == player.playerId;
-                final bool isViewer = player.playerId == projection.viewerPlayerId;
+                final bool activeTurn =
+                    view.currentTurnPlayerId == player.playerId;
+                final bool isViewer =
+                    player.playerId == projection.viewerPlayerId;
                 final Color color = !player.connected
                     ? const Color(0xFF8A6E64)
                     : activeTurn
@@ -912,12 +969,16 @@ class _HostedSessionViewState extends State<HostedSessionView>
               _pyramidPublicPanel(
                 cards: view.pyramidCards,
                 revealIndex: view.pyramidRevealIndex,
-                onReveal: hostCanReveal ? widget.controller.revealPyramidNext : null,
+                onReveal: hostCanReveal
+                    ? widget.controller.revealPyramidNext
+                    : null,
               ),
             if (view.phase == GamePhase.tiebreak)
               _tieBreakPanel(
                 tieBreak: view.tieBreak,
-                onRunRound: hostCanReveal ? widget.controller.runTieBreakRound : null,
+                onRunRound: hostCanReveal
+                    ? widget.controller.runTieBreakRound
+                    : null,
               ),
             if (view.busRoute != null) ...<Widget>[
               _busRouteView(
@@ -1230,8 +1291,16 @@ class _HostedSessionViewState extends State<HostedSessionView>
 
     final String title = switch (round) {
       1 => tr(widget.language, 'Round 1: guess color', 'Runde 1: gjett farge'),
-      2 => tr(widget.language, 'Round 2: higher, lower, or same', 'Runde 2: høyere, lavere eller lik'),
-      3 => tr(widget.language, 'Round 3: between, outside, or same', 'Runde 3: mellom, utenfor eller lik'),
+      2 => tr(
+        widget.language,
+        'Round 2: higher, lower, or same',
+        'Runde 2: høyere, lavere eller lik',
+      ),
+      3 => tr(
+        widget.language,
+        'Round 3: between, outside, or same',
+        'Runde 3: mellom, utenfor eller lik',
+      ),
       _ => tr(widget.language, 'Round 4: guess suit', 'Runde 4: gjett sort'),
     };
 
@@ -1413,8 +1482,19 @@ class _HostedSessionViewState extends State<HostedSessionView>
               runSpacing: 12,
               children: tieBreak.contenders.map((int playerIndex) {
                 HostedPublicPlayer? player;
-                if (playerIndex >= 0 && playerIndex < widget.controller.projection!.publicView.players.length) {
-                  player = widget.controller.projection!.publicView.players[playerIndex];
+                if (playerIndex >= 0 &&
+                    playerIndex <
+                        widget
+                            .controller
+                            .projection!
+                            .publicView
+                            .players
+                            .length) {
+                  player = widget
+                      .controller
+                      .projection!
+                      .publicView
+                      .players[playerIndex];
                 }
                 TieBreakDraw? draw;
                 for (final TieBreakDraw entry in tieBreak.lastDraws) {
@@ -1456,7 +1536,11 @@ class _HostedSessionViewState extends State<HostedSessionView>
                 ),
                 icon: const Icon(Icons.casino),
                 label: Text(
-                  tr(widget.language, 'Run tie-break round', 'Kjør tie-break-runde'),
+                  tr(
+                    widget.language,
+                    'Run tie-break round',
+                    'Kjør tie-break-runde',
+                  ),
                 ),
               ),
             ],
@@ -1500,7 +1584,9 @@ class _HostedSessionViewState extends State<HostedSessionView>
             Wrap(
               spacing: 10,
               runSpacing: 10,
-              children: List<Widget>.generate(route.routeCards.length, (int index) {
+              children: List<Widget>.generate(route.routeCards.length, (
+                int index,
+              ) {
                 final bool isActive = active == index && phase == GamePhase.bus;
                 return DecoratedBox(
                   decoration: BoxDecoration(
