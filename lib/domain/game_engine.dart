@@ -528,10 +528,10 @@ class GameEngine {
     }
 
     final TieBreakState tie = state.tieBreak!;
+    if (state.busRunnerIndex != null && tie.lastDraws.isNotEmpty) {
+      return _startBusRoute(state.copyWith(clearTieBreak: true));
+    }
     if (tie.contenders.length < 2) {
-      if (tie.contenders.length == 1 && state.busRunnerIndex != null) {
-        return _startBusRoute(state.copyWith(clearTieBreak: true));
-      }
       return state;
     }
 
@@ -599,7 +599,7 @@ class GameEngine {
         phase: GamePhase.tiebreak,
         busRunnerIndex: winner,
         tieBreak: tie.copyWith(
-          contenders: nextContenders,
+          contenders: tie.contenders,
           deck: deck,
           round: tie.round + 1,
           lastDraws: draws,

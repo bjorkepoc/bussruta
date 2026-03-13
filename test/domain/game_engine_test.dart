@@ -110,8 +110,9 @@ void main() {
 
       final GameState afterRound2 = engine.runTieBreakRound(afterRound1);
       expect(afterRound2.phase, GamePhase.tiebreak);
-      expect(afterRound2.tieBreak!.contenders, <int>[0]);
+      expect(afterRound2.tieBreak!.contenders, <int>[0, 1]);
       expect(afterRound2.busRunnerIndex, 0);
+      expect(afterRound2.tieBreak!.lastDraws.length, 2);
 
       final GameState afterRound3 = engine.runTieBreakRound(afterRound2);
       expect(afterRound3.phase, GamePhase.bussetup);
@@ -136,8 +137,9 @@ void main() {
 
       final GameState next = engine.runTieBreakRound(state);
       expect(next.phase, GamePhase.tiebreak);
-      expect(next.tieBreak!.contenders, <int>[0]);
+      expect(next.tieBreak!.contenders, <int>[0, 1]);
       expect(next.busRunnerIndex, 0);
+      expect(next.tieBreak!.lastDraws.length, 2);
 
       final GameState advanced = engine.runTieBreakRound(next);
       expect(advanced.phase, GamePhase.bussetup);
