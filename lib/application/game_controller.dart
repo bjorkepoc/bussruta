@@ -17,6 +17,7 @@ class GameController extends ChangeNotifier with WidgetsBindingObserver {
 
   GameState _state = GameState.initial();
   bool _initialized = false;
+  bool _onboardingSeen = false;
   bool _autoPlayRunning = false;
   Timer? _autoPlayTimer;
   String? _errorMessage;
@@ -24,6 +25,8 @@ class GameController extends ChangeNotifier with WidgetsBindingObserver {
   GameState get state => _state;
 
   bool get initialized => _initialized;
+
+  bool get onboardingSeen => _onboardingSeen;
 
   String? consumeErrorMessage() {
     final String? value = _errorMessage;
@@ -38,6 +41,7 @@ class GameController extends ChangeNotifier with WidgetsBindingObserver {
     } else {
       _state = GameState.initial();
     }
+    _onboardingSeen = await _storage.loadOnboardingSeen();
     _initialized = true;
     notifyListeners();
     _syncAutoPlay();
@@ -54,6 +58,15 @@ class GameController extends ChangeNotifier with WidgetsBindingObserver {
 
   void setLanguage(AppLanguage language) {
     _emit(_state.copyWith(language: language));
+  }
+
+  void markOnboardingSeen({bool seen = true}) {
+    if (_onboardingSeen == seen) {
+      return;
+    }
+    _onboardingSeen = seen;
+    notifyListeners();
+    unawaited(_storage.saveOnboardingSeen(seen));
   }
 
   void setPlayerCount(int count) {

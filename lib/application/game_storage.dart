@@ -7,12 +7,17 @@ abstract class GameStorage {
   Future<void> saveGameState(GameState state);
 
   Future<void> clearGameState();
+
+  Future<bool> loadOnboardingSeen();
+
+  Future<void> saveOnboardingSeen(bool seen);
 }
 
 class SharedPrefsGameStorage implements GameStorage {
   SharedPrefsGameStorage({SharedPreferences? prefs}) : _prefs = prefs;
 
   static const String _gameStateKey = 'bussruta.game_state.v1';
+  static const String _onboardingSeenKey = 'bussruta.onboarding_seen.v1';
 
   SharedPreferences? _prefs;
 
@@ -49,5 +54,17 @@ class SharedPrefsGameStorage implements GameStorage {
   Future<void> clearGameState() async {
     final SharedPreferences prefs = await _instance();
     await prefs.remove(_gameStateKey);
+  }
+
+  @override
+  Future<bool> loadOnboardingSeen() async {
+    final SharedPreferences prefs = await _instance();
+    return prefs.getBool(_onboardingSeenKey) ?? false;
+  }
+
+  @override
+  Future<void> saveOnboardingSeen(bool seen) async {
+    final SharedPreferences prefs = await _instance();
+    await prefs.setBool(_onboardingSeenKey, seen);
   }
 }
