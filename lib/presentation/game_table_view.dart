@@ -590,29 +590,34 @@ class _GameTableViewState extends State<GameTableView> {
             layout: layout,
           ),
         if (state.phase == GamePhase.bussetup)
-          Positioned(
-            left: tableRect.center.dx - 150,
-            top: layout.controlsTop,
-            width: 300,
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: FilledButton.tonal(
-                    onPressed: () =>
-                        widget.controller.beginBusRoute(BusStartSide.left),
-                    child: Text(tr(lang, 'Start Left', 'Start venstre')),
-                  ),
+          Builder(
+            builder: (BuildContext context) {
+              final double controlsWidth = math.min(tableRect.width - 24, 340);
+              return Positioned(
+                left: tableRect.center.dx - controlsWidth / 2,
+                top: layout.controlsTop,
+                width: controlsWidth,
+                child: Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: FilledButton.tonal(
+                        onPressed: () =>
+                            widget.controller.beginBusRoute(BusStartSide.left),
+                        child: Text(tr(lang, 'Start Left', 'Start venstre')),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton.tonal(
+                        onPressed: () =>
+                            widget.controller.beginBusRoute(BusStartSide.right),
+                        child: Text(tr(lang, 'Start Right', 'Start hoyre')),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton.tonal(
-                    onPressed: () =>
-                        widget.controller.beginBusRoute(BusStartSide.right),
-                    child: Text(tr(lang, 'Start Right', 'Start hoyre')),
-                  ),
-                ),
-              ],
-            ),
+              );
+            },
           ),
       ],
     );
