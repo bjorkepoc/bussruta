@@ -112,6 +112,27 @@ void main() {
       expect(afterRound2.phase, GamePhase.bussetup);
       expect(afterRound2.busRunnerIndex, 0);
     });
+
+    test('tie-break treats ace as highest card', () {
+      final GameEngine engine = GameEngine();
+      final GameState state = GameState.initial().copyWith(
+        phase: GamePhase.tiebreak,
+        players: const <PlayerState>[
+          PlayerState(name: 'A', hand: <PlayingCard>[]),
+          PlayerState(name: 'B', hand: <PlayingCard>[]),
+        ],
+        tieBreak: TieBreakState(
+          contenders: <int>[0, 1],
+          deck: <PlayingCard>[card(Suit.clubs, 1), card(Suit.hearts, 13)],
+          round: 1,
+          lastDraws: const <TieBreakDraw>[],
+        ),
+      );
+
+      final GameState next = engine.runTieBreakRound(state);
+      expect(next.phase, GamePhase.bussetup);
+      expect(next.busRunnerIndex, 1);
+    });
   });
 
   group('GameEngine bus route', () {

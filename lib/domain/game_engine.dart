@@ -552,15 +552,18 @@ class GameEngine {
       draws.add(TieBreakDraw(playerIndex: idx, card: draw));
     }
 
-    int highest = 0;
+    int highest = -1;
     for (final TieBreakDraw entry in draws) {
-      if (entry.card.rank > highest) {
-        highest = entry.card.rank;
+      final int tieBreakRank = _tieBreakRank(entry.card.rank);
+      if (tieBreakRank > highest) {
+        highest = tieBreakRank;
       }
     }
 
     final List<int> nextContenders = draws
-        .where((TieBreakDraw entry) => entry.card.rank == highest)
+        .where(
+          (TieBreakDraw entry) => _tieBreakRank(entry.card.rank) == highest,
+        )
         .map((TieBreakDraw entry) => entry.playerIndex)
         .toList();
 
@@ -1340,6 +1343,10 @@ class GameEngine {
       return -1;
     }
     return 0;
+  }
+
+  int _tieBreakRank(int rank) {
+    return rank == 1 ? 14 : rank;
   }
 
   String _tr(AppLanguage language, String english, String norwegian) {
