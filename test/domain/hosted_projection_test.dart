@@ -124,6 +124,7 @@ HostedSessionState _sessionState() {
       assignedDrinksByTarget: <int, int>{101: 1},
       reason: 'Warmup round 2',
     ),
+    queuedDrinkDistributions: const <HostedPendingDrinkDistribution>[],
     pendingDrinkPenaltyByPlayer: const <int, int>{103: 2},
     lastError: null,
   );

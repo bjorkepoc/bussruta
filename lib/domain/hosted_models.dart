@@ -179,6 +179,7 @@ class HostedSessionState {
     required this.playerOrder,
     required this.gameState,
     required this.pendingDrinkDistribution,
+    required this.queuedDrinkDistributions,
     required this.pendingDrinkPenaltyByPlayer,
     required this.lastError,
   });
@@ -197,6 +198,7 @@ class HostedSessionState {
       playerOrder: <int>[host.playerId],
       gameState: base,
       pendingDrinkDistribution: null,
+      queuedDrinkDistributions: const <HostedPendingDrinkDistribution>[],
       pendingDrinkPenaltyByPlayer: const <int, int>{},
       lastError: null,
     );
@@ -209,6 +211,7 @@ class HostedSessionState {
   final List<int> playerOrder;
   final GameState gameState;
   final HostedPendingDrinkDistribution? pendingDrinkDistribution;
+  final List<HostedPendingDrinkDistribution> queuedDrinkDistributions;
   final Map<int, int> pendingDrinkPenaltyByPlayer;
   final String? lastError;
 
@@ -221,6 +224,7 @@ class HostedSessionState {
     GameState? gameState,
     HostedPendingDrinkDistribution? pendingDrinkDistribution,
     bool clearPendingDrinkDistribution = false,
+    List<HostedPendingDrinkDistribution>? queuedDrinkDistributions,
     Map<int, int>? pendingDrinkPenaltyByPlayer,
     String? lastError,
     bool clearLastError = false,
@@ -235,6 +239,8 @@ class HostedSessionState {
       pendingDrinkDistribution: clearPendingDrinkDistribution
           ? null
           : (pendingDrinkDistribution ?? this.pendingDrinkDistribution),
+      queuedDrinkDistributions:
+          queuedDrinkDistributions ?? this.queuedDrinkDistributions,
       pendingDrinkPenaltyByPlayer:
           pendingDrinkPenaltyByPlayer ?? this.pendingDrinkPenaltyByPlayer,
       lastError: clearLastError ? null : (lastError ?? this.lastError),
@@ -278,6 +284,9 @@ class HostedSessionState {
       'playerOrder': playerOrder,
       'gameState': gameState.toJson(),
       'pendingDrinkDistribution': pendingDrinkDistribution?.toJson(),
+      'queuedDrinkDistributions': queuedDrinkDistributions
+          .map((HostedPendingDrinkDistribution value) => value.toJson())
+          .toList(),
       'pendingDrinkPenaltyByPlayer': pendingDrinkPenaltyByPlayer.map(
         (int key, int value) => MapEntry<String, int>(key.toString(), value),
       ),
@@ -287,6 +296,8 @@ class HostedSessionState {
 
   static HostedSessionState fromJson(Map<String, dynamic> json) {
     final List<dynamic> rawParticipants = json['participants'] as List<dynamic>;
+    final List<dynamic> rawQueued =
+        json['queuedDrinkDistributions'] as List<dynamic>? ?? <dynamic>[];
     final Map<String, dynamic> rawPenalty =
         json['pendingDrinkPenaltyByPlayer'] as Map<String, dynamic>? ??
         const <String, dynamic>{};
@@ -307,6 +318,13 @@ class HostedSessionState {
           : HostedPendingDrinkDistribution.fromJson(
               json['pendingDrinkDistribution'] as Map<String, dynamic>,
             ),
+      queuedDrinkDistributions: rawQueued
+          .map(
+            (dynamic item) => HostedPendingDrinkDistribution.fromJson(
+              item as Map<String, dynamic>,
+            ),
+          )
+          .toList(),
       pendingDrinkPenaltyByPlayer: rawPenalty.map(
         (String key, dynamic value) =>
             MapEntry<int, int>(int.parse(key), value as int),
