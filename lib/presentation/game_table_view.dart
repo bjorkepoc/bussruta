@@ -595,6 +595,15 @@ class _GameTableViewState extends State<GameTableView> {
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: Color(0xFF5D3B27)),
               ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: widget.controller.resetToSetup,
+                  icon: const Icon(Icons.restart_alt),
+                  label: Text(tr(lang, 'New game', 'Nytt spill')),
+                ),
+              ),
             ],
           ),
         ),

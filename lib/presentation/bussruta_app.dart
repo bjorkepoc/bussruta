@@ -164,6 +164,46 @@ class _SetupScreen extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           children: <Widget>[
             Card(
+              color: const Color(0xFFF8E6D1),
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      tr(lang, 'Ready to deal?', 'Klar til a dele ut?'),
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      tr(
+                        lang,
+                        'Start game begins warmup immediately with current setup.',
+                        'Start spill begynner oppvarmingen umiddelbart med valgt oppsett.',
+                      ),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: controller.startGameFromSetup,
+                        icon: const Icon(Icons.play_arrow),
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        label: Text(
+                          tr(lang, 'Start game', 'Start spill'),
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Card(
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: Column(
@@ -303,12 +343,6 @@ class _SetupScreen extends StatelessWidget {
                   ],
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: controller.startGameFromSetup,
-              icon: const Icon(Icons.play_arrow),
-              label: Text(tr(lang, 'Start game', 'Start spill')),
             ),
             const SizedBox(height: 8),
             Text(
@@ -533,16 +567,6 @@ class _StatusStrip extends StatelessWidget {
             avatar: const Icon(Icons.style, size: 18),
             label: Text(phaseLabel(lang, state.phase, state.warmupRound)),
           ),
-          Chip(
-            avatar: const Icon(Icons.layers, size: 18),
-            label: Text(
-              tr(
-                lang,
-                'Deck ${_deckCount(state)}',
-                'Stokk ${_deckCount(state)}',
-              ),
-            ),
-          ),
           if (_focusLabel(state, lang) case final String focus)
             Chip(
               avatar: const Icon(Icons.person, size: 18),
@@ -551,22 +575,6 @@ class _StatusStrip extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  static int _deckCount(GameState state) {
-    switch (state.phase) {
-      case GamePhase.setup:
-        return 52;
-      case GamePhase.tiebreak:
-        return state.tieBreak?.deck.length ?? 0;
-      case GamePhase.bussetup:
-      case GamePhase.bus:
-      case GamePhase.finished:
-        return state.busRoute?.deck.length ?? 0;
-      case GamePhase.warmup:
-      case GamePhase.pyramid:
-        return state.deck.length;
-    }
   }
 
   static String? _focusLabel(GameState state, AppLanguage lang) {
