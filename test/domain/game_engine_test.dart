@@ -113,7 +113,7 @@ void main() {
       expect(afterRound2.busRunnerIndex, 0);
     });
 
-    test('tie-break treats ace as highest card', () {
+    test('tie-break treats ace as lowest card', () {
       final GameEngine engine = GameEngine();
       final GameState state = GameState.initial().copyWith(
         phase: GamePhase.tiebreak,
@@ -131,7 +131,7 @@ void main() {
 
       final GameState next = engine.runTieBreakRound(state);
       expect(next.phase, GamePhase.bussetup);
-      expect(next.busRunnerIndex, 1);
+      expect(next.busRunnerIndex, 0);
     });
   });
 

@@ -1346,7 +1346,7 @@ class GameEngine {
   }
 
   int _tieBreakRank(int rank) {
-    return rank == 1 ? 14 : rank;
+    return rank;
   }
 
   String _tr(AppLanguage language, String english, String norwegian) {
