@@ -285,6 +285,7 @@ class _GameTableViewState extends State<GameTableView> {
         : (state.reversePyramid
               ? 14 - state.pyramidRevealIndex.clamp(0, 14)
               : state.pyramidRevealIndex.clamp(0, 14));
+    final bool canRevealNext = nextSlot >= 0;
 
     return Stack(
       children: <Widget>[
@@ -313,10 +314,18 @@ class _GameTableViewState extends State<GameTableView> {
         ),
         Positioned.fromRect(
           rect: layout.deckRect,
-          child: _DeckStack(
-            label: tr(lang, 'PYR', 'PYR'),
-            deckCount: state.deck.length,
-            ready: false,
+          child: GestureDetector(
+            onTap: canRevealNext
+                ? () async {
+                    await HapticFeedback.selectionClick();
+                    widget.controller.revealPyramidNext();
+                  }
+                : null,
+            child: _DeckStack(
+              label: tr(lang, 'PYR', 'PYR'),
+              deckCount: state.deck.length,
+              ready: canRevealNext,
+            ),
           ),
         ),
         Positioned.fromRect(
@@ -331,8 +340,8 @@ class _GameTableViewState extends State<GameTableView> {
               child: Text(
                 tr(
                   lang,
-                  'Reveal the glowing next pyramid card',
-                  'Avslor det glodende neste pyramidekortet',
+                  'Tap deck to reveal next pyramid card',
+                  'Trykk stokken for a avslore neste pyramidekort',
                 ),
                 textAlign: TextAlign.center,
                 style: const TextStyle(
@@ -358,12 +367,7 @@ class _GameTableViewState extends State<GameTableView> {
           else if (index == nextSlot)
             Positioned.fromRect(
               rect: slotRects[index],
-              child: _PyramidRevealTarget(
-                onTap: () async {
-                  await HapticFeedback.selectionClick();
-                  widget.controller.revealPyramidNext();
-                },
-              ),
+              child: const _PyramidRevealTarget(),
             ),
       ],
     );
@@ -573,7 +577,7 @@ class _GameTableViewState extends State<GameTableView> {
         child: _BusZone(
           label: active ? tr(lang, 'Above', 'Over') : '',
           active: active,
-          tone: tone.high,
+          tone: active ? tone.high : null,
           onTap: active
               ? () async {
                   await HapticFeedback.selectionClick();
@@ -595,7 +599,7 @@ class _GameTableViewState extends State<GameTableView> {
         rect: layout.baseRects[step],
         child: _BusBase(
           active: active,
-          tone: tone.same,
+          tone: active ? tone.same : null,
           sameButtonLabel: active ? tr(lang, 'Same', 'Samme') : null,
           onSame: active
               ? () async {
@@ -607,10 +611,13 @@ class _GameTableViewState extends State<GameTableView> {
             clipBehavior: Clip.none,
             alignment: Alignment.center,
             children: <Widget>[
-              _PlayingCardView(
-                card: step < visibleRouteCount ? bus.routeCards[step] : null,
-                faceUp: step < visibleRouteCount,
-                size: _CardVisualSize.medium,
+              Opacity(
+                opacity: active ? 1 : 0.9,
+                child: _PlayingCardView(
+                  card: step < visibleRouteCount ? bus.routeCards[step] : null,
+                  faceUp: step < visibleRouteCount,
+                  size: _CardVisualSize.medium,
+                ),
               ),
               Positioned(
                 right: 8,
@@ -635,7 +642,7 @@ class _GameTableViewState extends State<GameTableView> {
         child: _BusZone(
           label: active ? tr(lang, 'Below', 'Under') : '',
           active: active,
-          tone: tone.low,
+          tone: active ? tone.low : null,
           onTap: active
               ? () async {
                   await HapticFeedback.selectionClick();
@@ -655,10 +662,16 @@ class _GameTableViewState extends State<GameTableView> {
 
   Widget _buildCelebration(Rect tableRect) {
     final AppLanguage lang = widget.state.language;
+    final _BusLayout layout = _busLayout(tableRect);
+    final double width = math.min(320, tableRect.width - 28);
+    final double top = (layout.baseRects[2].top - 94).clamp(
+      tableRect.top + 28,
+      tableRect.top + 180,
+    );
     return Positioned(
-      left: tableRect.center.dx - 150,
-      top: tableRect.top + 34,
-      width: 300,
+      left: tableRect.center.dx - width / 2,
+      top: top,
+      width: width,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: const Color(0xFFF8E8D3).withValues(alpha: 0.92),
@@ -1203,11 +1216,21 @@ class _GameTableViewState extends State<GameTableView> {
     final bool leftSide;
     final int sideIndex;
     if (oddCount) {
-      leftSide = index <= sideSlots;
-      sideIndex = leftSide ? index - 1 : index - sideSlots - 1;
+      if (index <= sideSlots) {
+        leftSide = false;
+        sideIndex = sideSlots - index;
+      } else {
+        leftSide = true;
+        sideIndex = index - sideSlots - 1;
+      }
     } else {
-      leftSide = index < sideSlots;
-      sideIndex = leftSide ? index : index - sideSlots;
+      if (index < sideSlots) {
+        leftSide = true;
+        sideIndex = sideSlots - 1 - index;
+      } else {
+        leftSide = false;
+        sideIndex = index - sideSlots;
+      }
     }
 
     final double topRail = phase == GamePhase.pyramid
@@ -1361,20 +1384,45 @@ class _GameTableViewState extends State<GameTableView> {
   }
 
   _BusLayout _busLayout(Rect rect) {
-    final double columnWidth = _CardMetrics.medium.width + 22;
-    final double gap = math.min(14, rect.width * 0.024);
-    final double zoneWidth = _CardMetrics.small.width + 14;
-    const double zoneHeight = 54;
-    final double baseHeight = _CardMetrics.medium.height + 18;
-    final double totalWidth = columnWidth * 5 + gap * 4;
+    const int columns = 5;
+    const double minGap = 2;
+    const double maxGap = 11;
+    final double availableWidth = math.max(280, rect.width - 20);
+    final double minColumnWidth = _CardMetrics.medium.width + 2;
+    final double maxColumnWidth = _CardMetrics.medium.width + 18;
+    double columnWidth = maxColumnWidth;
+    double gap = maxGap;
+    double totalWidth = columns * columnWidth + (columns - 1) * gap;
+
+    if (totalWidth > availableWidth) {
+      columnWidth = ((availableWidth - (columns - 1) * minGap) / columns).clamp(
+        minColumnWidth,
+        maxColumnWidth,
+      );
+      final double leftover = availableWidth - columns * columnWidth;
+      gap = (leftover / (columns - 1)).clamp(minGap, maxGap);
+      totalWidth = columns * columnWidth + (columns - 1) * gap;
+    }
+
+    final double zoneWidth = (columnWidth - 10).clamp(
+      _CardMetrics.small.width + 4,
+      _CardMetrics.small.width + 14,
+    );
+    final double zoneHeight = 52;
+    final double baseHeight = _CardMetrics.medium.height + 14;
     final double startX = rect.center.dx - totalWidth / 2;
-    final double baseTop = rect.top + 214;
+    final double minBaseTop = rect.top + 194;
+    final double maxBaseTop = math.max(
+      minBaseTop,
+      rect.bottom - baseHeight - zoneHeight - 24,
+    );
+    final double baseTop = (rect.top + 214).clamp(minBaseTop, maxBaseTop);
 
     final List<Rect> highRects = <Rect>[];
     final List<Rect> baseRects = <Rect>[];
     final List<Rect> lowRects = <Rect>[];
 
-    for (int index = 0; index < 5; index += 1) {
+    for (int index = 0; index < columns; index += 1) {
       final double left = startX + index * (columnWidth + gap);
       final double zoneLeft = left + (columnWidth - zoneWidth) / 2;
       highRects.add(
@@ -1940,44 +1988,35 @@ class _PyramidSlotCard extends StatelessWidget {
 }
 
 class _PyramidRevealTarget extends StatelessWidget {
-  const _PyramidRevealTarget({required this.onTap});
-
-  final VoidCallback onTap;
+  const _PyramidRevealTarget();
 
   @override
   Widget build(BuildContext context) {
     final BorderRadius radius = BorderRadius.circular(
       _CardMetrics.small.width * 0.18,
     );
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOut,
-        decoration: BoxDecoration(
-          borderRadius: radius,
-          border: Border.all(color: const Color(0xAAFFE4A7), width: 1.6),
-          gradient: const LinearGradient(
-            colors: <Color>[Color(0x44FFE4A7), Color(0x16FFFFFF)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          boxShadow: const <BoxShadow>[
-            BoxShadow(
-              color: Color(0x66FFE4A7),
-              blurRadius: 14,
-              spreadRadius: 1,
-            ),
-          ],
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOut,
+      decoration: BoxDecoration(
+        borderRadius: radius,
+        border: Border.all(color: const Color(0xAAFFE4A7), width: 1.6),
+        gradient: const LinearGradient(
+          colors: <Color>[Color(0x44FFE4A7), Color(0x16FFFFFF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        child: const Center(
-          child: Text(
-            '?',
-            style: TextStyle(
-              color: Color(0xFFF7F1E2),
-              fontWeight: FontWeight.w900,
-              fontSize: 24,
-            ),
+        boxShadow: const <BoxShadow>[
+          BoxShadow(color: Color(0x66FFE4A7), blurRadius: 14, spreadRadius: 1),
+        ],
+      ),
+      child: const Center(
+        child: Text(
+          '?',
+          style: TextStyle(
+            color: Color(0xFFF7F1E2),
+            fontWeight: FontWeight.w900,
+            fontSize: 24,
           ),
         ),
       ),
