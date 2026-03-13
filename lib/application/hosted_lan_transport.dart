@@ -10,6 +10,20 @@ import 'package:bussruta_app/domain/hosted_projection.dart';
 const int hostedDiscoveryPort = 45878;
 const String _announcementType = 'bussruta-host-v1';
 
+enum HostedClientIssueCode {
+  genericError,
+  disconnected,
+  hostUnavailable,
+  sessionClosed,
+}
+
+class HostedClientIssue {
+  const HostedClientIssue({required this.code, required this.message});
+
+  final HostedClientIssueCode code;
+  final String message;
+}
+
 class HostedDiscoveryEntry {
   const HostedDiscoveryEntry({
     required this.pin,
@@ -170,6 +184,7 @@ class HostedLanHostServer {
   final HostedSessionRuntime runtime;
   final String hostName;
   final String pin;
+  final Random _random = Random.secure();
 
   ServerSocket? _server;
   RawDatagramSocket? _beaconSocket;
@@ -178,6 +193,8 @@ class HostedLanHostServer {
   String? _hostAddress;
   final Map<Socket, int> _playerIdBySocket = <Socket, int>{};
   final Map<int, Socket> _socketByPlayerId = <int, Socket>{};
+  final Map<String, int> _playerIdByToken = <String, int>{};
+  final Map<int, String> _tokenByPlayerId = <int, String>{};
   final StreamController<HostedSessionState> _stateUpdates =
       StreamController<HostedSessionState>.broadcast();
   final StreamController<String> _errors = StreamController<String>.broadcast();
@@ -197,6 +214,7 @@ class HostedLanHostServer {
       shared: false,
     );
     _nextPlayerId = runtime.state.playerOrder.fold<int>(1, max<int>) + 1;
+    _ensureTokenForPlayer(runtime.state.hostPlayerId);
     _server!.listen(_handleSocket);
     _hostAddress = await _resolveHostAddress();
     await _startBeacon();
@@ -279,6 +297,44 @@ class HostedLanHostServer {
       return;
     }
     final String name = (envelope['name'] as String? ?? '').trim();
+    final String? incomingToken = (envelope['playerToken'] as String?)?.trim();
+    final int? requestedPlayerId = envelope['requestedPlayerId'] as int?;
+
+    if (requestedPlayerId != null &&
+        (incomingToken == null || incomingToken.isEmpty)) {
+      _send(socket, <String, dynamic>{
+        'type': 'error',
+        'message': 'Reconnect token required for seat reclaim.',
+      });
+      return;
+    }
+    if (incomingToken != null && incomingToken.isNotEmpty) {
+      final int? mappedId = _playerIdByToken[incomingToken];
+      if (mappedId == null) {
+        if (requestedPlayerId != null) {
+          _send(socket, <String, dynamic>{
+            'type': 'error',
+            'message': 'Invalid reconnect token.',
+          });
+          return;
+        }
+      } else {
+        if (requestedPlayerId != null && requestedPlayerId != mappedId) {
+          _send(socket, <String, dynamic>{
+            'type': 'error',
+            'message': 'Reconnect token does not match requested seat.',
+          });
+          return;
+        }
+        _reclaimSeat(
+          socket: socket,
+          playerId: mappedId,
+          playerToken: incomingToken,
+        );
+        return;
+      }
+    }
+
     final int playerId = _nextPlayerId;
     _nextPlayerId += 1;
 
@@ -287,11 +343,22 @@ class HostedLanHostServer {
       name: name.isEmpty ? 'Player $playerId' : name,
       connected: true,
     );
+    if (runtime.state.participantById(playerId) == null) {
+      _send(socket, <String, dynamic>{
+        'type': 'error',
+        'message': runtime.state.lastError ?? 'Could not join this session.',
+      });
+      return;
+    }
+
+    final String playerToken = _ensureTokenForPlayer(playerId);
     _playerIdBySocket[socket] = playerId;
     _socketByPlayerId[playerId] = socket;
     _send(socket, <String, dynamic>{
       'type': 'joined',
       'playerId': playerId,
+      'playerToken': playerToken,
+      'reconnected': false,
       'projection': projectionForPlayer(playerId).toJson(),
     });
     _emitState();
@@ -354,6 +421,67 @@ class HostedLanHostServer {
     _emitState();
     _broadcastSnapshots();
     socket.destroy();
+  }
+
+  void _reclaimSeat({
+    required Socket socket,
+    required int playerId,
+    required String playerToken,
+  }) {
+    final HostedParticipant? participant = runtime.state.participantById(
+      playerId,
+    );
+    if (participant == null) {
+      _send(socket, <String, dynamic>{
+        'type': 'error',
+        'message': 'Requested seat is not available.',
+      });
+      return;
+    }
+    if (participant.isHost) {
+      _send(socket, <String, dynamic>{
+        'type': 'error',
+        'message': 'Host seat cannot be reclaimed by client.',
+      });
+      return;
+    }
+
+    final Socket? previousSocket = _socketByPlayerId[playerId];
+    if (previousSocket != null && previousSocket != socket) {
+      _playerIdBySocket.remove(previousSocket);
+      previousSocket.destroy();
+    }
+    _playerIdBySocket[socket] = playerId;
+    _socketByPlayerId[playerId] = socket;
+    runtime.updateParticipantConnection(playerId: playerId, connected: true);
+
+    _send(socket, <String, dynamic>{
+      'type': 'joined',
+      'playerId': playerId,
+      'playerToken': playerToken,
+      'reconnected': true,
+      'projection': projectionForPlayer(playerId).toJson(),
+    });
+    _emitState();
+    _broadcastSnapshots();
+  }
+
+  String _ensureTokenForPlayer(int playerId) {
+    final String? existing = _tokenByPlayerId[playerId];
+    if (existing != null) {
+      return existing;
+    }
+    final String token = _newPlayerToken();
+    _tokenByPlayerId[playerId] = token;
+    _playerIdByToken[token] = playerId;
+    return token;
+  }
+
+  String _newPlayerToken() {
+    final int a = _random.nextInt(1 << 32);
+    final int b = _random.nextInt(1 << 32);
+    final int c = _random.nextInt(1 << 32);
+    return '$a-$b-$c';
   }
 
   Future<void> _startBeacon() async {
@@ -430,16 +558,41 @@ class HostedLanHostServer {
     } catch (_) {}
   }
 
-  Future<void> close() async {
+  Future<void> close({
+    String reason = 'Host ended the session.',
+    bool broadcastSessionClosed = true,
+  }) async {
     _beaconTimer?.cancel();
     _beaconTimer = null;
     _beaconSocket?.close();
     _beaconSocket = null;
-    for (final Socket socket in _socketByPlayerId.values) {
-      socket.destroy();
+    final List<Socket> sockets = _socketByPlayerId.values.toList(
+      growable: false,
+    );
+    if (broadcastSessionClosed) {
+      for (final Socket socket in sockets) {
+        _send(socket, <String, dynamic>{
+          'type': 'session_closed',
+          'message': reason,
+        });
+      }
+      for (final Socket socket in sockets) {
+        try {
+          await socket.flush();
+        } catch (_) {}
+      }
+    }
+    for (final Socket socket in sockets) {
+      try {
+        await socket.close();
+      } catch (_) {
+        socket.destroy();
+      }
     }
     _socketByPlayerId.clear();
     _playerIdBySocket.clear();
+    _playerIdByToken.clear();
+    _tokenByPlayerId.clear();
     await _server?.close();
     _server = null;
     await _stateUpdates.close();
@@ -452,6 +605,8 @@ class HostedLanClientConnection {
     required Socket socket,
     required String pin,
     required String playerName,
+    this.initialPlayerToken,
+    this.requestedPlayerId,
   }) : _socket = socket,
        _pin = pin,
        _playerName = playerName;
@@ -459,24 +614,34 @@ class HostedLanClientConnection {
   final Socket _socket;
   final String _pin;
   final String _playerName;
+  final String? initialPlayerToken;
+  final int? requestedPlayerId;
   final StreamController<HostedProjectedView> _projectionUpdates =
       StreamController<HostedProjectedView>.broadcast();
-  final StreamController<String> _errors = StreamController<String>.broadcast();
+  final StreamController<HostedClientIssue> _issues =
+      StreamController<HostedClientIssue>.broadcast();
   final Completer<void> _joined = Completer<void>();
   HostedProjectedView? _projection;
   int? _playerId;
+  String? _playerToken;
+  bool _sessionClosedReceived = false;
+  bool _closingLocally = false;
+  StreamSubscription<String>? _socketSub;
 
   Stream<HostedProjectedView> get projectionUpdates =>
       _projectionUpdates.stream;
-  Stream<String> get errors => _errors.stream;
+  Stream<HostedClientIssue> get issues => _issues.stream;
   HostedProjectedView? get projection => _projection;
   int? get playerId => _playerId;
+  String? get playerToken => _playerToken;
 
   static Future<HostedLanClientConnection> connect({
     required String hostAddress,
     required int hostPort,
     required String pin,
     required String playerName,
+    String? playerToken,
+    int? requestedPlayerId,
     Duration timeout = const Duration(seconds: 8),
   }) async {
     final Socket socket = await Socket.connect(
@@ -488,6 +653,8 @@ class HostedLanClientConnection {
       socket: socket,
       pin: pin,
       playerName: playerName,
+      initialPlayerToken: playerToken,
+      requestedPlayerId: requestedPlayerId,
     );
     connection._listen();
     connection._sendJoin();
@@ -496,24 +663,58 @@ class HostedLanClientConnection {
   }
 
   void _listen() {
-    _socket
+    _socketSub = _socket
         .cast<List<int>>()
         .transform(utf8.decoder)
         .transform(const LineSplitter())
         .listen(
           _handleLine,
           onError: (_) {
-            _errors.add('Connection error.');
+            if (_closingLocally) {
+              return;
+            }
+            final bool joinPending = !_joined.isCompleted;
+            _emitIssue(
+              HostedClientIssue(
+                code: joinPending
+                    ? HostedClientIssueCode.hostUnavailable
+                    : HostedClientIssueCode.disconnected,
+                message: joinPending
+                    ? 'Could not connect to host.'
+                    : 'Connection error.',
+              ),
+            );
+            if (joinPending) {
+              _joined.completeError('Connection error.');
+            }
           },
           onDone: () {
-            _errors.add('Disconnected from host.');
+            if (_sessionClosedReceived || _closingLocally) {
+              return;
+            }
+            _emitIssue(
+              const HostedClientIssue(
+                code: HostedClientIssueCode.disconnected,
+                message: 'Disconnected from host.',
+              ),
+            );
+            if (!_joined.isCompleted) {
+              _joined.completeError('Disconnected from host.');
+            }
           },
           cancelOnError: true,
         );
   }
 
   void _sendJoin() {
-    _send(<String, dynamic>{'type': 'join', 'pin': _pin, 'name': _playerName});
+    _send(<String, dynamic>{
+      'type': 'join',
+      'pin': _pin,
+      'name': _playerName,
+      if (initialPlayerToken != null && initialPlayerToken!.trim().isNotEmpty)
+        'playerToken': initialPlayerToken!.trim(),
+      if (requestedPlayerId != null) 'requestedPlayerId': requestedPlayerId,
+    });
   }
 
   void _handleLine(String line) {
@@ -521,7 +722,12 @@ class HostedLanClientConnection {
     try {
       envelope = jsonDecode(line) as Map<String, dynamic>;
     } catch (_) {
-      _errors.add('Invalid message from host.');
+      _emitIssue(
+        const HostedClientIssue(
+          code: HostedClientIssueCode.genericError,
+          message: 'Invalid message from host.',
+        ),
+      );
       return;
     }
     final String? type = envelope['type'] as String?;
@@ -531,11 +737,12 @@ class HostedLanClientConnection {
     switch (type) {
       case 'joined':
         _playerId = envelope['playerId'] as int?;
+        _playerToken = envelope['playerToken'] as String? ?? _playerToken;
         final Map<String, dynamic>? projectionMap =
             envelope['projection'] as Map<String, dynamic>?;
         if (projectionMap != null) {
           _projection = HostedProjectedView.fromJson(projectionMap);
-          _projectionUpdates.add(_projection!);
+          _emitProjection(_projection!);
         }
         if (!_joined.isCompleted) {
           _joined.complete();
@@ -548,11 +755,35 @@ class HostedLanClientConnection {
           break;
         }
         _projection = HostedProjectedView.fromJson(projectionMap);
-        _projectionUpdates.add(_projection!);
+        _emitProjection(_projection!);
         break;
       case 'error':
         final String message = envelope['message'] as String? ?? 'Host error.';
-        _errors.add(message);
+        final bool joinPending = !_joined.isCompleted;
+        _emitIssue(
+          HostedClientIssue(
+            code: joinPending
+                ? HostedClientIssueCode.hostUnavailable
+                : HostedClientIssueCode.genericError,
+            message: message,
+          ),
+        );
+        if (joinPending) {
+          _joined.completeError(message);
+          _closingLocally = true;
+          _socket.destroy();
+        }
+        break;
+      case 'session_closed':
+        final String message =
+            envelope['message'] as String? ?? 'Session closed by host.';
+        _sessionClosedReceived = true;
+        _emitIssue(
+          HostedClientIssue(
+            code: HostedClientIssueCode.sessionClosed,
+            message: message,
+          ),
+        );
         if (!_joined.isCompleted) {
           _joined.completeError(message);
         }
@@ -566,7 +797,12 @@ class HostedLanClientConnection {
 
   void sendCommand(HostedSessionCommand command) {
     if (_playerId == null) {
-      _errors.add('Join not completed yet.');
+      _emitIssue(
+        const HostedClientIssue(
+          code: HostedClientIssueCode.genericError,
+          message: 'Join not completed yet.',
+        ),
+      );
       return;
     }
     final HostedSessionCommand safeCommand = HostedSessionCommand(
@@ -581,13 +817,51 @@ class HostedLanClientConnection {
   }
 
   void _send(Map<String, dynamic> envelope) {
-    _socket.writeln(jsonEncode(envelope));
+    if (_closingLocally) {
+      return;
+    }
+    try {
+      _socket.writeln(jsonEncode(envelope));
+    } catch (_) {
+      _emitIssue(
+        const HostedClientIssue(
+          code: HostedClientIssueCode.disconnected,
+          message: 'Disconnected from host.',
+        ),
+      );
+    }
   }
 
   Future<void> close() async {
-    await _socket.flush();
-    await _socket.close();
+    if (_closingLocally) {
+      return;
+    }
+    _closingLocally = true;
+    await _socketSub?.cancel();
+    _socketSub = null;
+    try {
+      await _socket.flush();
+      await _socket.close();
+    } catch (_) {}
     await _projectionUpdates.close();
-    await _errors.close();
+    await _issues.close();
+  }
+
+  void _emitProjection(HostedProjectedView projection) {
+    if (_closingLocally) {
+      return;
+    }
+    try {
+      _projectionUpdates.add(projection);
+    } catch (_) {}
+  }
+
+  void _emitIssue(HostedClientIssue issue) {
+    if (_closingLocally) {
+      return;
+    }
+    try {
+      _issues.add(issue);
+    } catch (_) {}
   }
 }

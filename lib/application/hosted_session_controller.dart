@@ -11,6 +11,16 @@ import 'package:flutter/widgets.dart';
 
 enum HostedFlowState { idle, hostingLobby, joiningLobby, inGame }
 
+enum HostedConnectionStatus {
+  idle,
+  joining,
+  connected,
+  reconnecting,
+  disconnected,
+  hostUnavailable,
+  sessionClosed,
+}
+
 class HostedSessionController extends ChangeNotifier {
   HostedSessionController({GameEngine? engine})
     : _engine = engine ?? GameEngine();
@@ -20,6 +30,7 @@ class HostedSessionController extends ChangeNotifier {
   final Random _random = Random();
 
   HostedFlowState _flowState = HostedFlowState.idle;
+  HostedConnectionStatus _connectionStatus = HostedConnectionStatus.idle;
   bool _isHost = false;
   int? _localPlayerId;
   HostedLanHostServer? _hostServer;
@@ -33,11 +44,22 @@ class HostedSessionController extends ChangeNotifier {
   StreamSubscription<HostedSessionState>? _hostStateSub;
   StreamSubscription<String>? _hostErrorsSub;
   StreamSubscription<HostedProjectedView>? _clientProjectionSub;
-  StreamSubscription<String>? _clientErrorsSub;
+  StreamSubscription<HostedClientIssue>? _clientIssuesSub;
   Timer? _autoPlayTimer;
   bool _autoPlayRunning = false;
+  Timer? _reconnectTimer;
+  bool _disposed = false;
+  bool _sessionCloseInProgress = false;
+  String? _lastHostAddress;
+  int? _lastHostPort;
+  String? _lastPin;
+  String? _lastPlayerName;
+  String? _lastPlayerToken;
+  int? _lastPlayerId;
+  int _reconnectAttempt = 0;
 
   HostedFlowState get flowState => _flowState;
+  HostedConnectionStatus get connectionStatus => _connectionStatus;
   bool get isHost => _isHost;
   int? get localPlayerId => _localPlayerId;
   HostedProjectedView? get projection => _projection;
@@ -108,10 +130,18 @@ class HostedSessionController extends ChangeNotifier {
     _isHost = true;
     _localPlayerId = host.playerId;
     _flowState = HostedFlowState.hostingLobby;
+    _connectionStatus = HostedConnectionStatus.connected;
     _projection = projectHostedView(
       session: server.state,
       viewerPlayerId: host.playerId,
     );
+    _lastHostAddress = null;
+    _lastHostPort = null;
+    _lastPin = pin;
+    _lastPlayerName = host.name;
+    _lastPlayerToken = null;
+    _lastPlayerId = host.playerId;
+    _reconnectAttempt = 0;
     _infoMessage = _tr(
       'Hosting started. Share PIN $pin.',
       'Hosting startet. Del PIN $pin.',
@@ -181,19 +211,25 @@ class HostedSessionController extends ChangeNotifier {
     required int hostPort,
     required String pin,
     required String playerName,
+    String? playerToken,
+    int? requestedPlayerId,
   }) async {
     await leaveSession();
     _flowState = HostedFlowState.joiningLobby;
+    _connectionStatus = HostedConnectionStatus.joining;
     notifyListeners();
+    final String resolvedName = playerName.trim().isEmpty
+        ? _fallbackGuestName()
+        : playerName.trim();
     try {
       final HostedLanClientConnection client =
           await HostedLanClientConnection.connect(
             hostAddress: hostAddress,
             hostPort: hostPort,
             pin: pin,
-            playerName: playerName.trim().isEmpty
-                ? _fallbackGuestName()
-                : playerName.trim(),
+            playerName: resolvedName,
+            playerToken: playerToken,
+            requestedPlayerId: requestedPlayerId,
           );
       _clientConnection = client;
       _hostServer = null;
@@ -201,10 +237,19 @@ class HostedSessionController extends ChangeNotifier {
       _localPlayerId = client.playerId;
       _projection = client.projection;
       _flowState = HostedFlowState.inGame;
+      _connectionStatus = HostedConnectionStatus.connected;
+      _lastHostAddress = hostAddress;
+      _lastHostPort = hostPort;
+      _lastPin = pin;
+      _lastPlayerName = resolvedName;
+      _lastPlayerToken = client.playerToken;
+      _lastPlayerId = client.playerId;
+      _reconnectAttempt = 0;
       _bindClient(client);
       notifyListeners();
     } catch (error) {
       _flowState = HostedFlowState.idle;
+      _connectionStatus = HostedConnectionStatus.hostUnavailable;
       _errorMessage = _tr(
         'Could not join hosted game: $error',
         'Kunne ikke bli med i hostet spill: $error',
@@ -405,7 +450,7 @@ class HostedSessionController extends ChangeNotifier {
 
   void _bindClient(HostedLanClientConnection client) {
     _clientProjectionSub?.cancel();
-    _clientErrorsSub?.cancel();
+    _clientIssuesSub?.cancel();
     _clientProjectionSub = client.projectionUpdates.listen((
       HostedProjectedView projection,
     ) {
@@ -413,28 +458,192 @@ class HostedSessionController extends ChangeNotifier {
       _flowState = projection.publicView.phase == GamePhase.setup
           ? HostedFlowState.joiningLobby
           : HostedFlowState.inGame;
+      _connectionStatus = HostedConnectionStatus.connected;
+      _localPlayerId = client.playerId;
+      _lastPlayerId = client.playerId;
+      _lastPlayerToken = client.playerToken ?? _lastPlayerToken;
+      _reconnectAttempt = 0;
+      _reconnectTimer?.cancel();
+      _reconnectTimer = null;
       notifyListeners();
     });
-    _clientErrorsSub = client.errors.listen((String message) {
-      _errorMessage = message;
-      notifyListeners();
+    _clientIssuesSub = client.issues.listen((HostedClientIssue issue) {
+      _handleClientIssue(issue);
     });
   }
 
+  void _handleClientIssue(HostedClientIssue issue) {
+    if (_sessionCloseInProgress || _disposed) {
+      return;
+    }
+    switch (issue.code) {
+      case HostedClientIssueCode.genericError:
+        if (_connectionStatus == HostedConnectionStatus.joining ||
+            _connectionStatus == HostedConnectionStatus.reconnecting) {
+          _connectionStatus = HostedConnectionStatus.hostUnavailable;
+          _errorMessage = issue.message;
+          unawaited(_clearRemoteSessionState());
+          notifyListeners();
+          return;
+        }
+        _errorMessage = issue.message;
+        notifyListeners();
+        return;
+      case HostedClientIssueCode.disconnected:
+        _connectionStatus = HostedConnectionStatus.disconnected;
+        _infoMessage = _tr(
+          'Connection dropped. Trying to reconnect...',
+          'Tilkoblingen falt ut. Prøver å koble til igjen...',
+        );
+        _infoMessage = _tr(
+          'Connection dropped. Trying to reconnect...',
+          'Tilkoblingen falt ut. Prover a koble til igjen...',
+        );
+        _startReconnectLoop();
+        notifyListeners();
+        return;
+      case HostedClientIssueCode.hostUnavailable:
+        _connectionStatus = HostedConnectionStatus.hostUnavailable;
+        _errorMessage = issue.message;
+        unawaited(_clearRemoteSessionState());
+        notifyListeners();
+        return;
+      case HostedClientIssueCode.sessionClosed:
+        _connectionStatus = HostedConnectionStatus.sessionClosed;
+        _infoMessage = issue.message;
+        _resetReconnectIdentity();
+        unawaited(_clearRemoteSessionState());
+        notifyListeners();
+        return;
+    }
+  }
+
+  void _startReconnectLoop() {
+    if (_isHost) {
+      return;
+    }
+    if (_lastHostAddress == null ||
+        _lastHostPort == null ||
+        _lastPin == null ||
+        _lastPlayerName == null ||
+        _lastPlayerToken == null ||
+        _lastPlayerId == null) {
+      _connectionStatus = HostedConnectionStatus.hostUnavailable;
+      unawaited(_clearRemoteSessionState());
+      notifyListeners();
+      return;
+    }
+    if (_connectionStatus == HostedConnectionStatus.reconnecting) {
+      return;
+    }
+    _connectionStatus = HostedConnectionStatus.reconnecting;
+    _reconnectTimer?.cancel();
+    _reconnectAttempt = 0;
+    _reconnectTimer = Timer.periodic(const Duration(seconds: 2), (
+      Timer timer,
+    ) async {
+      if (_disposed || _sessionCloseInProgress || _isHost) {
+        timer.cancel();
+        return;
+      }
+      if (_reconnectAttempt >= 6) {
+        timer.cancel();
+        _connectionStatus = HostedConnectionStatus.hostUnavailable;
+        _errorMessage = _tr(
+          'Host unavailable. Reconnect failed.',
+          'Vert utilgjengelig. Gjenoppkobling feilet.',
+        );
+        unawaited(_clearRemoteSessionState());
+        notifyListeners();
+        return;
+      }
+      _reconnectAttempt += 1;
+      await _attemptReconnect();
+    });
+  }
+
+  Future<void> _attemptReconnect() async {
+    if (_lastHostAddress == null ||
+        _lastHostPort == null ||
+        _lastPin == null ||
+        _lastPlayerName == null ||
+        _lastPlayerToken == null ||
+        _lastPlayerId == null) {
+      return;
+    }
+    try {
+      await _clientProjectionSub?.cancel();
+      _clientProjectionSub = null;
+      await _clientIssuesSub?.cancel();
+      _clientIssuesSub = null;
+      await _clientConnection?.close();
+      _clientConnection = null;
+
+      final HostedLanClientConnection client =
+          await HostedLanClientConnection.connect(
+            hostAddress: _lastHostAddress!,
+            hostPort: _lastHostPort!,
+            pin: _lastPin!,
+            playerName: _lastPlayerName!,
+            playerToken: _lastPlayerToken,
+            requestedPlayerId: _lastPlayerId,
+            timeout: const Duration(seconds: 4),
+          );
+      _clientConnection = client;
+      _projection = client.projection;
+      _localPlayerId = client.playerId;
+      _lastPlayerId = client.playerId;
+      _lastPlayerToken = client.playerToken ?? _lastPlayerToken;
+      _flowState = _projection?.publicView.phase == GamePhase.setup
+          ? HostedFlowState.joiningLobby
+          : HostedFlowState.inGame;
+      _bindClient(client);
+      _connectionStatus = HostedConnectionStatus.connected;
+      _infoMessage = _tr('Reconnected.', 'Koblet til igjen.');
+      _reconnectTimer?.cancel();
+      _reconnectTimer = null;
+      _reconnectAttempt = 0;
+      notifyListeners();
+    } catch (_) {
+      // Keep retry loop alive until max attempts.
+    }
+  }
+
+  Future<void> _clearRemoteSessionState() async {
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    await _clientProjectionSub?.cancel();
+    _clientProjectionSub = null;
+    await _clientIssuesSub?.cancel();
+    _clientIssuesSub = null;
+    await _clientConnection?.close();
+    _clientConnection = null;
+    _projection = null;
+    _localPlayerId = null;
+    _isHost = false;
+    _flowState = HostedFlowState.idle;
+  }
+
   Future<void> leaveSession() async {
+    _sessionCloseInProgress = true;
     _autoPlayTimer?.cancel();
     _autoPlayTimer = null;
     _autoPlayRunning = false;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
     await _hostStateSub?.cancel();
     _hostStateSub = null;
     await _hostErrorsSub?.cancel();
     _hostErrorsSub = null;
     await _clientProjectionSub?.cancel();
     _clientProjectionSub = null;
-    await _clientErrorsSub?.cancel();
-    _clientErrorsSub = null;
+    await _clientIssuesSub?.cancel();
+    _clientIssuesSub = null;
 
-    await _hostServer?.close();
+    await _hostServer?.close(
+      reason: _tr('Host ended the session.', 'Verten avsluttet sesjonen.'),
+      broadcastSessionClosed: true,
+    );
     _hostServer = null;
     await _clientConnection?.close();
     _clientConnection = null;
@@ -442,7 +651,20 @@ class HostedSessionController extends ChangeNotifier {
     _localPlayerId = null;
     _isHost = false;
     _flowState = HostedFlowState.idle;
+    _connectionStatus = HostedConnectionStatus.idle;
+    _resetReconnectIdentity();
+    _reconnectAttempt = 0;
+    _sessionCloseInProgress = false;
     notifyListeners();
+  }
+
+  void _resetReconnectIdentity() {
+    _lastHostAddress = null;
+    _lastHostPort = null;
+    _lastPin = null;
+    _lastPlayerName = null;
+    _lastPlayerToken = null;
+    _lastPlayerId = null;
   }
 
   String _generatePin() {
@@ -464,6 +686,7 @@ class HostedSessionController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     unawaited(leaveSession());
     unawaited(_discoverySub?.cancel());
     unawaited(_discovery.stop());
