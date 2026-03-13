@@ -381,6 +381,7 @@ class HostedPublicView {
     required this.warmupRound,
     required this.pyramidCards,
     required this.pyramidRevealIndex,
+    required this.tieBreak,
     required this.busRunnerPlayerId,
     required this.busRoute,
     required this.banner,
@@ -399,6 +400,7 @@ class HostedPublicView {
   final int warmupRound;
   final List<PlayingCard?> pyramidCards;
   final int pyramidRevealIndex;
+  final TieBreakState? tieBreak;
   final int? busRunnerPlayerId;
   final BusRouteState? busRoute;
   final String banner;
@@ -422,6 +424,7 @@ class HostedPublicView {
           .map((PlayingCard? card) => card?.toJson())
           .toList(),
       'pyramidRevealIndex': pyramidRevealIndex,
+      'tieBreak': tieBreak?.toJson(),
       'busRunnerPlayerId': busRunnerPlayerId,
       'busRoute': busRoute?.toJson(),
       'banner': banner,
@@ -455,6 +458,9 @@ class HostedPublicView {
         return PlayingCard.fromJson(item as Map<String, dynamic>);
       }).toList(),
       pyramidRevealIndex: json['pyramidRevealIndex'] as int,
+      tieBreak: json['tieBreak'] == null
+          ? null
+          : TieBreakState.fromJson(json['tieBreak'] as Map<String, dynamic>),
       busRunnerPlayerId: json['busRunnerPlayerId'] as int?,
       busRoute: json['busRoute'] == null
           ? null

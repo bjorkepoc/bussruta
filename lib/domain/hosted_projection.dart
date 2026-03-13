@@ -45,6 +45,7 @@ HostedProjectedView projectHostedView({
       warmupRound: session.gameState.warmupRound,
       pyramidCards: session.gameState.pyramidCards,
       pyramidRevealIndex: session.gameState.pyramidRevealIndex,
+      tieBreak: session.gameState.tieBreak,
       busRunnerPlayerId: busRunnerPlayerId,
       busRoute: session.gameState.busRoute,
       banner: session.gameState.banner,
@@ -63,8 +64,31 @@ HostedProjectedView projectHostedView({
 
 List<HostedPublicPlayer> _buildPublicPlayers(HostedSessionState session) {
   final List<HostedPublicPlayer> players = <HostedPublicPlayer>[];
-  for (int i = 0; i < session.participants.length; i += 1) {
-    final HostedParticipant participant = session.participants[i];
+  final Set<int> seen = <int>{};
+  for (final int playerId in session.playerOrder) {
+    final HostedParticipant? participant = session.participantById(playerId);
+    if (participant == null) {
+      continue;
+    }
+    seen.add(playerId);
+    final int? playerIndex = session.playerIndexForId(participant.playerId);
+    final int handCount = playerIndex == null
+        ? 0
+        : session.gameState.players[playerIndex].hand.length;
+    players.add(
+      HostedPublicPlayer(
+        playerId: participant.playerId,
+        name: participant.name,
+        isHost: participant.isHost,
+        connected: participant.connected,
+        handCount: handCount,
+      ),
+    );
+  }
+  for (final HostedParticipant participant in session.participants) {
+    if (seen.contains(participant.playerId)) {
+      continue;
+    }
     final int? playerIndex = session.playerIndexForId(participant.playerId);
     final int handCount = playerIndex == null
         ? 0
