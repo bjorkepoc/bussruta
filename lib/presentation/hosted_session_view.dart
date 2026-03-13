@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:bussruta_app/application/hosted_lan_transport.dart';
 import 'package:bussruta_app/application/hosted_session_controller.dart';
@@ -80,6 +81,12 @@ class _HostedSessionViewState extends State<HostedSessionView>
 
   Widget _buildEntry() {
     final AppLanguage language = widget.language;
+    final HostedConnectionStatus status = widget.controller.connectionStatus;
+    final _ConnectionVisual statusVisual = _connectionVisual(status);
+    final bool busy =
+        status == HostedConnectionStatus.joining ||
+        status == HostedConnectionStatus.reconnecting;
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -88,92 +95,195 @@ class _HostedSessionViewState extends State<HostedSessionView>
         ),
         title: Text(tr(language, 'Hosted mode', 'Hostet modus')),
       ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: <Widget>[
-            TextField(
-              controller: _name,
-              decoration: InputDecoration(
-                labelText: tr(language, 'Your name', 'Ditt navn'),
-                border: const OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 10),
-            FilledButton.icon(
-              onPressed: () =>
-                  widget.controller.startHosting(hostName: _name.text),
-              icon: const Icon(Icons.wifi_tethering),
-              label: Text(tr(language, 'Host game', 'Host spill')),
-            ),
-            const SizedBox(height: 14),
-            TextField(
-              controller: _pin,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: tr(language, 'PIN code', 'PIN-kode'),
-                border: const OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _host,
-              decoration: InputDecoration(
-                labelText: tr(
-                  language,
-                  'Host address (optional)',
-                  'Vertsadresse (valgfri)',
-                ),
-                border: const OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 8),
-            OutlinedButton.icon(
-              onPressed: () {
-                widget.controller.joinByPin(
-                  pin: _pin.text,
-                  playerName: _name.text,
-                  hostAddress: _host.text.trim().isEmpty
-                      ? null
-                      : _host.text.trim(),
-                );
-              },
-              icon: const Icon(Icons.login),
-              label: Text(tr(language, 'Join by PIN', 'Bli med via PIN')),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              tr(
-                language,
-                'Available local games',
-                'Tilgjengelige lokale spill',
-              ),
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            if (widget.controller.discoveries.isEmpty)
-              Text(
-                tr(language, 'No LAN games found.', 'Ingen LAN-spill funnet.'),
-              )
-            else
-              ...widget.controller.discoveries.map((
-                HostedDiscoveryEntry entry,
-              ) {
-                return Card(
-                  child: ListTile(
-                    title: Text('${entry.hostName} • PIN ${entry.pin}'),
-                    subtitle: Text('${entry.hostAddress}:${entry.hostPort}'),
-                    trailing: FilledButton(
-                      onPressed: () => widget.controller.joinByDiscovery(
-                        entry: entry,
-                        playerName: _name.text,
+      body: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: <Color>[Color(0xFFF3ECDD), Color(0xFFE7D5C1)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: <Widget>[
+              if (status != HostedConnectionStatus.idle)
+                _surfaceCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Row(
+                        children: <Widget>[
+                          Icon(statusVisual.icon, color: statusVisual.color),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              statusVisual.title,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      child: Text(tr(language, 'Join', 'Bli med')),
-                    ),
+                      const SizedBox(height: 6),
+                      Text(
+                        statusVisual.subtitle,
+                        style: TextStyle(color: statusVisual.color),
+                      ),
+                      if (busy) ...<Widget>[
+                        const SizedBox(height: 10),
+                        LinearProgressIndicator(
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                      ],
+                    ],
                   ),
-                );
-              }),
-          ],
+                ),
+              const SizedBox(height: 10),
+              _surfaceCard(
+                child: TextField(
+                  controller: _name,
+                  decoration: InputDecoration(
+                    labelText: tr(language, 'Your name', 'Ditt navn'),
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              _surfaceCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      tr(language, 'Host a LAN game', 'Host et LAN-spill'),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: busy
+                            ? null
+                            : () => widget.controller.startHosting(
+                                hostName: _name.text,
+                              ),
+                        icon: const Icon(Icons.wifi_tethering),
+                        label: Text(tr(language, 'Host game', 'Host spill')),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+              _surfaceCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      tr(
+                        language,
+                        'Join a hosted game',
+                        'Bli med i hostet spill',
+                      ),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _pin,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: tr(language, 'PIN code', 'PIN-kode'),
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _host,
+                      decoration: InputDecoration(
+                        labelText: tr(
+                          language,
+                          'Host address (optional)',
+                          'Vertsadresse (valgfri)',
+                        ),
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: busy
+                            ? null
+                            : () {
+                                widget.controller.joinByPin(
+                                  pin: _pin.text,
+                                  playerName: _name.text,
+                                  hostAddress: _host.text.trim().isEmpty
+                                      ? null
+                                      : _host.text.trim(),
+                                );
+                              },
+                        icon: const Icon(Icons.login),
+                        label: Text(
+                          tr(language, 'Join by PIN', 'Bli med via PIN'),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+              _surfaceCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      tr(
+                        language,
+                        'Available local games',
+                        'Tilgjengelige lokale spill',
+                      ),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    if (widget.controller.discoveries.isEmpty)
+                      Text(
+                        tr(
+                          language,
+                          'No LAN games found.',
+                          'Ingen LAN-spill funnet.',
+                        ),
+                      )
+                    else
+                      ...widget.controller.discoveries.map((
+                        HostedDiscoveryEntry entry,
+                      ) {
+                        return Card(
+                          child: ListTile(
+                            leading: const Icon(Icons.hub),
+                            title: Text('${entry.hostName} - PIN ${entry.pin}'),
+                            subtitle: Text(
+                              '${entry.hostAddress}:${entry.hostPort}',
+                            ),
+                            trailing: FilledButton(
+                              onPressed: busy
+                                  ? null
+                                  : () => widget.controller.joinByDiscovery(
+                                      entry: entry,
+                                      playerName: _name.text,
+                                    ),
+                              child: Text(tr(language, 'Join', 'Bli med')),
+                            ),
+                          ),
+                        );
+                      }),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -181,6 +291,13 @@ class _HostedSessionViewState extends State<HostedSessionView>
 
   Widget _buildLobby(HostedProjectedView projection) {
     final AppLanguage language = widget.language;
+    final HostedPublicView view = projection.publicView;
+    final HostedConnectionStatus status = widget.controller.connectionStatus;
+    final _ConnectionVisual visual = _connectionVisual(status);
+    final int connectedCount = view.players
+        .where((HostedPublicPlayer player) => player.connected)
+        .length;
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -198,59 +315,137 @@ class _HostedSessionViewState extends State<HostedSessionView>
           ),
         ],
       ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: <Widget>[
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
+      body: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: <Color>[Color(0xFFF3ECDD), Color(0xFFE7D5C1)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: <Widget>[
+              _surfaceCard(
+                child: Row(
                   children: <Widget>[
-                    Text(tr(language, 'Share PIN', 'Del PIN')),
-                    const SizedBox(height: 8),
-                    Text(
-                      projection.publicView.sessionPin,
-                      style: Theme.of(context).textTheme.displaySmall,
+                    Icon(visual.icon, color: visual.color),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        visual.title,
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
                     ),
                   ],
                 ),
               ),
-            ),
-            const SizedBox(height: 8),
-            ...projection.publicView.players.map((HostedPublicPlayer player) {
-              return ListTile(
-                leading: Icon(
-                  player.connected ? Icons.check_circle : Icons.cancel,
-                  color: player.connected
-                      ? const Color(0xFF18824A)
-                      : const Color(0xFFB93838),
+              const SizedBox(height: 10),
+              _surfaceCard(
+                color: const Color(0xFFF8E8D3),
+                child: Column(
+                  children: <Widget>[
+                    Text(
+                      tr(language, 'Session PIN', 'Sesjon PIN'),
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      view.sessionPin,
+                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 3,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      tr(
+                        language,
+                        '$connectedCount / ${view.players.length} connected',
+                        '$connectedCount / ${view.players.length} tilkoblet',
+                      ),
+                    ),
+                  ],
                 ),
-                title: Text(
-                  player.isHost
-                      ? '${player.name} (${tr(language, 'Host', 'Vert')})'
-                      : player.name,
-                ),
-              );
-            }),
-            const SizedBox(height: 10),
-            if (projection.canUseHostTools)
-              FilledButton(
-                onPressed: widget.controller.startHostedGame,
-                child: Text(
-                  tr(language, 'Start hosted game', 'Start hostet spill'),
-                ),
-              )
-            else
-              Text(
-                tr(
-                  language,
-                  'Waiting for host to start.',
-                  'Venter pa at verten starter.',
-                ),
-                textAlign: TextAlign.center,
               ),
-          ],
+              const SizedBox(height: 10),
+              _surfaceCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      tr(language, 'Players', 'Spillere'),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    ...view.players.asMap().entries.map((
+                      MapEntry<int, HostedPublicPlayer> entry,
+                    ) {
+                      final HostedPublicPlayer player = entry.value;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8F3EA),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: player.connected
+                                  ? const Color(0xFFB9D5C1)
+                                  : const Color(0xFFE1C5C5),
+                            ),
+                          ),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: const Color(0xFFE5D4BE),
+                              child: Text('${entry.key + 1}'),
+                            ),
+                            title: Row(
+                              children: <Widget>[
+                                Expanded(child: Text(player.name)),
+                                if (player.isHost)
+                                  _tag(
+                                    tr(language, 'Host', 'Vert'),
+                                    const Color(0xFF1C6A43),
+                                  ),
+                              ],
+                            ),
+                            trailing: _tag(
+                              player.connected
+                                  ? tr(language, 'Connected', 'Tilkoblet')
+                                  : tr(language, 'Disconnected', 'Frakoblet'),
+                              player.connected
+                                  ? const Color(0xFF1B8A49)
+                                  : const Color(0xFFB93838),
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+              if (projection.canUseHostTools)
+                FilledButton.icon(
+                  onPressed: widget.controller.startHostedGame,
+                  icon: const Icon(Icons.play_arrow),
+                  label: Text(
+                    tr(language, 'Start hosted game', 'Start hostet spill'),
+                  ),
+                )
+              else
+                _surfaceCard(
+                  child: Text(
+                    tr(
+                      language,
+                      'Waiting for host to start the game.',
+                      'Venter pa at verten starter spillet.',
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -259,6 +454,8 @@ class _HostedSessionViewState extends State<HostedSessionView>
   Widget _buildGame(HostedProjectedView projection) {
     final AppLanguage language = widget.language;
     final HostedPublicView view = projection.publicView;
+    final HostedConnectionStatus status = widget.controller.connectionStatus;
+    final bool connected = status == HostedConnectionStatus.connected;
     final bool myTurn = view.currentTurnPlayerId == projection.viewerPlayerId;
     final HostedPendingDrinkDistribution? pending =
         view.pendingDrinkDistribution;
@@ -275,11 +472,15 @@ class _HostedSessionViewState extends State<HostedSessionView>
           },
           icon: const Icon(Icons.arrow_back),
         ),
-        title: Text('Hosted • PIN ${view.sessionPin}'),
+        title: Text('Hosted - PIN ${view.sessionPin}'),
         actions: <Widget>[
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Center(child: _connectionChip(_connectionVisual(status))),
+          ),
           if (projection.canUseHostTools)
             IconButton(
-              onPressed: _showAutoPlaySheet,
+              onPressed: connected ? _showAutoPlaySheet : null,
               icon: const Icon(Icons.smart_toy),
             ),
           if (projection.canUseHostTools)
@@ -289,167 +490,306 @@ class _HostedSessionViewState extends State<HostedSessionView>
             ),
           if (projection.canUseHostTools)
             IconButton(
-              onPressed: widget.controller.resetHostedGameToLobby,
+              onPressed: connected
+                  ? widget.controller.resetHostedGameToLobby
+                  : null,
               icon: const Icon(Icons.restart_alt),
             ),
         ],
       ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(12),
-          children: <Widget>[
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+      body: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: <Color>[Color(0xFFEFE2D2), Color(0xFFE4CFB8)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.all(12),
+            children: <Widget>[
+              _surfaceCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Chip(
-                      label: Text(
-                        phaseLabel(language, view.phase, view.warmupRound),
+                    Text(
+                      phaseLabel(language, view.phase, view.warmupRound),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
                       ),
                     ),
-                    Chip(
-                      label: Text(
-                        tr(
-                          language,
-                          'You: ${projection.viewerName}',
-                          'Du: ${projection.viewerName}',
-                        ),
+                    const SizedBox(height: 6),
+                    Text(
+                      tr(
+                        language,
+                        'You are ${projection.viewerName}.',
+                        'Du er ${projection.viewerName}.',
                       ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _turnText(
+                        language: language,
+                        view: view,
+                        myTurn: myTurn,
+                        viewerName: projection.viewerName,
+                      ),
+                      style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                   ],
                 ),
               ),
-            ),
-            const SizedBox(height: 8),
-            _bigOwnHand(projection.ownHand),
-            if (projection.giveOutPromptDrinks > 0)
-              _promptCard(
-                tr(language, 'Give out', 'Del ut'),
-                projection.giveOutPromptDrinks,
-                const Color(0xFF1A8B47),
-                null,
-              ),
-            if (projection.drinkPromptDrinks > 0)
-              _promptCard(
-                tr(language, 'Drink', 'Drikk'),
-                projection.drinkPromptDrinks,
-                const Color(0xFFB93838),
-                widget.controller.acknowledgeDrinks,
-              ),
-            if (isPendingSource) _distributionCard(pending, view.players),
-            if (blocked && !isPendingSource)
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
+              if (status != HostedConnectionStatus.connected) ...<Widget>[
+                const SizedBox(height: 8),
+                _surfaceCard(
+                  color: const Color(0xFFFFF4E5),
+                  child: Row(
+                    children: <Widget>[
+                      Icon(
+                        _connectionVisual(status).icon,
+                        color: _connectionVisual(status).color,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(_connectionVisual(status).subtitle)),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 8),
+              _ownHandPanel(projection.ownHand),
+              if (projection.giveOutPromptDrinks > 0) ...<Widget>[
+                const SizedBox(height: 8),
+                _promptCard(
+                  label: tr(language, 'Give out drinks', 'Del ut drikker'),
+                  amount: projection.giveOutPromptDrinks,
+                  color: const Color(0xFF1A8B47),
+                  action: null,
+                ),
+              ],
+              if (projection.drinkPromptDrinks > 0) ...<Widget>[
+                const SizedBox(height: 8),
+                _promptCard(
+                  label: tr(language, 'You drink', 'Du drikker'),
+                  amount: projection.drinkPromptDrinks,
+                  color: const Color(0xFFB93838),
+                  action: connected
+                      ? widget.controller.acknowledgeDrinks
+                      : null,
+                ),
+              ],
+              if (isPendingSource) ...<Widget>[
+                const SizedBox(height: 8),
+                _distributionCard(pending, view.players, connected),
+              ],
+              if (blocked && !isPendingSource) ...<Widget>[
+                const SizedBox(height: 8),
+                _surfaceCard(
+                  color: const Color(0xFFF8F2E8),
                   child: Text(
                     tr(
                       language,
-                      'Waiting for drink distribution.',
-                      'Venter pa drikkefordeling.',
+                      'Waiting for another player to distribute drinks.',
+                      'Venter pa at en annen spiller fordeler drikker.',
                     ),
                   ),
                 ),
-              ),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
+              ],
+              const SizedBox(height: 8),
+              _surfaceCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: view.players
-                          .map(
-                            (HostedPublicPlayer p) =>
-                                Chip(label: Text('${p.name}: ${p.handCount}')),
-                          )
-                          .toList(),
+                      children: view.players.map((HostedPublicPlayer player) {
+                        final bool isTurnPlayer =
+                            view.currentTurnPlayerId == player.playerId;
+                        final String text = isTurnPlayer
+                            ? '${player.name} (${tr(language, 'turn', 'tur')})'
+                            : player.name;
+                        return _tag(
+                          '$text: ${player.handCount}',
+                          player.connected
+                              ? const Color(0xFF325A86)
+                              : const Color(0xFF826767),
+                        );
+                      }).toList(),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     if (view.phase == GamePhase.warmup)
-                      _warmupButtons(myTurn && !blocked, view.warmupRound),
-                    if (view.phase == GamePhase.pyramid) ...<Widget>[
-                      _pyramidGrid(view.pyramidCards),
-                      if (projection.canUseHostTools && !blocked)
-                        FilledButton(
-                          onPressed: widget.controller.revealPyramidNext,
-                          child: Text(tr(language, 'Reveal next', 'Vis neste')),
-                        ),
-                    ],
-                    if (view.phase == GamePhase.tiebreak &&
-                        projection.canUseHostTools)
-                      FilledButton(
-                        onPressed: blocked
-                            ? null
-                            : widget.controller.runTieBreakRound,
-                        child: Text(
-                          tr(language, 'Run tie-break', 'Kjor tie-break'),
+                      _warmupButtons(
+                        enabled: myTurn && !blocked && connected,
+                        round: view.warmupRound,
+                      ),
+                    if (view.phase == GamePhase.pyramid)
+                      _pyramidPublicPanel(
+                        cards: view.pyramidCards,
+                        revealIndex: view.pyramidRevealIndex,
+                        onReveal:
+                            projection.canUseHostTools && !blocked && connected
+                            ? widget.controller.revealPyramidNext
+                            : null,
+                      ),
+                    if (view.phase == GamePhase.tiebreak)
+                      FilledButton.tonalIcon(
+                        onPressed:
+                            projection.canUseHostTools && !blocked && connected
+                            ? widget.controller.runTieBreakRound
+                            : null,
+                        icon: const Icon(Icons.filter_9_plus),
+                        label: Text(
+                          tr(
+                            language,
+                            'Run tie-break round',
+                            'Kjor tie-break-runde',
+                          ),
                         ),
                       ),
-                    if (view.busRoute != null)
+                    if (view.busRoute != null) ...<Widget>[
+                      const SizedBox(height: 8),
                       _busRouteView(
-                        view.busRoute!,
-                        projection.canControlBusRoute && !blocked,
-                        view.phase,
+                        route: view.busRoute!,
+                        canControl:
+                            projection.canControlBusRoute &&
+                            !blocked &&
+                            connected,
+                        phase: view.phase,
+                        players: view.players,
+                        busRunnerPlayerId: view.busRunnerPlayerId,
                       ),
+                    ],
                   ],
                 ),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _ownHandPanel(List<PlayingCard> hand) {
+    return _surfaceCard(
+      color: const Color(0xFF1F4A38),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            tr(widget.language, 'Your hand', 'Din hand'),
+            style: const TextStyle(
+              color: Color(0xFFF6EFE3),
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 6),
+          SizedBox(
+            height: 190,
+            child: hand.isEmpty
+                ? Center(
+                    child: Text(
+                      tr(widget.language, 'No cards yet', 'Ingen kort ennå'),
+                      style: const TextStyle(color: Color(0xFFE9DDCA)),
+                    ),
+                  )
+                : LayoutBuilder(
+                    builder:
+                        (BuildContext context, BoxConstraints constraints) {
+                          const double cardWidth = 98;
+                          const double cardHeight = 138;
+                          final int count = hand.length;
+                          final double maxSpan = math.max(
+                            0,
+                            constraints.maxWidth - cardWidth,
+                          );
+                          final double step = count <= 1
+                              ? 0
+                              : (maxSpan / (count - 1))
+                                    .clamp(22, 54)
+                                    .toDouble();
+                          final double usedWidth =
+                              cardWidth + (count - 1) * step;
+                          final double leftStart = math.max(
+                            0,
+                            (constraints.maxWidth - usedWidth) / 2,
+                          );
+                          return Stack(
+                            clipBehavior: Clip.none,
+                            children: List<Widget>.generate(count, (int index) {
+                              final double angle =
+                                  (index - (count - 1) / 2) * 0.075;
+                              return Positioned(
+                                left: leftStart + index * step,
+                                top: 18 + angle.abs() * 20,
+                                child: Transform.rotate(
+                                  angle: angle,
+                                  child: _playingCard(
+                                    hand[index],
+                                    width: cardWidth,
+                                    height: cardHeight,
+                                    emphasized: true,
+                                  ),
+                                ),
+                              );
+                            }),
+                          );
+                        },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _promptCard({
+    required String label,
+    required int amount,
+    required Color color,
+    required VoidCallback? action,
+  }) {
+    return FadeTransition(
+      opacity: CurvedAnimation(parent: _flash, curve: Curves.easeInOut),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color.withValues(alpha: 0.55), width: 1.2),
+          boxShadow: <BoxShadow>[
+            BoxShadow(
+              color: color.withValues(alpha: 0.18),
+              blurRadius: 20,
+              spreadRadius: 1,
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _bigOwnHand(List<PlayingCard> hand) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: SizedBox(
-          height: 138,
-          child: hand.isEmpty
-              ? Center(
-                  child: Text(tr(widget.language, 'No cards', 'Ingen kort')),
-                )
-              : ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: hand.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 10),
-                  itemBuilder: (_, int index) =>
-                      _card(hand[index], large: true),
-                ),
-        ),
-      ),
-    );
-  }
-
-  Widget _promptCard(
-    String label,
-    int amount,
-    Color color,
-    VoidCallback? action,
-  ) {
-    return FadeTransition(
-      opacity: CurvedAnimation(parent: _flash, curve: Curves.easeInOut),
-      child: Card(
-        color: color.withValues(alpha: 0.14),
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           child: Row(
             children: <Widget>[
               Expanded(
-                child: Text(
-                  '$label: $amount',
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 34,
-                    fontWeight: FontWeight.w900,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      label,
+                      style: TextStyle(
+                        color: color,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      '$amount',
+                      style: TextStyle(
+                        color: color,
+                        fontSize: 42,
+                        height: 1.05,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               if (action != null)
@@ -467,9 +807,13 @@ class _HostedSessionViewState extends State<HostedSessionView>
   Widget _distributionCard(
     HostedPendingDrinkDistribution pending,
     List<HostedPublicPlayer> players,
+    bool enabled,
   ) {
     final List<HostedPublicPlayer> targets = players
-        .where((HostedPublicPlayer p) => p.playerId != pending.sourcePlayerId)
+        .where(
+          (HostedPublicPlayer player) =>
+              player.playerId != pending.sourcePlayerId,
+        )
         .toList();
     int draftTotal = 0;
     for (final int value in _draftTargets.values) {
@@ -477,48 +821,52 @@ class _HostedSessionViewState extends State<HostedSessionView>
     }
     final int remain = pending.remainingDrinks - draftTotal;
 
-    return Card(
+    return _surfaceCard(
       color: const Color(0xFFEAF7EE),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              tr(
-                widget.language,
-                'Assign drinks (${pending.remainingDrinks} left)',
-                'Fordel drikker (${pending.remainingDrinks} igjen)',
-              ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            tr(
+              widget.language,
+              'Assign drinks (${pending.remainingDrinks} left)',
+              'Fordel drikker (${pending.remainingDrinks} igjen)',
             ),
-            const SizedBox(height: 8),
-            for (final HostedPublicPlayer player in targets)
-              Row(
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 8),
+          for (final HostedPublicPlayer player in targets)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
                 children: <Widget>[
                   Expanded(child: Text(player.name)),
                   IconButton(
-                    onPressed: () {
-                      final int current = _draftTargets[player.playerId] ?? 0;
-                      if (current <= 0) {
-                        return;
-                      }
-                      final Map<int, int> next = Map<int, int>.from(
-                        _draftTargets,
-                      );
-                      if (current == 1) {
-                        next.remove(player.playerId);
-                      } else {
-                        next[player.playerId] = current - 1;
-                      }
-                      setState(() {
-                        _draftTargets = next;
-                      });
-                    },
+                    onPressed: !enabled
+                        ? null
+                        : () {
+                            final int current =
+                                _draftTargets[player.playerId] ?? 0;
+                            if (current <= 0) {
+                              return;
+                            }
+                            final Map<int, int> next = Map<int, int>.from(
+                              _draftTargets,
+                            );
+                            if (current == 1) {
+                              next.remove(player.playerId);
+                            } else {
+                              next[player.playerId] = current - 1;
+                            }
+                            setState(() {
+                              _draftTargets = next;
+                            });
+                          },
                     icon: const Icon(Icons.remove_circle_outline),
                   ),
                   Text('${_draftTargets[player.playerId] ?? 0}'),
                   IconButton(
-                    onPressed: remain <= 0
+                    onPressed: !enabled || remain <= 0
                         ? null
                         : () {
                             final Map<int, int> next = Map<int, int>.from(
@@ -534,27 +882,28 @@ class _HostedSessionViewState extends State<HostedSessionView>
                   ),
                 ],
               ),
-            FilledButton.icon(
-              onPressed: draftTotal <= 0
-                  ? null
-                  : () {
-                      widget.controller.assignDrinks(_draftTargets);
-                      setState(() {
-                        _draftTargets = <int, int>{};
-                      });
-                    },
-              icon: const Icon(Icons.send),
-              label: Text(
-                tr(widget.language, 'Send assignment', 'Send fordeling'),
-              ),
             ),
-          ],
-        ),
+          const SizedBox(height: 6),
+          FilledButton.icon(
+            onPressed: !enabled || draftTotal <= 0
+                ? null
+                : () {
+                    widget.controller.assignDrinks(_draftTargets);
+                    setState(() {
+                      _draftTargets = <int, int>{};
+                    });
+                  },
+            icon: const Icon(Icons.send),
+            label: Text(
+              tr(widget.language, 'Send assignment', 'Send fordeling'),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _warmupButtons(bool enabled, int round) {
+  Widget _warmupButtons({required bool enabled, required int round}) {
     final List<WarmupGuess> options = switch (round) {
       1 => const <WarmupGuess>[WarmupGuess.black, WarmupGuess.red],
       2 => const <WarmupGuess>[
@@ -574,60 +923,149 @@ class _HostedSessionViewState extends State<HostedSessionView>
         WarmupGuess.spades,
       ],
     };
+
     return Wrap(
       spacing: 8,
       runSpacing: 8,
-      children: options
-          .map(
-            (WarmupGuess option) => FilledButton.tonal(
-              onPressed: enabled
-                  ? () => widget.controller.submitWarmupGuess(option)
-                  : null,
-              child: Text(warmupGuessLabel(widget.language, option)),
+      children: options.map((WarmupGuess guess) {
+        return SizedBox(
+          width: 140,
+          child: FilledButton.tonal(
+            onPressed: enabled
+                ? () => widget.controller.submitWarmupGuess(guess)
+                : null,
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
             ),
-          )
-          .toList(),
+            child: Text(
+              warmupGuessLabel(widget.language, guess),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 
-  Widget _pyramidGrid(List<PlayingCard?> cards) {
-    return Wrap(
-      spacing: 6,
-      runSpacing: 6,
-      children: cards.map((PlayingCard? card) => _card(card)).toList(),
+  Widget _pyramidPublicPanel({
+    required List<PlayingCard?> cards,
+    required int revealIndex,
+    required VoidCallback? onReveal,
+  }) {
+    final List<PlayingCard> revealed = cards.whereType<PlayingCard>().toList(
+      growable: false,
     );
-  }
+    final bool hasMore = revealIndex < cards.length;
 
-  Widget _busRouteView(BusRouteState route, bool canControl, GamePhase phase) {
-    final int active = route.progress < route.order.length
-        ? route.order[route.progress]
-        : -1;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
+        Text(
+          tr(
+            widget.language,
+            'Revealed pyramid cards',
+            'Avdekkede pyramidekort',
+          ),
+          style: const TextStyle(fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 8),
+        if (revealed.isEmpty)
+          Text(
+            tr(
+              widget.language,
+              'No cards revealed yet.',
+              'Ingen kort er avdekket ennå.',
+            ),
+          )
+        else
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: revealed
+                .map(
+                  (PlayingCard card) =>
+                      _playingCard(card, width: 58, height: 82),
+                )
+                .toList(),
+          ),
+        if (hasMore) ...<Widget>[
+          const SizedBox(height: 10),
+          Row(
+            children: <Widget>[
+              _playingCard(null, showBack: true, width: 58, height: 82),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  tr(
+                    widget.language,
+                    'Next reveal comes from the deck.',
+                    'Neste avdekking kommer fra bunken.',
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+        if (onReveal != null) ...<Widget>[
+          const SizedBox(height: 10),
+          FilledButton.icon(
+            onPressed: onReveal,
+            icon: const Icon(Icons.visibility),
+            label: Text(tr(widget.language, 'Reveal next', 'Vis neste')),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _busRouteView({
+    required BusRouteState route,
+    required bool canControl,
+    required GamePhase phase,
+    required List<HostedPublicPlayer> players,
+    required int? busRunnerPlayerId,
+  }) {
+    final int active = route.progress < route.order.length
+        ? route.order[route.progress]
+        : -1;
+    final String runnerName = _nameForPlayer(players, busRunnerPlayerId);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(
+          tr(widget.language, 'Bus route (public)', 'Bussrute (offentlig)'),
+          style: const TextStyle(fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 8),
         Wrap(
           spacing: 8,
           runSpacing: 8,
           children: List<Widget>.generate(route.routeCards.length, (int index) {
+            final bool isActive = active == index && phase == GamePhase.bus;
             return DecoratedBox(
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: active == index
+                  color: isActive
                       ? const Color(0xFF18824A)
-                      : const Color(0xFFCCCCCC),
-                  width: active == index ? 2 : 1,
+                      : const Color(0xFFCFBA9D),
+                  width: isActive ? 2 : 1,
                 ),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(10),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(4),
-                child: _card(route.routeCards[index]),
+                child: _playingCard(
+                  route.routeCards[index],
+                  width: 52,
+                  height: 74,
+                ),
               ),
             );
           }),
         ),
         if (phase == GamePhase.bussetup && canControl) ...<Widget>[
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Row(
             children: <Widget>[
               Expanded(
@@ -653,7 +1091,7 @@ class _HostedSessionViewState extends State<HostedSessionView>
           ),
         ],
         if (phase == GamePhase.bus && canControl) ...<Widget>[
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -667,31 +1105,238 @@ class _HostedSessionViewState extends State<HostedSessionView>
                 .toList(),
           ),
         ],
+        if ((phase == GamePhase.bussetup || phase == GamePhase.bus) &&
+            !canControl) ...<Widget>[
+          const SizedBox(height: 10),
+          _surfaceCard(
+            color: const Color(0xFFF8F2E8),
+            child: Text(
+              tr(
+                widget.language,
+                'Public view only. $runnerName is actively playing the bus route.',
+                'Offentlig visning. $runnerName spiller bussruta aktivt.',
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
 
-  Widget _card(PlayingCard? card, {bool large = false}) {
+  Widget _playingCard(
+    PlayingCard? card, {
+    required double width,
+    required double height,
+    bool showBack = false,
+    bool emphasized = false,
+  }) {
     final bool red = card?.suit == Suit.hearts || card?.suit == Suit.diamonds;
+    final bool back = showBack || card == null;
     return Container(
-      width: large ? 90 : 48,
-      height: large ? 128 : 68,
+      width: width,
+      height: height,
       decoration: BoxDecoration(
-        color: card == null ? const Color(0xFFE2E2E2) : Colors.white,
-        border: Border.all(color: const Color(0xFFCDB79F)),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(width * 0.16),
+        border: Border.all(
+          color: back ? const Color(0xFFB9CDE1) : const Color(0xFFCDB79F),
+          width: emphasized ? 1.5 : 1.0,
+        ),
+        gradient: back
+            ? const LinearGradient(
+                colors: <Color>[Color(0xFF244D70), Color(0xFF102C40)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : const LinearGradient(
+                colors: <Color>[Color(0xFFFFFEFB), Color(0xFFF5EFE5)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.16),
+            blurRadius: emphasized ? 14 : 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Center(
         child: Text(
-          card?.shortLabel() ?? '??',
+          back ? 'B' : card.shortLabel(),
           style: TextStyle(
-            fontSize: large ? 24 : 14,
-            fontWeight: FontWeight.w800,
-            color: red ? const Color(0xFFB93838) : const Color(0xFF202020),
+            fontSize: emphasized ? 29 : 19,
+            fontWeight: FontWeight.w900,
+            color: back
+                ? const Color(0xFFEFF5FF)
+                : (red ? const Color(0xFFB93838) : const Color(0xFF202020)),
           ),
         ),
       ),
     );
+  }
+
+  Widget _surfaceCard({required Widget child, Color? color}) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: color ?? Colors.white.withValues(alpha: 0.82),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.85)),
+        boxShadow: const <BoxShadow>[
+          BoxShadow(
+            color: Color(0x13000000),
+            blurRadius: 18,
+            offset: Offset(0, 9),
+          ),
+        ],
+      ),
+      child: Padding(padding: const EdgeInsets.all(12), child: child),
+    );
+  }
+
+  Widget _connectionChip(_ConnectionVisual visual) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(99),
+        color: visual.color.withValues(alpha: 0.12),
+        border: Border.all(color: visual.color.withValues(alpha: 0.5)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        child: Text(
+          visual.title,
+          style: TextStyle(
+            color: visual.color,
+            fontWeight: FontWeight.w700,
+            fontSize: 12,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _tag(String text, Color color) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(99),
+        border: Border.all(color: color.withValues(alpha: 0.45)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: color,
+            fontWeight: FontWeight.w700,
+            fontSize: 12,
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _turnText({
+    required AppLanguage language,
+    required HostedPublicView view,
+    required bool myTurn,
+    required String viewerName,
+  }) {
+    if (myTurn) {
+      return tr(language, 'Your turn', 'Din tur');
+    }
+    final String actor = _nameForPlayer(view.players, view.currentTurnPlayerId);
+    if (actor.isEmpty) {
+      return tr(
+        language,
+        'Waiting for next action',
+        'Venter pa neste handling',
+      );
+    }
+    return tr(language, 'Waiting for $actor', 'Venter pa $actor');
+  }
+
+  String _nameForPlayer(List<HostedPublicPlayer> players, int? playerId) {
+    if (playerId == null) {
+      return '';
+    }
+    for (final HostedPublicPlayer player in players) {
+      if (player.playerId == playerId) {
+        return player.name;
+      }
+    }
+    return 'Player $playerId';
+  }
+
+  _ConnectionVisual _connectionVisual(HostedConnectionStatus status) {
+    final AppLanguage language = widget.language;
+    return switch (status) {
+      HostedConnectionStatus.idle => _ConnectionVisual(
+        icon: Icons.pause_circle_outline,
+        color: const Color(0xFF6F6F6F),
+        title: tr(language, 'Idle', 'Inaktiv'),
+        subtitle: tr(
+          language,
+          'Not connected to a hosted session.',
+          'Ikke koblet til en hostet sesjon.',
+        ),
+      ),
+      HostedConnectionStatus.joining => _ConnectionVisual(
+        icon: Icons.sync,
+        color: const Color(0xFF335E98),
+        title: tr(language, 'Joining', 'Kobler til'),
+        subtitle: tr(
+          language,
+          'Joining host session.',
+          'Kobler til host-sesjon.',
+        ),
+      ),
+      HostedConnectionStatus.connected => _ConnectionVisual(
+        icon: Icons.wifi,
+        color: const Color(0xFF1B8A49),
+        title: tr(language, 'Connected', 'Tilkoblet'),
+        subtitle: tr(
+          language,
+          'Live session is active.',
+          'Live sesjon er aktiv.',
+        ),
+      ),
+      HostedConnectionStatus.reconnecting => _ConnectionVisual(
+        icon: Icons.wifi_find,
+        color: const Color(0xFF9E6A13),
+        title: tr(language, 'Reconnecting', 'Kobler til igjen'),
+        subtitle: tr(
+          language,
+          'Trying to reclaim your seat.',
+          'Prover a hente tilbake plassen din.',
+        ),
+      ),
+      HostedConnectionStatus.disconnected => _ConnectionVisual(
+        icon: Icons.wifi_off,
+        color: const Color(0xFFB36319),
+        title: tr(language, 'Disconnected', 'Frakoblet'),
+        subtitle: tr(language, 'Connection dropped.', 'Tilkoblingen falt ut.'),
+      ),
+      HostedConnectionStatus.hostUnavailable => _ConnectionVisual(
+        icon: Icons.portable_wifi_off,
+        color: const Color(0xFFB93838),
+        title: tr(language, 'Host unavailable', 'Vert utilgjengelig'),
+        subtitle: tr(
+          language,
+          'Host cannot be reached.',
+          'Finner ikke verten.',
+        ),
+      ),
+      HostedConnectionStatus.sessionClosed => _ConnectionVisual(
+        icon: Icons.event_busy,
+        color: const Color(0xFF7A4D9B),
+        title: tr(language, 'Session closed', 'Sesjon avsluttet'),
+        subtitle: tr(
+          language,
+          'Host ended the session.',
+          'Verten avsluttet sesjonen.',
+        ),
+      ),
+    };
   }
 
   void _syncDraft(HostedProjectedView projection) {
@@ -749,7 +1394,10 @@ class _HostedSessionViewState extends State<HostedSessionView>
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text(tr(widget.language, 'Auto play', 'Autospill')),
+              Text(
+                tr(widget.language, 'Auto play', 'Autospill'),
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
               SwitchListTile(
                 value: view.autoPlayEnabled,
                 onChanged: (bool value) =>
@@ -786,7 +1434,10 @@ class _HostedSessionViewState extends State<HostedSessionView>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text(tr(widget.language, 'Game log', 'Spilllogg')),
+              Text(
+                tr(widget.language, 'Game log', 'Spilllogg'),
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
               const SizedBox(height: 8),
               Expanded(
                 child: log.isEmpty
@@ -814,4 +1465,18 @@ class _HostedSessionViewState extends State<HostedSessionView>
       },
     );
   }
+}
+
+class _ConnectionVisual {
+  const _ConnectionVisual({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String subtitle;
 }
