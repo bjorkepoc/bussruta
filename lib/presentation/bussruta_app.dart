@@ -598,27 +598,54 @@ class _BannerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Color tone = switch (state.bannerTone) {
-      BannerTone.info => Theme.of(context).colorScheme.primary,
+      BannerTone.info => const Color(0xFF2D5B96),
       BannerTone.success => const Color(0xFF18824A),
       BannerTone.fail => const Color(0xFFB93838),
     };
+    final IconData icon = switch (state.bannerTone) {
+      BannerTone.info => Icons.info_outline,
+      BannerTone.success => Icons.check_circle_outline,
+      BannerTone.fail => Icons.error_outline,
+    };
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
+    return DecoratedBox(
       decoration: BoxDecoration(
-        color: tone.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: tone.withValues(alpha: 0.55)),
+        color: tone.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
         boxShadow: const <BoxShadow>[
           BoxShadow(
-            color: Color(0x22000000),
-            blurRadius: 12,
-            offset: Offset(0, 6),
+            color: Color(0x33000000),
+            blurRadius: 14,
+            offset: Offset(0, 8),
           ),
         ],
       ),
-      child: Text(state.banner, maxLines: 2, overflow: TextOverflow.ellipsis),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.only(top: 1),
+              child: Icon(icon, color: const Color(0xFFF8F2E9), size: 18),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                state.banner,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Color(0xFFF8F2E9),
+                  fontWeight: FontWeight.w700,
+                  height: 1.25,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

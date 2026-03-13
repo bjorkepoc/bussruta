@@ -59,6 +59,12 @@ class _GameTableViewState extends State<GameTableView> {
         _stageSize = constraints.biggest;
         final GameState state = widget.state;
         final Rect tableRect = _tableRect(_stageSize, state.phase);
+        final double? warmupPanelTop = state.phase == GamePhase.warmup
+            ? _warmupPanelRect(
+                tableRect,
+                _warmupOptions(state.warmupRound).length,
+              ).top
+            : null;
 
         return DecoratedBox(
           decoration: const BoxDecoration(
@@ -90,6 +96,7 @@ class _GameTableViewState extends State<GameTableView> {
                     total: state.players.length,
                     phase: state.phase,
                     rect: tableRect,
+                    warmupPanelTop: warmupPanelTop,
                   );
                   return Positioned(
                     left: position.dx,
@@ -172,26 +179,14 @@ class _GameTableViewState extends State<GameTableView> {
     final GameState state = widget.state;
     final AppLanguage lang = state.language;
     final List<WarmupGuess> options = _warmupOptions(state.warmupRound);
-    final int optionColumns = options.length == 4 ? 2 : options.length;
-    final int optionRows = (options.length / optionColumns).ceil();
+    final int optionColumns = _warmupPanelColumns(options.length);
     final Offset deckCenter = _warmupDeckCenter(tableRect);
     final Rect deckRect = Rect.fromCenter(
       center: deckCenter,
       width: _CardMetrics.medium.width,
       height: _CardMetrics.medium.height,
     );
-    final double panelWidth = math.min(
-      _stageSize.width - 20,
-      options.length == 4 ? 380 : 420,
-    );
-    final double panelHeight = math.min(
-      188,
-      math.max(112, 58 + optionRows * 52 + (optionRows - 1) * 8),
-    );
-    final double panelTop = math.min(
-      tableRect.bottom + 28,
-      _stageSize.height - panelHeight - 8,
-    );
+    final Rect panelRect = _warmupPanelRect(tableRect, options.length);
 
     return Stack(
       children: <Widget>[
@@ -207,9 +202,9 @@ class _GameTableViewState extends State<GameTableView> {
           ),
         ),
         Positioned(
-          left: (_stageSize.width - panelWidth) / 2,
-          top: panelTop,
-          width: panelWidth,
+          left: panelRect.left,
+          top: panelRect.top,
+          width: panelRect.width,
           child: DecoratedBox(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(22),
@@ -382,7 +377,7 @@ class _GameTableViewState extends State<GameTableView> {
     final _TieLayout layout = _tieLayout(tableRect, tie.contenders.length);
     final String instruction;
     final bool winnerLocked =
-        tie.contenders.length == 1 && state.busRunnerIndex != null;
+        state.busRunnerIndex != null && tie.lastDraws.isNotEmpty;
     if (winnerLocked) {
       instruction = tr(
         lang,
@@ -935,6 +930,13 @@ class _GameTableViewState extends State<GameTableView> {
 
   void _animateWarmupDeals(GameState previous, GameState next) {
     final Rect tableRect = _tableRect(_stageSize, GamePhase.warmup);
+    final int warmupRound = previous.phase == GamePhase.warmup
+        ? previous.warmupRound
+        : next.warmupRound;
+    final double warmupPanelTop = _warmupPanelRect(
+      tableRect,
+      _warmupOptions(warmupRound).length,
+    ).top;
     for (int index = 0; index < next.players.length; index += 1) {
       final int previousCount = previous.players[index].hand.length;
       final int nextCount = next.players[index].hand.length;
@@ -957,6 +959,7 @@ class _GameTableViewState extends State<GameTableView> {
               ? GamePhase.warmup
               : next.phase,
           rect: tableRect,
+          warmupPanelTop: warmupPanelTop,
         );
         _queueFlight(
           card: card,
@@ -1063,8 +1066,7 @@ class _GameTableViewState extends State<GameTableView> {
                 ..clear()
                 ..addAll(revealedPlayers);
             });
-            if (nextTie.contenders.length == 1 &&
-                next.busRunnerIndex != null &&
+            if (next.busRunnerIndex != null &&
                 next.phase == GamePhase.tiebreak) {
               Future<void>.delayed(const Duration(milliseconds: 900), () {
                 if (!mounted || revealToken != _tieRevealToken) {
@@ -1072,8 +1074,8 @@ class _GameTableViewState extends State<GameTableView> {
                 }
                 final GameState current = widget.state;
                 if (current.phase == GamePhase.tiebreak &&
-                    current.tieBreak?.contenders.length == 1 &&
-                    current.busRunnerIndex != null) {
+                    current.busRunnerIndex != null &&
+                    (current.tieBreak?.lastDraws.isNotEmpty ?? false)) {
                   widget.controller.runTieBreakRound();
                 }
               });
@@ -1274,6 +1276,37 @@ class _GameTableViewState extends State<GameTableView> {
     }
   }
 
+  int _warmupPanelColumns(int optionCount) {
+    if (optionCount <= 1) {
+      return 1;
+    }
+    return optionCount == 4 ? 2 : optionCount;
+  }
+
+  double _warmupPanelHeight(int optionCount) {
+    final int columns = _warmupPanelColumns(optionCount);
+    final int rows = (optionCount / columns).ceil();
+    return math.min(188, math.max(112, 58 + rows * 52 + (rows - 1) * 8));
+  }
+
+  Rect _warmupPanelRect(Rect tableRect, int optionCount) {
+    final double panelWidth = math.min(
+      _stageSize.width - 20,
+      optionCount == 4 ? 380 : 420,
+    );
+    final double panelHeight = _warmupPanelHeight(optionCount);
+    final double panelTop = math.min(
+      tableRect.bottom + 28,
+      _stageSize.height - panelHeight - 8,
+    );
+    return Rect.fromLTWH(
+      (_stageSize.width - panelWidth) / 2,
+      panelTop,
+      panelWidth,
+      panelHeight,
+    );
+  }
+
   Rect _tableRect(Size size, [GamePhase? phase]) {
     final bool warmup = phase == GamePhase.warmup;
     final bool routePhase =
@@ -1319,6 +1352,7 @@ class _GameTableViewState extends State<GameTableView> {
     required int total,
     required GamePhase phase,
     required Rect rect,
+    double? warmupPanelTop,
   }) {
     final bool compact = phase == GamePhase.pyramid || total >= 5;
     final Size seatFootprint = _seatFootprint(compact, phase: phase);
@@ -1331,10 +1365,6 @@ class _GameTableViewState extends State<GameTableView> {
         rect.bottom -
         seatFootprint.height / 2 -
         (phase == GamePhase.pyramid ? 10 : 14);
-
-    if (oddCount && index == 0) {
-      return Offset(rect.center.dx, bottomCenterY);
-    }
     if (sideSlots <= 0) {
       return Offset(rect.center.dx, bottomCenterY);
     }
@@ -1346,8 +1376,12 @@ class _GameTableViewState extends State<GameTableView> {
         rect.bottom -
         seatFootprint.height / 2 -
         (phase == GamePhase.pyramid ? 30 : 18);
-    final double safeTop = math.min(topRail, bottomRail);
-    final double safeBottom = math.max(topRail, bottomRail);
+    final double warmupBottomCap = phase == GamePhase.warmup
+        ? (warmupPanelTop ?? rect.bottom) - seatFootprint.height / 2 - 10
+        : bottomRail;
+    final double limitedBottom = math.min(bottomRail, warmupBottomCap);
+    final double safeTop = topRail;
+    final double safeBottom = math.max(topRail, limitedBottom);
     final List<double> sideYs = List<double>.generate(sideSlots, (int slot) {
       final double fraction = sideSlots == 1 ? 0.5 : slot / (sideSlots - 1);
       return safeTop + (safeBottom - safeTop) * fraction;
@@ -1363,7 +1397,12 @@ class _GameTableViewState extends State<GameTableView> {
     clockwiseFromTopLeft.add(leftTopToBottom.first);
     clockwiseFromTopLeft.addAll(rightTopToBottom);
     if (oddCount) {
-      clockwiseFromTopLeft.add(Offset(rect.center.dx, bottomCenterY));
+      clockwiseFromTopLeft.add(
+        Offset(
+          rect.center.dx,
+          bottomCenterY.clamp(safeTop, safeBottom).toDouble(),
+        ),
+      );
     }
     for (int slot = leftTopToBottom.length - 1; slot >= 1; slot -= 1) {
       clockwiseFromTopLeft.add(leftTopToBottom[slot]);
@@ -1380,12 +1419,14 @@ class _GameTableViewState extends State<GameTableView> {
     required int total,
     required GamePhase phaseHint,
     required Rect rect,
+    double? warmupPanelTop,
   }) {
     final Offset center = _seatCenter(
       index: index,
       total: total,
       phase: phaseHint,
       rect: rect,
+      warmupPanelTop: warmupPanelTop,
     );
     final bool compact =
         phaseHint == GamePhase.pyramid ||
