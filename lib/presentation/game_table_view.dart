@@ -570,29 +570,32 @@ class _GameTableViewState extends State<GameTableView> {
       0,
       bus.routeCards.length,
     );
+    final int highCount = _visibleCountForBusZone(step, 'high');
+    final int lowCount = _visibleCountForBusZone(step, 'low');
+    final int sameCount = _visibleCountForBusZone(step, 'same');
 
-    widgets.add(
-      Positioned.fromRect(
-        rect: layout.highRects[step],
-        child: _BusZone(
-          label: active ? tr(lang, 'Above', 'Over') : '',
-          active: active,
-          tone: active ? tone.high : null,
-          onTap: active
-              ? () async {
-                  await HapticFeedback.selectionClick();
-                  widget.controller.playBusGuess(BusGuess.above);
-                }
-              : null,
-          child: _StackPile(
-            cards: lane.high
-                .take(_visibleCountForBusZone(step, 'high'))
-                .toList(),
-            size: _CardVisualSize.extraSmall,
+    if (active || highCount > 0) {
+      widgets.add(
+        Positioned.fromRect(
+          rect: layout.highRects[step],
+          child: _BusZone(
+            label: active ? tr(lang, 'Above', 'Over') : '',
+            active: active,
+            tone: active ? tone.high : null,
+            onTap: active
+                ? () async {
+                    await HapticFeedback.selectionClick();
+                    widget.controller.playBusGuess(BusGuess.above);
+                  }
+                : null,
+            child: _StackPile(
+              cards: lane.high.take(highCount).toList(),
+              size: _CardVisualSize.extraSmall,
+            ),
           ),
         ),
-      ),
-    );
+      );
+    }
 
     widgets.add(
       Positioned.fromRect(
@@ -623,9 +626,7 @@ class _GameTableViewState extends State<GameTableView> {
                 right: 8,
                 bottom: 6,
                 child: _StackPile(
-                  cards: lane.same
-                      .take(_visibleCountForBusZone(step, 'same'))
-                      .toList(),
+                  cards: lane.same.take(sameCount).toList(),
                   size: _CardVisualSize.extraSmall,
                   samePile: true,
                 ),
@@ -636,26 +637,28 @@ class _GameTableViewState extends State<GameTableView> {
       ),
     );
 
-    widgets.add(
-      Positioned.fromRect(
-        rect: layout.lowRects[step],
-        child: _BusZone(
-          label: active ? tr(lang, 'Below', 'Under') : '',
-          active: active,
-          tone: active ? tone.low : null,
-          onTap: active
-              ? () async {
-                  await HapticFeedback.selectionClick();
-                  widget.controller.playBusGuess(BusGuess.below);
-                }
-              : null,
-          child: _StackPile(
-            cards: lane.low.take(_visibleCountForBusZone(step, 'low')).toList(),
-            size: _CardVisualSize.extraSmall,
+    if (active || lowCount > 0) {
+      widgets.add(
+        Positioned.fromRect(
+          rect: layout.lowRects[step],
+          child: _BusZone(
+            label: active ? tr(lang, 'Below', 'Under') : '',
+            active: active,
+            tone: active ? tone.low : null,
+            onTap: active
+                ? () async {
+                    await HapticFeedback.selectionClick();
+                    widget.controller.playBusGuess(BusGuess.below);
+                  }
+                : null,
+            child: _StackPile(
+              cards: lane.low.take(lowCount).toList(),
+              size: _CardVisualSize.extraSmall,
+            ),
           ),
         ),
-      ),
-    );
+      );
+    }
 
     return widgets;
   }
@@ -663,10 +666,12 @@ class _GameTableViewState extends State<GameTableView> {
   Widget _buildCelebration(Rect tableRect) {
     final AppLanguage lang = widget.state.language;
     final _BusLayout layout = _busLayout(tableRect);
-    final double width = math.min(320, tableRect.width - 28);
-    final double top = (layout.baseRects[2].top - 94).clamp(
-      tableRect.top + 28,
-      tableRect.top + 180,
+    final double width = math.min(320, tableRect.width - 24);
+    final double targetCenterY =
+        (layout.deckRect.center.dy + layout.baseRects[2].center.dy) / 2;
+    final double top = (targetCenterY - 80).clamp(
+      tableRect.top + 24,
+      layout.baseRects[2].top - 24,
     );
     return Positioned(
       left: tableRect.center.dx - width / 2,
@@ -1160,14 +1165,24 @@ class _GameTableViewState extends State<GameTableView> {
 
   Rect _tableRect(Size size, [GamePhase? phase]) {
     final bool warmup = phase == GamePhase.warmup;
-    final double width = math.min(size.width - (warmup ? 18 : 12), 960);
-    final double height = warmup
-        ? math.min(size.height - 136, math.max(352, size.height * 0.72))
-        : math.min(size.height - 12, math.max(360, size.height * 0.94));
+    final bool routePhase =
+        phase == GamePhase.bussetup ||
+        phase == GamePhase.bus ||
+        phase == GamePhase.finished;
+    final double width = math.min(size.width - (warmup ? 10 : 8), 980);
+    final double desiredHeight = warmup
+        ? size.height * 0.82
+        : routePhase
+        ? size.height * 0.95
+        : size.height * 0.96;
+    final double height = math.min(
+      size.height - (warmup ? 84 : 10),
+      math.max(warmup ? 360 : 380, desiredHeight),
+    );
     return Rect.fromCenter(
       center: Offset(
         size.width / 2,
-        warmup ? (size.height / 2) - 30 : size.height / 2,
+        warmup ? (size.height / 2) - 10 : size.height / 2,
       ),
       width: width,
       height: height,
@@ -1284,7 +1299,7 @@ class _GameTableViewState extends State<GameTableView> {
   }
 
   Offset _busDeckCenter(Rect rect) {
-    return Offset(rect.center.dx, rect.top + 104);
+    return Offset(rect.center.dx, rect.top + 96);
   }
 
   List<Rect> _pyramidSlotRects(Rect rect) {
@@ -1411,12 +1426,12 @@ class _GameTableViewState extends State<GameTableView> {
     final double zoneHeight = 52;
     final double baseHeight = _CardMetrics.medium.height + 14;
     final double startX = rect.center.dx - totalWidth / 2;
-    final double minBaseTop = rect.top + 194;
+    final double minBaseTop = rect.top + 208;
     final double maxBaseTop = math.max(
       minBaseTop,
-      rect.bottom - baseHeight - zoneHeight - 24,
+      rect.bottom - baseHeight - zoneHeight - 28,
     );
-    final double baseTop = (rect.top + 214).clamp(minBaseTop, maxBaseTop);
+    final double baseTop = (rect.top + 238).clamp(minBaseTop, maxBaseTop);
 
     final List<Rect> highRects = <Rect>[];
     final List<Rect> baseRects = <Rect>[];
@@ -1453,7 +1468,7 @@ class _GameTableViewState extends State<GameTableView> {
       highRects: highRects,
       baseRects: baseRects,
       lowRects: lowRects,
-      controlsTop: lowRects.first.bottom + 20,
+      controlsTop: lowRects.first.bottom + 18,
     );
   }
 
@@ -2098,6 +2113,10 @@ class _BusZone extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!active && tone == null) {
+      return IgnorePointer(child: Center(child: child));
+    }
+
     final Color background = switch (tone) {
       BannerTone.success => const Color(0x4425A363),
       BannerTone.fail => const Color(0x48B93838),
@@ -2196,6 +2215,10 @@ class _BusBase extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!active && tone == null && sameButtonLabel == null) {
+      return IgnorePointer(child: Center(child: child));
+    }
+
     final Color border = active
         ? const Color(0x99FFE4A7)
         : tone == BannerTone.success
