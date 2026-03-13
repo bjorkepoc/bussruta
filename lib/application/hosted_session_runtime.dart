@@ -425,9 +425,6 @@ class HostedSessionRuntime {
       if (!_state.playerOrder.contains(target)) {
         continue;
       }
-      if (target == pending.sourcePlayerId) {
-        continue;
-      }
       increments[target] = (increments[target] ?? 0) + amount;
     }
     if (increments.isEmpty) {

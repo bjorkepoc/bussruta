@@ -104,6 +104,43 @@ void main() {
       expect(runtime.state.pendingDrinkPenaltyByPlayer[3], 1);
     });
 
+    test('allows assigning drinks to yourself in hosted mode', () {
+      final HostedSessionRuntime runtime = HostedSessionRuntime(
+        engine: GameEngine(),
+        initialState: _warmupState(
+          round: 2,
+          players: <PlayerState>[
+            PlayerState(name: 'Host', hand: <PlayingCard>[card(Suit.clubs, 5)]),
+            const PlayerState(name: 'A', hand: <PlayingCard>[]),
+          ],
+          deck: <PlayingCard>[card(Suit.hearts, 12)],
+        ),
+      );
+
+      runtime.applyCommand(
+        const HostedSessionCommand(
+          type: HostedCommandType.warmupGuess,
+          playerId: 1,
+          payload: <String, dynamic>{'guess': 'above'},
+        ),
+      );
+      expect(runtime.state.pendingDrinkDistribution?.totalDrinks, 2);
+
+      runtime.applyCommand(
+        const HostedSessionCommand(
+          type: HostedCommandType.assignDrinks,
+          playerId: 1,
+          payload: <String, dynamic>{
+            'targets': <String, int>{'1': 1, '2': 1},
+          },
+        ),
+      );
+
+      expect(runtime.state.pendingDrinkDistribution, isNull);
+      expect(runtime.state.pendingDrinkPenaltyByPlayer[1], 1);
+      expect(runtime.state.pendingDrinkPenaltyByPlayer[2], 1);
+    });
+
     test('queues pyramid givers and resolves them one-by-one', () {
       final HostedSessionRuntime runtime = HostedSessionRuntime(
         engine: GameEngine(),

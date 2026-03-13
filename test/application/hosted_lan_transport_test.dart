@@ -7,6 +7,13 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('HostedLan transport', () {
+    test('hosts on the deterministic LAN session port', () async {
+      final HostedLanHostServer server = await _startServer();
+      addTearDown(() => server.close(broadcastSessionClosed: false));
+
+      expect(server.port, hostedSessionPort);
+    });
+
     test('reconnects to same seat when reconnect token matches', () async {
       final HostedLanHostServer server = await _startServer();
       bool serverClosed = false;

@@ -8,6 +8,7 @@ import 'package:bussruta_app/domain/hosted_models.dart';
 import 'package:bussruta_app/domain/hosted_projection.dart';
 
 const int hostedDiscoveryPort = 45878;
+const int hostedSessionPort = 45879;
 const String _announcementType = 'bussruta-host-v1';
 
 enum HostedClientIssueCode {
@@ -130,13 +131,18 @@ class HostedLanDiscovery {
       }
       final String pin = (json['pin'] as String? ?? '').trim();
       final int port = json['port'] as int? ?? 0;
-      if (pin.isEmpty || port <= 0) {
+      final String announcedAddress =
+          (json['hostAddress'] as String? ?? '').trim();
+      final String hostAddress = announcedAddress.isNotEmpty
+          ? announcedAddress
+          : datagram.address.address;
+      if (pin.isEmpty || port <= 0 || hostAddress.isEmpty) {
         return null;
       }
       return HostedDiscoveryEntry(
         pin: pin,
         hostName: (json['name'] as String? ?? 'Host').trim(),
-        hostAddress: datagram.address.address,
+        hostAddress: hostAddress,
         hostPort: port,
         lastSeenUtcMillis: DateTime.now().toUtc().millisecondsSinceEpoch,
       );
@@ -202,6 +208,7 @@ class HostedLanHostServer {
   Stream<HostedSessionState> get stateUpdates => _stateUpdates.stream;
   Stream<String> get errors => _errors.stream;
   HostedSessionState get state => runtime.state;
+  String? get hostAddress => _hostAddress;
   int get port => _server?.port ?? 0;
 
   Future<void> start() async {
@@ -210,7 +217,7 @@ class HostedLanHostServer {
     }
     _server = await ServerSocket.bind(
       InternetAddress.anyIPv4,
-      0,
+      hostedSessionPort,
       shared: false,
     );
     _nextPlayerId = runtime.state.playerOrder.fold<int>(1, max<int>) + 1;
@@ -538,18 +545,38 @@ class HostedLanHostServer {
         type: InternetAddressType.IPv4,
         includeLoopback: false,
       );
+      String? fallback;
       for (final NetworkInterface iface in interfaces) {
         for (final InternetAddress address in iface.addresses) {
-          if (address.address.startsWith('169.254.')) {
+          final String value = address.address;
+          if (value.startsWith('169.254.')) {
             continue;
           }
-          return address.address;
+          if (_isPrivateIpv4(value)) {
+            return value;
+          }
+          fallback ??= value;
         }
       }
-      return null;
+      return fallback;
     } catch (_) {
       return null;
     }
+  }
+
+  bool _isPrivateIpv4(String address) {
+    if (address.startsWith('10.') || address.startsWith('192.168.')) {
+      return true;
+    }
+    if (!address.startsWith('172.')) {
+      return false;
+    }
+    final List<String> parts = address.split('.');
+    if (parts.length < 2) {
+      return false;
+    }
+    final int? second = int.tryParse(parts[1]);
+    return second != null && second >= 16 && second <= 31;
   }
 
   void _send(Socket socket, Map<String, dynamic> payload) {

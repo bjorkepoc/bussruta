@@ -57,6 +57,7 @@ class HostedSessionController extends ChangeNotifier {
   String? _lastPlayerToken;
   int? _lastPlayerId;
   int _reconnectAttempt = 0;
+  bool _reconnectAttemptInFlight = false;
 
   HostedFlowState get flowState => _flowState;
   HostedConnectionStatus get connectionStatus => _connectionStatus;
@@ -66,6 +67,8 @@ class HostedSessionController extends ChangeNotifier {
   List<HostedDiscoveryEntry> get discoveries => _discoveries;
   AppLanguage get language => _language;
   String? get sessionPin => _projection?.publicView.sessionPin;
+  String? get hostAddress => _hostServer?.hostAddress;
+  int? get hostPort => _hostServer?.port;
   List<String> get hostGameLog =>
       _hostServer?.state.gameState.log ?? const <String>[];
   bool get hasActiveSession =>
@@ -85,6 +88,8 @@ class HostedSessionController extends ChangeNotifier {
 
   Future<void> initialize({required AppLanguage language}) async {
     _language = language;
+    await _discoverySub?.cancel();
+    _discoverySub = null;
     await _discovery.start();
     _discoverySub = _discovery.updates.listen((
       List<HostedDiscoveryEntry> list,
@@ -142,9 +147,11 @@ class HostedSessionController extends ChangeNotifier {
     _lastPlayerToken = null;
     _lastPlayerId = host.playerId;
     _reconnectAttempt = 0;
+    final String hostHint =
+        server.hostAddress == null ? '' : ' ${server.hostAddress}:${server.port}';
     _infoMessage = _tr(
-      'Hosting started. Share PIN $pin.',
-      'Hosting startet. Del PIN $pin.',
+      'Hosting started. Share PIN $pin.$hostHint',
+      'Hosting startet. Del PIN $pin.$hostHint',
     );
     _bindHostServer(server);
     _syncHostAutoPlay();
@@ -189,11 +196,13 @@ class HostedSessionController extends ChangeNotifier {
     final String? address = hostAddress?.trim().isNotEmpty == true
         ? hostAddress!.trim()
         : match?.hostAddress;
-    final int? port = hostPort ?? match?.hostPort;
+    final int? port = hostPort ??
+        match?.hostPort ??
+        (address == null ? null : hostedSessionPort);
     if (address == null || port == null) {
       _errorMessage = _tr(
-        'PIN not found on local network. Use LAN discovery first.',
-        'PIN ikke funnet pa lokalt nettverk. Bruk LAN-oversikt forst.',
+        'PIN was not found automatically. Enter the host address shown by the host device.',
+        'PIN ble ikke funnet automatisk. Skriv inn vertsadressen som vises pa verts-enheten.',
       );
       notifyListeners();
       return;
@@ -493,10 +502,6 @@ class HostedSessionController extends ChangeNotifier {
         _connectionStatus = HostedConnectionStatus.disconnected;
         _infoMessage = _tr(
           'Connection dropped. Trying to reconnect...',
-          'Tilkoblingen falt ut. Prøver å koble til igjen...',
-        );
-        _infoMessage = _tr(
-          'Connection dropped. Trying to reconnect...',
           'Tilkoblingen falt ut. Prover a koble til igjen...',
         );
         _startReconnectLoop();
@@ -539,6 +544,7 @@ class HostedSessionController extends ChangeNotifier {
     _connectionStatus = HostedConnectionStatus.reconnecting;
     _reconnectTimer?.cancel();
     _reconnectAttempt = 0;
+    _reconnectAttemptInFlight = false;
     _reconnectTimer = Timer.periodic(const Duration(seconds: 2), (
       Timer timer,
     ) async {
@@ -557,12 +563,18 @@ class HostedSessionController extends ChangeNotifier {
         notifyListeners();
         return;
       }
+      if (_reconnectAttemptInFlight) {
+        return;
+      }
       _reconnectAttempt += 1;
       await _attemptReconnect();
     });
   }
 
   Future<void> _attemptReconnect() async {
+    if (_reconnectAttemptInFlight) {
+      return;
+    }
     if (_lastHostAddress == null ||
         _lastHostPort == null ||
         _lastPin == null ||
@@ -571,6 +583,7 @@ class HostedSessionController extends ChangeNotifier {
         _lastPlayerId == null) {
       return;
     }
+    _reconnectAttemptInFlight = true;
     try {
       await _clientProjectionSub?.cancel();
       _clientProjectionSub = null;
@@ -606,12 +619,15 @@ class HostedSessionController extends ChangeNotifier {
       notifyListeners();
     } catch (_) {
       // Keep retry loop alive until max attempts.
+    } finally {
+      _reconnectAttemptInFlight = false;
     }
   }
 
   Future<void> _clearRemoteSessionState() async {
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
+    _reconnectAttemptInFlight = false;
     await _clientProjectionSub?.cancel();
     _clientProjectionSub = null;
     await _clientIssuesSub?.cancel();
@@ -631,6 +647,7 @@ class HostedSessionController extends ChangeNotifier {
     _autoPlayRunning = false;
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
+    _reconnectAttemptInFlight = false;
     await _hostStateSub?.cancel();
     _hostStateSub = null;
     await _hostErrorsSub?.cancel();
