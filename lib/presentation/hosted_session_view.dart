@@ -26,6 +26,8 @@ class HostedSessionView extends StatefulWidget {
 
 class _HostedSessionViewState extends State<HostedSessionView>
     with SingleTickerProviderStateMixin {
+  static const double _hostedCardAspect = 0.7;
+
   final TextEditingController _name = TextEditingController();
   final TextEditingController _pin = TextEditingController();
   final TextEditingController _host = TextEditingController();
@@ -759,8 +761,10 @@ class _HostedSessionViewState extends State<HostedSessionView>
                           ),
                         ),
                       ],
-                      const SizedBox(height: 10),
-                      _ownHandPanel(projection.ownHand),
+                      if (view.phase != GamePhase.finished) ...<Widget>[
+                        const SizedBox(height: 10),
+                        _ownHandPanel(projection.ownHand),
+                      ],
                     ],
                   ),
                 ),
@@ -1800,13 +1804,13 @@ class _HostedSessionViewState extends State<HostedSessionView>
                 final int count = route.routeCards.length;
                 final double maxCardWidth =
                     (constraints.maxWidth - gap * (count - 1)) / count;
-                final double cardWidth = maxCardWidth.clamp(38, 72).toDouble();
-                final double cardHeight = cardWidth * 1.42;
-                final double totalWidth = cardWidth * count + gap * (count - 1);
+                final double cardWidth = maxCardWidth.clamp(34, 56).toDouble();
+                final double cardHeight = cardWidth / _hostedCardAspect;
                 return Center(
-                  child: SizedBox(
-                    width: totalWidth,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
                     child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: List<Widget>.generate(count, (int index) {
                         final bool isActive = routePhase && active == index;
                         return Padding(
@@ -2100,20 +2104,22 @@ class _HostedSessionViewState extends State<HostedSessionView>
     bool showBack = false,
     bool emphasized = false,
   }) {
-    final bool red = card?.suit == Suit.hearts || card?.suit == Suit.diamonds;
     final bool back = showBack || card == null;
+    final double radius = width * 0.18;
+
     return Container(
       width: width,
       height: height,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(width * 0.16),
+        borderRadius: BorderRadius.circular(radius),
         border: Border.all(
-          color: back ? const Color(0xFF31586B) : const Color(0xFFCDB79F),
-          width: emphasized ? 1.5 : 1.0,
+          color: back ? const Color(0xFFB8CBE0) : const Color(0xFFCEBCA8),
+          width: emphasized ? 1.4 : 1.0,
         ),
+        color: back ? const Color(0xFF163E5A) : const Color(0xFFFFFCF7),
         gradient: back
             ? const LinearGradient(
-                colors: <Color>[Color(0xFF204B41), Color(0xFF15382F)],
+                colors: <Color>[Color(0xFF214B4A), Color(0xFF132B35)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               )
@@ -2124,50 +2130,176 @@ class _HostedSessionViewState extends State<HostedSessionView>
               ),
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.16),
-            blurRadius: emphasized ? 14 : 8,
-            offset: const Offset(0, 4),
+            color: const Color(0x22000000).withValues(
+              alpha: emphasized ? 0.2 : 0.13,
+            ),
+            blurRadius: emphasized ? 12 : 9,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
-      child: back
-          ? Center(
-              child: RotatedBox(
-                quarterTurns: 1,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: const <Widget>[
-                    Icon(
-                      Icons.directions_bus_filled_rounded,
-                      color: Color(0xFFFFC83D),
-                      size: 18,
-                    ),
-                    SizedBox(width: 6),
-                    Text(
-                      'BUS',
-                      style: TextStyle(
-                        color: Color(0xFFFFE5A3),
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 3,
-                      ),
-                    ),
-                  ],
-                ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(radius),
+        child: back
+            ? _hostedCardBack(radius: radius)
+            : _hostedCardFace(card, width: width, height: height),
+      ),
+    );
+  }
+
+  Widget _hostedCardFace(
+    PlayingCard card, {
+    required double width,
+    required double height,
+  }) {
+    final bool red = card.suit == Suit.hearts || card.suit == Suit.diamonds;
+    final Color ink = red ? const Color(0xFFBE3030) : const Color(0xFF232323);
+    final double cornerFont = width < 36
+        ? 7
+        : width < 52
+        ? 9.5
+        : 12;
+    final double centerFont = width < 36
+        ? 12
+        : width < 52
+        ? 18
+        : 24;
+
+    return Padding(
+      padding: const EdgeInsets.all(4),
+      child: Stack(
+        children: <Widget>[
+          Align(
+            alignment: Alignment.topLeft,
+            child: _HostedCornerMark(
+              label: card.rankLabel,
+              suit: _suitGlyphForDisplay(card.suit),
+              color: ink,
+              fontSize: cornerFont,
+            ),
+          ),
+          Align(
+            alignment: Alignment.center,
+            child: Text(
+              _suitGlyphForDisplay(card.suit),
+              style: TextStyle(
+                color: ink,
+                fontSize: centerFont,
+                fontWeight: FontWeight.w800,
               ),
-            )
-          : Center(
-              child: Text(
-                card.shortLabel(),
-                style: TextStyle(
-                  fontSize: emphasized ? 29 : 19,
-                  fontWeight: FontWeight.w900,
-                  color: red
-                      ? const Color(0xFFB93838)
-                      : const Color(0xFF202020),
+            ),
+          ),
+          Align(
+            alignment: Alignment.bottomRight,
+            child: RotatedBox(
+              quarterTurns: 2,
+              child: _HostedCornerMark(
+                label: card.rankLabel,
+                suit: _suitGlyphForDisplay(card.suit),
+                color: ink,
+                fontSize: cornerFont,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _hostedCardBack({required double radius}) {
+    return Stack(
+      fit: StackFit.expand,
+      children: <Widget>[
+        Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: <Color>[Color(0xFF224F4E), Color(0xFF17313F)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(radius),
+            ),
+          ),
+        ),
+        Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(radius),
+              gradient: LinearGradient(
+                colors: <Color>[
+                  Colors.white.withValues(alpha: 0.06),
+                  Colors.transparent,
+                  Colors.black.withValues(alpha: 0.1),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
+        ),
+        Positioned.fill(
+          child: Padding(
+            padding: const EdgeInsets.all(5),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.white.withValues(alpha: 0.26)),
+                borderRadius: BorderRadius.circular(
+                  math.max(2, radius - 1.4),
                 ),
               ),
             ),
+          ),
+        ),
+        Positioned(
+          left: 9,
+          right: 9,
+          top: 11,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(999),
+              color: const Color(0x33FFE08F),
+            ),
+            child: const SizedBox(height: 3),
+          ),
+        ),
+        Positioned(
+          left: 13,
+          right: 13,
+          bottom: 13,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(999),
+              color: Colors.white.withValues(alpha: 0.18),
+            ),
+            child: const SizedBox(height: 2),
+          ),
+        ),
+        const Center(
+          child: RotatedBox(
+            quarterTurns: 1,
+            child: Icon(
+              Icons.directions_bus_filled_rounded,
+              color: Color(0xFFFFD155),
+              size: 22,
+            ),
+          ),
+        ),
+      ],
     );
+  }
+
+  String _suitGlyphForDisplay(Suit suit) {
+    switch (suit) {
+      case Suit.clubs:
+        return '\u2663';
+      case Suit.diamonds:
+        return '\u2666';
+      case Suit.hearts:
+        return '\u2665';
+      case Suit.spades:
+        return '\u2660';
+    }
   }
 
   Widget _surfaceCard({required Widget child, Color? color}) {
@@ -2474,4 +2606,45 @@ class _ConnectionVisual {
   final Color color;
   final String title;
   final String subtitle;
+}
+
+class _HostedCornerMark extends StatelessWidget {
+  const _HostedCornerMark({
+    required this.label,
+    required this.suit,
+    required this.color,
+    required this.fontSize,
+  });
+
+  final String label;
+  final String suit;
+  final Color color;
+  final double fontSize;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Text(
+          label,
+          style: TextStyle(
+            color: color,
+            fontWeight: FontWeight.w900,
+            fontSize: fontSize,
+            height: 1,
+          ),
+        ),
+        Text(
+          suit,
+          style: TextStyle(
+            color: color,
+            fontWeight: FontWeight.w900,
+            fontSize: fontSize,
+            height: 1,
+          ),
+        ),
+      ],
+    );
+  }
 }
