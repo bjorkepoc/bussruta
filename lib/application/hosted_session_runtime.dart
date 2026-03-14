@@ -68,6 +68,10 @@ class HostedSessionRuntime {
   }
 
   HostedSessionState applyCommand(HostedSessionCommand command) {
+    final HostedSessionState before = _state;
+    final Map<int, int> penaltiesBefore = Map<int, int>.from(
+      before.pendingDrinkPenaltyByPlayer,
+    );
     if (_state.pendingDrinkDistribution != null &&
         command.type != HostedCommandType.assignDrinks &&
         command.type != HostedCommandType.acknowledgeDrinks &&
@@ -118,6 +122,12 @@ class HostedSessionRuntime {
         _state = _handleSetAutoPlayDelayMs(command);
         break;
     }
+    _state = _expireStaleDrinkPrompts(
+      previous: before,
+      current: _state,
+      previousPenalties: penaltiesBefore,
+      commandType: command.type,
+    );
     return _state;
   }
 
@@ -811,6 +821,58 @@ class HostedSessionRuntime {
 
   String _tr(AppLanguage language, String english, String norwegian) {
     return language == AppLanguage.no ? norwegian : english;
+  }
+
+  HostedSessionState _expireStaleDrinkPrompts({
+    required HostedSessionState previous,
+    required HostedSessionState current,
+    required Map<int, int> previousPenalties,
+    required HostedCommandType commandType,
+  }) {
+    if (!_autoExpirePromptCommand(commandType) || previousPenalties.isEmpty) {
+      return current;
+    }
+    if (identical(previous.gameState, current.gameState)) {
+      return current;
+    }
+    final Map<int, int> fresh = <int, int>{};
+    current.pendingDrinkPenaltyByPlayer.forEach((int playerId, int amount) {
+      final int oldAmount = previousPenalties[playerId] ?? 0;
+      final int delta = amount - oldAmount;
+      if (delta > 0) {
+        fresh[playerId] = delta;
+      }
+    });
+    if (_samePenaltyMap(fresh, current.pendingDrinkPenaltyByPlayer)) {
+      return current;
+    }
+    return current.copyWith(pendingDrinkPenaltyByPlayer: fresh);
+  }
+
+  bool _autoExpirePromptCommand(HostedCommandType type) {
+    return switch (type) {
+      HostedCommandType.warmupGuess ||
+      HostedCommandType.revealPyramid ||
+      HostedCommandType.runTieBreakRound ||
+      HostedCommandType.beginBusRoute ||
+      HostedCommandType.playBusGuess => true,
+      _ => false,
+    };
+  }
+
+  bool _samePenaltyMap(Map<int, int> a, Map<int, int> b) {
+    if (identical(a, b)) {
+      return true;
+    }
+    if (a.length != b.length) {
+      return false;
+    }
+    for (final MapEntry<int, int> entry in a.entries) {
+      if (b[entry.key] != entry.value) {
+        return false;
+      }
+    }
+    return true;
   }
 }
 

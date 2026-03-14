@@ -218,6 +218,77 @@ void main() {
       );
       expect(runtime.state.lastError, contains('Only the bus loser'));
     });
+
+    test('expires stale drink penalty prompts after next warmup action', () {
+      final HostedSessionRuntime runtime = HostedSessionRuntime(
+        engine: GameEngine(),
+        initialState: _warmupState(
+          round: 1,
+          players: <PlayerState>[
+            const PlayerState(name: 'Host', hand: <PlayingCard>[]),
+            const PlayerState(name: 'Guest', hand: <PlayingCard>[]),
+          ],
+          deck: <PlayingCard>[
+            card(Suit.hearts, 6),
+            card(Suit.spades, 9),
+          ],
+        ),
+      );
+
+      runtime.applyCommand(
+        const HostedSessionCommand(
+          type: HostedCommandType.warmupGuess,
+          playerId: 1,
+          payload: <String, dynamic>{'guess': 'red'},
+        ),
+      );
+      expect(runtime.state.pendingDrinkPenaltyByPlayer[1], 1);
+
+      runtime.applyCommand(
+        const HostedSessionCommand(
+          type: HostedCommandType.warmupGuess,
+          playerId: 2,
+          payload: <String, dynamic>{'guess': 'black'},
+        ),
+      );
+
+      expect(runtime.state.pendingDrinkPenaltyByPlayer.containsKey(1), isFalse);
+      expect(runtime.state.pendingDrinkPenaltyByPlayer[2], 1);
+    });
+
+    test('does not clear drink penalty when command is rejected', () {
+      final HostedSessionRuntime runtime = HostedSessionRuntime(
+        engine: GameEngine(),
+        initialState: _warmupState(
+          round: 1,
+          players: <PlayerState>[
+            const PlayerState(name: 'Host', hand: <PlayingCard>[]),
+            const PlayerState(name: 'Guest', hand: <PlayingCard>[]),
+          ],
+          deck: <PlayingCard>[card(Suit.spades, 9)],
+        ),
+      );
+
+      runtime.applyCommand(
+        const HostedSessionCommand(
+          type: HostedCommandType.warmupGuess,
+          playerId: 1,
+          payload: <String, dynamic>{'guess': 'red'},
+        ),
+      );
+      expect(runtime.state.pendingDrinkPenaltyByPlayer[1], 1);
+
+      runtime.applyCommand(
+        const HostedSessionCommand(
+          type: HostedCommandType.warmupGuess,
+          playerId: 1,
+          payload: <String, dynamic>{'guess': 'red'},
+        ),
+      );
+
+      expect(runtime.state.lastError, contains('Not your warmup turn'));
+      expect(runtime.state.pendingDrinkPenaltyByPlayer[1], 1);
+    });
   });
 }
 

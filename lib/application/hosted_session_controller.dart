@@ -198,11 +198,23 @@ class HostedSessionController extends ChangeNotifier {
         break;
       }
     }
-    final String? address = hostAddress?.trim().isNotEmpty == true
-        ? hostAddress!.trim()
-        : match?.hostAddress;
+    HostedJoinHostInput? manualTarget;
+    if (hostAddress != null && hostAddress.trim().isNotEmpty) {
+      try {
+        manualTarget = parseHostedJoinHostInput(hostAddress);
+      } on FormatException {
+        _errorMessage = _tr(
+          'Host address is invalid. Use host or host:port.',
+          'Vertsadresse er ugyldig. Bruk host eller host:port.',
+        );
+        notifyListeners();
+        return;
+      }
+    }
+    final String? address = manualTarget?.host ?? match?.hostAddress;
     final int? port =
         hostPort ??
+        manualTarget?.port ??
         match?.hostPort ??
         (address == null ? null : hostedSessionPort);
     if (address == null || port == null) {
@@ -230,6 +242,32 @@ class HostedSessionController extends ChangeNotifier {
     int? requestedPlayerId,
   }) async {
     await leaveSession();
+    final HostedJoinHostInput target;
+    try {
+      target = parseHostedJoinHostInput(hostAddress);
+    } on FormatException {
+      _flowState = HostedFlowState.idle;
+      _connectionStatus = HostedConnectionStatus.hostUnavailable;
+      _networkDiagnostic = null;
+      _errorMessage = _tr(
+        'Host address is invalid. Use host or host:port.',
+        'Vertsadresse er ugyldig. Bruk host eller host:port.',
+      );
+      notifyListeners();
+      return;
+    }
+    final int targetPort = target.port ?? hostPort;
+    if (targetPort < 1 || targetPort > 65535) {
+      _flowState = HostedFlowState.idle;
+      _connectionStatus = HostedConnectionStatus.hostUnavailable;
+      _networkDiagnostic = null;
+      _errorMessage = _tr(
+        'Host port is invalid.',
+        'Vertsport er ugyldig.',
+      );
+      notifyListeners();
+      return;
+    }
     _flowState = HostedFlowState.joiningLobby;
     _connectionStatus = HostedConnectionStatus.joining;
     notifyListeners();
@@ -237,7 +275,7 @@ class HostedSessionController extends ChangeNotifier {
         ? _fallbackGuestName()
         : playerName.trim();
     final List<String> addressCandidates = hostedJoinAddressCandidates(
-      hostAddress,
+      target.host,
     );
     final List<String> failedTargets = <String>[];
 
@@ -246,7 +284,7 @@ class HostedSessionController extends ChangeNotifier {
         final HostedLanClientConnection client =
             await HostedLanClientConnection.connect(
               hostAddress: candidateAddress,
-              hostPort: hostPort,
+              hostPort: targetPort,
               pin: pin,
               playerName: resolvedName,
               playerToken: playerToken,
@@ -260,33 +298,35 @@ class HostedSessionController extends ChangeNotifier {
         _flowState = HostedFlowState.inGame;
         _connectionStatus = HostedConnectionStatus.connected;
         _lastHostAddress = candidateAddress;
-        _lastHostPort = hostPort;
+        _lastHostPort = targetPort;
         _lastPin = pin;
         _lastPlayerName = resolvedName;
         _lastPlayerToken = client.playerToken;
         _lastPlayerId = client.playerId;
         _reconnectAttempt = 0;
-        _networkDiagnostic = 'Connected to $candidateAddress:$hostPort';
-        if (candidateAddress != hostAddress) {
+        _networkDiagnostic = 'Connected to $candidateAddress:$targetPort';
+        if (candidateAddress != target.host) {
           _infoMessage = _tr(
-            'Connected using emulator fallback target $candidateAddress:$hostPort.',
-            'Koblet til med emulator-fallback $candidateAddress:$hostPort.',
+            'Connected using emulator fallback target $candidateAddress:$targetPort.',
+            'Koblet til med emulator-fallback $candidateAddress:$targetPort.',
           );
         }
         _bindClient(client);
         notifyListeners();
         return;
       } catch (error) {
-        failedTargets.add('$candidateAddress:$hostPort -> $error');
+        failedTargets.add('$candidateAddress:$targetPort -> $error');
       }
     }
 
     _flowState = HostedFlowState.idle;
     _connectionStatus = HostedConnectionStatus.hostUnavailable;
-    _networkDiagnostic = 'Join failed. Tried ${failedTargets.join(' | ')}';
+    _networkDiagnostic = failedTargets.isEmpty
+        ? 'Join failed.'
+        : 'Join failed. Tried ${failedTargets.join(' | ')}';
     _errorMessage = _tr(
-      'Could not join hosted game. ${failedTargets.join(' | ')}',
-      'Kunne ikke bli med i hostet spill. ${failedTargets.join(' | ')}',
+      'Could not join hosted game. Check PIN, host address, and network connectivity.',
+      'Kunne ikke bli med i hostet spill. Sjekk PIN, vertsadresse og nettverkstilkobling.',
     );
     notifyListeners();
   }
@@ -880,4 +920,67 @@ List<String> hostedJoinAddressCandidates(String hostAddress) {
 
 bool hostedAddressLooksLikeEmulatorNat(String address) {
   return address.startsWith('10.0.2.');
+}
+
+class HostedJoinHostInput {
+  const HostedJoinHostInput({required this.host, required this.port});
+
+  final String host;
+  final int? port;
+}
+
+HostedJoinHostInput parseHostedJoinHostInput(String raw) {
+  final String input = raw.trim();
+  if (input.isEmpty) {
+    throw const FormatException('Host address is empty.');
+  }
+  if (input.contains('://')) {
+    final Uri? uri = Uri.tryParse(input);
+    if (uri != null && uri.host.trim().isNotEmpty) {
+      final int? uriPort = uri.hasPort && uri.port > 0 ? uri.port : null;
+      return HostedJoinHostInput(host: uri.host.trim(), port: uriPort);
+    }
+  }
+  if (input.startsWith('[')) {
+    final int closingBracket = input.indexOf(']');
+    if (closingBracket <= 1) {
+      throw const FormatException('Invalid bracketed host.');
+    }
+    final String hostPart = input.substring(1, closingBracket).trim();
+    if (hostPart.isEmpty) {
+      throw const FormatException('Host is empty.');
+    }
+    if (closingBracket == input.length - 1) {
+      return HostedJoinHostInput(host: hostPart, port: null);
+    }
+    final String suffix = input.substring(closingBracket + 1).trim();
+    if (!suffix.startsWith(':')) {
+      throw const FormatException('Unexpected suffix after host.');
+    }
+    final String portPart = suffix.substring(1).trim();
+    final int port = _parseHostedJoinPort(portPart);
+    return HostedJoinHostInput(host: hostPart, port: port);
+  }
+
+  final List<String> segments = input.split(':');
+  if (segments.length == 2) {
+    final String hostPart = segments[0].trim();
+    final String portPart = segments[1].trim();
+    if (hostPart.isEmpty) {
+      throw const FormatException('Host is empty.');
+    }
+    final int port = _parseHostedJoinPort(portPart);
+    return HostedJoinHostInput(host: hostPart, port: port);
+  }
+
+  return HostedJoinHostInput(host: input, port: null);
+}
+
+int _parseHostedJoinPort(String rawPort) {
+  final String portText = rawPort.trim();
+  final int? parsed = int.tryParse(portText);
+  if (parsed == null || parsed < 1 || parsed > 65535) {
+    throw const FormatException('Invalid host port.');
+  }
+  return parsed;
 }
