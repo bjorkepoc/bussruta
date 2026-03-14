@@ -261,10 +261,7 @@ class HostedSessionController extends ChangeNotifier {
       _flowState = HostedFlowState.idle;
       _connectionStatus = HostedConnectionStatus.hostUnavailable;
       _networkDiagnostic = null;
-      _errorMessage = _tr(
-        'Host port is invalid.',
-        'Vertsport er ugyldig.',
-      );
+      _errorMessage = _tr('Host port is invalid.', 'Vertsport er ugyldig.');
       notifyListeners();
       return;
     }

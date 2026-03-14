@@ -142,13 +142,36 @@ class _HostedSessionViewState extends State<HostedSessionView>
                       if (networkDiagnostic != null &&
                           networkDiagnostic.trim().isNotEmpty) ...<Widget>[
                         const SizedBox(height: 10),
-                        SelectableText(
-                          networkDiagnostic,
-                          style: const TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 12,
-                            color: Color(0xFF4B3524),
+                        ExpansionTile(
+                          tilePadding: EdgeInsets.zero,
+                          childrenPadding: EdgeInsets.zero,
+                          collapsedIconColor: const Color(0xFF6D4F33),
+                          iconColor: const Color(0xFF6D4F33),
+                          title: Text(
+                            tr(
+                              language,
+                              'Advanced diagnostics',
+                              'Avanserte diagnoser',
+                            ),
+                            style: const TextStyle(
+                              color: Color(0xFF6D4F33),
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                            ),
                           ),
+                          children: <Widget>[
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: SelectableText(
+                                networkDiagnostic,
+                                style: const TextStyle(
+                                  fontFamily: 'monospace',
+                                  fontSize: 12,
+                                  color: Color(0xFF4B3524),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ],
@@ -217,10 +240,11 @@ class _HostedSessionViewState extends State<HostedSessionView>
                       decoration: InputDecoration(
                         labelText: tr(
                           language,
-                          'Host address (use for emulators)',
-                          'Vertsadresse (bruk for emulatorer)',
+                          'Host address (host or host:port)',
+                          'Vertsadresse (host eller host:port)',
                         ),
                         border: const OutlineInputBorder(),
+                        hintText: '10.0.2.2:45879',
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -683,8 +707,13 @@ class _HostedSessionViewState extends State<HostedSessionView>
                         const SizedBox(height: 8),
                         _bannerCard(view.banner, view.bannerTone),
                       ],
-                      const SizedBox(height: 8),
-                      _ownHandPanel(projection.ownHand),
+                      const SizedBox(height: 10),
+                      _tablePanel(
+                        projection: projection,
+                        connected: connected,
+                        blocked: blocked,
+                        myTurn: myTurn,
+                      ),
                       if (projection.giveOutPromptDrinks > 0) ...<Widget>[
                         const SizedBox(height: 8),
                         _promptCard(
@@ -731,12 +760,7 @@ class _HostedSessionViewState extends State<HostedSessionView>
                         ),
                       ],
                       const SizedBox(height: 10),
-                      _tablePanel(
-                        projection: projection,
-                        connected: connected,
-                        blocked: blocked,
-                        myTurn: myTurn,
-                      ),
+                      _ownHandPanel(projection.ownHand),
                     ],
                   ),
                 ),
@@ -896,76 +920,20 @@ class _HostedSessionViewState extends State<HostedSessionView>
               ],
             ),
             const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: view.players.map((HostedPublicPlayer player) {
-                final bool activeTurn =
-                    view.currentTurnPlayerId == player.playerId;
-                final bool isViewer =
-                    player.playerId == projection.viewerPlayerId;
-                final Color color = !player.connected
-                    ? const Color(0xFF8A6E64)
-                    : activeTurn
-                    ? const Color(0xFF2E9C5B)
-                    : isViewer
-                    ? const Color(0xFFE2B356)
-                    : const Color(0xFFF2E8D5);
-                final Color textColor = !player.connected
-                    ? const Color(0xFFEBD8D1)
-                    : (activeTurn || isViewer)
-                    ? const Color(0xFF183728)
-                    : const Color(0xFF5E422D);
-                final String label =
-                    '${player.name} - ${player.handCount} ${tr(widget.language, 'cards', 'kort')}';
-                return DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: color,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: activeTurn
-                          ? const Color(0xFFA3E2B9)
-                          : const Color(0x40FFFFFF),
-                    ),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 8,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        if (player.isHost)
-                          Padding(
-                            padding: const EdgeInsets.only(right: 6),
-                            child: Icon(
-                              Icons.workspace_premium,
-                              size: 16,
-                              color: textColor,
-                            ),
-                          ),
-                        Text(
-                          label,
-                          style: TextStyle(
-                            color: textColor,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 12),
+            if (view.phase != GamePhase.pyramid) ...<Widget>[
+              _publicPlayerChips(
+                players: view.players,
+                currentTurnPlayerId: view.currentTurnPlayerId,
+                viewerPlayerId: projection.viewerPlayerId,
+              ),
+              const SizedBox(height: 12),
+            ],
             if (view.phase == GamePhase.warmup)
               _warmupButtons(
                 enabled: myTurn && !blocked && connected,
                 round: view.warmupRound,
               ),
-            if (view.phase == GamePhase.pyramid)
+            if (view.phase == GamePhase.pyramid) ...<Widget>[
               _pyramidPublicPanel(
                 cards: view.pyramidCards,
                 revealIndex: view.pyramidRevealIndex,
@@ -973,6 +941,13 @@ class _HostedSessionViewState extends State<HostedSessionView>
                     ? widget.controller.revealPyramidNext
                     : null,
               ),
+              const SizedBox(height: 12),
+              _publicPlayerChips(
+                players: view.players,
+                currentTurnPlayerId: view.currentTurnPlayerId,
+                viewerPlayerId: projection.viewerPlayerId,
+              ),
+            ],
             if (view.phase == GamePhase.tiebreak)
               _tieBreakPanel(
                 tieBreak: view.tieBreak,
@@ -993,6 +968,71 @@ class _HostedSessionViewState extends State<HostedSessionView>
           ],
         ),
       ),
+    );
+  }
+
+  Widget _publicPlayerChips({
+    required List<HostedPublicPlayer> players,
+    required int? currentTurnPlayerId,
+    required int viewerPlayerId,
+  }) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: players.map((HostedPublicPlayer player) {
+        final bool activeTurn = currentTurnPlayerId == player.playerId;
+        final bool isViewer = player.playerId == viewerPlayerId;
+        final Color color = !player.connected
+            ? const Color(0xFF8A6E64)
+            : activeTurn
+            ? const Color(0xFF2E9C5B)
+            : isViewer
+            ? const Color(0xFFE2B356)
+            : const Color(0xFFF2E8D5);
+        final Color textColor = !player.connected
+            ? const Color(0xFFEBD8D1)
+            : (activeTurn || isViewer)
+            ? const Color(0xFF183728)
+            : const Color(0xFF5E422D);
+        final String label =
+            '${player.name} - ${player.handCount} ${tr(widget.language, 'cards', 'kort')}';
+        return DecoratedBox(
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: activeTurn
+                  ? const Color(0xFFA3E2B9)
+                  : const Color(0x40FFFFFF),
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                if (player.isHost)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: Icon(
+                      Icons.workspace_premium,
+                      size: 16,
+                      color: textColor,
+                    ),
+                  ),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: textColor,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 
@@ -1369,6 +1409,12 @@ class _HostedSessionViewState extends State<HostedSessionView>
     required int revealIndex,
     required VoidCallback? onReveal,
   }) {
+    return _pyramidBoardPanel(
+      cards: cards,
+      revealIndex: revealIndex,
+      onReveal: onReveal,
+    );
+    /*
     final List<PlayingCard> revealed = cards.whereType<PlayingCard>().toList(
       growable: false,
     );
@@ -1446,6 +1492,144 @@ class _HostedSessionViewState extends State<HostedSessionView>
             ],
           ],
         ),
+      ),
+    );
+    */
+  }
+
+  Widget _pyramidBoardPanel({
+    required List<PlayingCard?> cards,
+    required int revealIndex,
+    required VoidCallback? onReveal,
+  }) {
+    const List<List<int>> rows = <List<int>>[
+      <int>[14],
+      <int>[12, 13],
+      <int>[9, 10, 11],
+      <int>[5, 6, 7, 8],
+      <int>[0, 1, 2, 3, 4],
+    ];
+    final bool hasMore = revealIndex < cards.length;
+    final bool canReveal = hasMore && onReveal != null;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        color: const Color(0xAA143E2D),
+        border: Border.all(color: const Color(0x66FFD89A)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              tr(widget.language, 'Pyramid reveal', 'Pyramideavdekking'),
+              style: const TextStyle(
+                color: Color(0xFFF8E9D8),
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Center(
+              child: GestureDetector(
+                onTap: canReveal ? onReveal : null,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: canReveal
+                          ? const Color(0xFFE9C172)
+                          : const Color(0x66FFFFFF),
+                      width: canReveal ? 2 : 1,
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: _playingCard(
+                      null,
+                      showBack: true,
+                      width: 64,
+                      height: 92,
+                      emphasized: canReveal,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              hasMore
+                  ? tr(
+                      widget.language,
+                      canReveal
+                          ? 'Tap deck to reveal next pyramid card.'
+                          : 'Host reveals next pyramid card from the deck.',
+                      canReveal
+                          ? 'Trykk stokken for a avslore neste pyramidekort.'
+                          : 'Verten avdekker neste pyramidekort fra stokken.',
+                    )
+                  : tr(
+                      widget.language,
+                      'All pyramid cards are revealed.',
+                      'Alle pyramidekort er avdekket.',
+                    ),
+              style: const TextStyle(
+                color: Color(0xFFF2E7D7),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 12),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(18),
+                color: const Color(0x33000000),
+                border: Border.all(color: const Color(0x38FFFFFF)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 12,
+                ),
+                child: Column(
+                  children: rows.map((List<int> row) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: row.map((int index) {
+                          final PlayingCard? card = cards[index];
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: _pyramidSlotCard(card),
+                          );
+                        }).toList(),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _pyramidSlotCard(PlayingCard? card) {
+    if (card != null) {
+      return _playingCard(card, width: 52, height: 74);
+    }
+    return Container(
+      width: 52,
+      height: 74,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        color: const Color(0x22313C34),
+        border: Border.all(color: const Color(0x44FFFFFF)),
+      ),
+      child: const Center(
+        child: Icon(Icons.circle, size: 8, color: Color(0x55FFFFFF)),
       ),
     );
   }
@@ -1550,6 +1734,219 @@ class _HostedSessionViewState extends State<HostedSessionView>
     );
   }
 
+  Widget _busRouteBoard({
+    required BusRouteState route,
+    required bool canControl,
+    required GamePhase phase,
+    required List<HostedPublicPlayer> players,
+    required int? busRunnerPlayerId,
+  }) {
+    final int active = route.progress < route.order.length
+        ? route.order[route.progress]
+        : -1;
+    final String runnerName = _nameForPlayer(players, busRunnerPlayerId);
+    final bool setupPhase = phase == GamePhase.bussetup;
+    final bool routePhase = phase == GamePhase.bus;
+    final bool finishedPhase = phase == GamePhase.finished;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        color: const Color(0xAA143E2D),
+        border: Border.all(color: const Color(0x66FFD89A)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              tr(widget.language, 'Bus route (public)', 'Bussrute (offentlig)'),
+              style: const TextStyle(
+                color: Color(0xFFF8E9D8),
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Center(
+              child: Column(
+                children: <Widget>[
+                  _playingCard(
+                    null,
+                    showBack: true,
+                    width: 62,
+                    height: 88,
+                    emphasized: routePhase,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    tr(
+                      widget.language,
+                      'Deck: ${route.deck.length}',
+                      'Stokk: ${route.deck.length}',
+                    ),
+                    style: const TextStyle(
+                      color: Color(0xFFF2E7D7),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) {
+                const double gap = 8;
+                final int count = route.routeCards.length;
+                final double maxCardWidth =
+                    (constraints.maxWidth - gap * (count - 1)) / count;
+                final double cardWidth = maxCardWidth.clamp(38, 72).toDouble();
+                final double cardHeight = cardWidth * 1.42;
+                final double totalWidth = cardWidth * count + gap * (count - 1);
+                return Center(
+                  child: SizedBox(
+                    width: totalWidth,
+                    child: Row(
+                      children: List<Widget>.generate(count, (int index) {
+                        final bool isActive = routePhase && active == index;
+                        return Padding(
+                          padding: EdgeInsets.only(
+                            right: index + 1 < count ? gap : 0,
+                          ),
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: isActive
+                                    ? const Color(0xFFE2B356)
+                                    : const Color(0x28000000),
+                                width: isActive ? 2.2 : 1.0,
+                              ),
+                              borderRadius: BorderRadius.circular(14),
+                              color: isActive
+                                  ? const Color(0x22FFD88A)
+                                  : Colors.transparent,
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(4),
+                              child: _playingCard(
+                                route.routeCards[index],
+                                width: cardWidth,
+                                height: cardHeight,
+                                emphasized: isActive,
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                  ),
+                );
+              },
+            ),
+            if (finishedPhase) ...<Widget>[
+              const SizedBox(height: 14),
+              Center(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8E8D3).withValues(alpha: 0.92),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: const <BoxShadow>[
+                      BoxShadow(
+                        color: Color(0x22000000),
+                        blurRadius: 14,
+                        offset: Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    child: Text(
+                      tr(widget.language, 'Route finished', 'Rute ferdig'),
+                      style: const TextStyle(
+                        color: Color(0xFF50301F),
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+            if (setupPhase && canControl) ...<Widget>[
+              const SizedBox(height: 14),
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () =>
+                          widget.controller.beginBusRoute(BusStartSide.left),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFFF3C978),
+                        foregroundColor: const Color(0xFF513514),
+                      ),
+                      child: Text(
+                        tr(widget.language, 'Start left', 'Start venstre'),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () =>
+                          widget.controller.beginBusRoute(BusStartSide.right),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFFF3C978),
+                        foregroundColor: const Color(0xFF513514),
+                      ),
+                      child: Text(
+                        tr(widget.language, 'Start right', 'Start hoyre'),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            if (routePhase && canControl) ...<Widget>[
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: BusGuess.values
+                    .map(
+                      (BusGuess guess) => FilledButton(
+                        onPressed: () => widget.controller.playBusGuess(guess),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFFF3C978),
+                          foregroundColor: const Color(0xFF513514),
+                        ),
+                        child: Text(busGuessLabel(widget.language, guess)),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ],
+            if ((setupPhase || routePhase) && !canControl) ...<Widget>[
+              const SizedBox(height: 12),
+              Text(
+                tr(
+                  widget.language,
+                  'Public view only. $runnerName is actively playing the bus route.',
+                  'Offentlig visning. $runnerName spiller bussruta aktivt.',
+                ),
+                style: const TextStyle(
+                  color: Color(0xFFF2E7D7),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _busRouteView({
     required BusRouteState route,
     required bool canControl,
@@ -1557,6 +1954,14 @@ class _HostedSessionViewState extends State<HostedSessionView>
     required List<HostedPublicPlayer> players,
     required int? busRunnerPlayerId,
   }) {
+    return _busRouteBoard(
+      route: route,
+      canControl: canControl,
+      phase: phase,
+      players: players,
+      busRunnerPlayerId: busRunnerPlayerId,
+    );
+    /*
     final int active = route.progress < route.order.length
         ? route.order[route.progress]
         : -1;
@@ -1685,6 +2090,7 @@ class _HostedSessionViewState extends State<HostedSessionView>
         ),
       ),
     );
+    */
   }
 
   Widget _playingCard(

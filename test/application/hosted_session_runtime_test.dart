@@ -228,10 +228,7 @@ void main() {
             const PlayerState(name: 'Host', hand: <PlayingCard>[]),
             const PlayerState(name: 'Guest', hand: <PlayingCard>[]),
           ],
-          deck: <PlayingCard>[
-            card(Suit.hearts, 6),
-            card(Suit.spades, 9),
-          ],
+          deck: <PlayingCard>[card(Suit.hearts, 6), card(Suit.spades, 9)],
         ),
       );
 
