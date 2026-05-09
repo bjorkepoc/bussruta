@@ -12,16 +12,16 @@
     "hash": "723bf1964220418391e2513e9aa13d4e"
   },
   "C:\\Users\\bjork\\dev\\bussruta\\android\\app\\build.gradle.kts": {
-    "mtime": 1778325738.1607382,
-    "hash": "777a1f1022d0faebf227324c8d2976e7"
+    "mtime": 1778327509.865956,
+    "hash": "c7991764ac60cf79d2904d84bc3c062c"
   },
   "C:\\Users\\bjork\\dev\\bussruta\\android\\app\\src\\main\\java\\io\\flutter\\plugins\\GeneratedPluginRegistrant.java": {
     "mtime": 1773337205.2957158,
     "hash": "0ac8af6f4fde2f8ff393d86a2098ec5d"
   },
-  "C:\\Users\\bjork\\dev\\bussruta\\android\\app\\src\\main\\kotlin\\com\\bjork\\bussruta_app\\MainActivity.kt": {
-    "mtime": 1773335256.2600431,
-    "hash": "6bbee0bae9db7a770820b2bb5722dd8c"
+  "C:\\Users\\bjork\\dev\\bussruta\\android\\app\\src\\main\\kotlin\\com\\bjork\\bussruta\\MainActivity.kt": {
+    "mtime": 1778326575.2271085,
+    "hash": "8d1b34d5f1d3ee8223b2b0abe11cf758"
   },
   "C:\\Users\\bjork\\dev\\bussruta\\BusRoute_web_app\\app.js": {
     "mtime": 1773335256.256042,
@@ -72,8 +72,8 @@
     "hash": "aabc27ba3dc48b1b595c73a0a82302b7"
   },
   "C:\\Users\\bjork\\dev\\bussruta\\lib\\application\\hosted_lan_transport.dart": {
-    "mtime": 1778258418.561884,
-    "hash": "e62b694a52bcd65d6bacfe4241aabd16"
+    "mtime": 1778327593.754882,
+    "hash": "ac7c17a03d387d099f4a77e0a62ee231"
   },
   "C:\\Users\\bjork\\dev\\bussruta\\lib\\application\\hosted_session_controller.dart": {
     "mtime": 1778325784.5481417,
@@ -92,12 +92,12 @@
     "hash": "2f2c812fdad6e644f13b1ae1e5260580"
   },
   "C:\\Users\\bjork\\dev\\bussruta\\lib\\domain\\hosted_models.dart": {
-    "mtime": 1778258324.8389592,
-    "hash": "3fd81d5880f8ee66272bb69a4618a3cf"
+    "mtime": 1778327391.0416431,
+    "hash": "519494f0be3bf82abc74179ee358b7ea"
   },
   "C:\\Users\\bjork\\dev\\bussruta\\lib\\domain\\hosted_projection.dart": {
-    "mtime": 1773443523.609461,
-    "hash": "0fc8b370727e736f5b650dc0216732dc"
+    "mtime": 1778327397.8893306,
+    "hash": "f06f8451a98383be85df3d544338a99d"
   },
   "C:\\Users\\bjork\\dev\\bussruta\\lib\\presentation\\bussruta_app.dart": {
     "mtime": 1778325730.0773523,
@@ -112,8 +112,8 @@
     "hash": "d37de8ff733a9336d1d496e081fc9337"
   },
   "C:\\Users\\bjork\\dev\\bussruta\\lib\\presentation\\hosted_session_view.dart": {
-    "mtime": 1778326057.004756,
-    "hash": "7c544bfdfe73399311d617e7c3b22734"
+    "mtime": 1778327404.0186791,
+    "hash": "88c09547dcdbc52ae914df2564fe8dd4"
   },
   "C:\\Users\\bjork\\dev\\bussruta\\lib\\presentation\\strings.dart": {
     "mtime": 1773336075.5301719,
@@ -140,16 +140,24 @@
     "hash": "90b02827990ac619a3c3c85c8773ebc2"
   },
   "C:\\Users\\bjork\\dev\\bussruta\\test\\domain\\hosted_models_test.dart": {
-    "mtime": 1778258400.4146514,
-    "hash": "f3805a215baed396544851a76fb6375b"
+    "mtime": 1778327417.6726642,
+    "hash": "f225857a6377d6d9458d503ab9ab5898"
   },
   "C:\\Users\\bjork\\dev\\bussruta\\test\\domain\\hosted_projection_test.dart": {
-    "mtime": 1773433883.1162055,
-    "hash": "0d0ee54ac1477ddf317da906629b4c1f"
+    "mtime": 1778327311.384612,
+    "hash": "6362bac5f55e6e853955eecdd45cd923"
   },
   "C:\\Users\\bjork\\dev\\bussruta\\test\\presentation\\bussruta_app_onboarding_test.dart": {
     "mtime": 1778325750.7804058,
     "hash": "22dcb1b4305d095c9694e6c2ce467aec"
+  },
+  "C:\\Users\\bjork\\dev\\bussruta\\test\\tool\\internet_relay_test.dart": {
+    "mtime": 1778327525.5564957,
+    "hash": "08061e8e227c733d966732f780485870"
+  },
+  "C:\\Users\\bjork\\dev\\bussruta\\tool\\internet_relay.dart": {
+    "mtime": 1778327518.1254294,
+    "hash": "08543a23516dc327e6322aad659de050"
   },
   "C:\\Users\\bjork\\dev\\bussruta\\AGENTS.md": {
     "mtime": 1778256422.5831997,
@@ -179,17 +187,25 @@
     "mtime": 1773444919.1401484,
     "hash": "60067e66b6db59de9d6cdf7f811366ce"
   },
+  "C:\\Users\\bjork\\dev\\bussruta\\docs\\internet_relay.md": {
+    "mtime": 1778326886.6364338,
+    "hash": "d9ec7f7ad7640c0611476a23cc42c695"
+  },
   "C:\\Users\\bjork\\dev\\bussruta\\docs\\manual_qa_checklist.md": {
-    "mtime": 1773441903.253519,
-    "hash": "32408a3fb9c27ec45cc86eedc84e5887"
+    "mtime": 1778327634.4020734,
+    "hash": "f26fd1c8bc52b2853d354e96b6040232"
+  },
+  "C:\\Users\\bjork\\dev\\bussruta\\docs\\manual_qa_results.md": {
+    "mtime": 1778327627.180332,
+    "hash": "e0bc33105162b0002873e8abe8c8fb21"
   },
   "C:\\Users\\bjork\\dev\\bussruta\\docs\\multiplayer_options.md": {
-    "mtime": 1778325730.8816779,
-    "hash": "9da7aec4c2c958a58fe48108d37640dc"
+    "mtime": 1778326894.3398876,
+    "hash": "a901e34ab89c43a424f2dcaa68cacd12"
   },
   "C:\\Users\\bjork\\dev\\bussruta\\docs\\release_readiness.md": {
-    "mtime": 1778325861.2687805,
-    "hash": "a8616ccdb74e5c4d778fb0f08e3df770"
+    "mtime": 1778327631.274886,
+    "hash": "08fb599494147f053f73df52d73c8cf5"
   },
   "C:\\Users\\bjork\\dev\\bussruta\\ios\\Runner\\Assets.xcassets\\LaunchImage.imageset\\README.md": {
     "mtime": 1773335256.2740443,

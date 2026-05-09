@@ -9,7 +9,7 @@
       "source_file": "android/build.gradle.kts",
       "source_location": "L1",
       "id": "android_build_gradle_kts",
-      "community": 34,
+      "community": 41,
       "norm_label": "build.gradle.kts"
     },
     {
@@ -18,7 +18,7 @@
       "source_file": "android/settings.gradle.kts",
       "source_location": "L1",
       "id": "android_settings_gradle_kts",
-      "community": 35,
+      "community": 42,
       "norm_label": "settings.gradle.kts"
     },
     {
@@ -31,12 +31,21 @@
       "norm_label": "build.gradle.kts"
     },
     {
+      "label": "releaseKeystoreProperty()",
+      "file_type": "code",
+      "source_file": "android/app/build.gradle.kts",
+      "source_location": "L26",
+      "id": "app_build_gradle_releasekeystoreproperty",
+      "community": 36,
+      "norm_label": "releasekeystoreproperty()"
+    },
+    {
       "label": "GeneratedPluginRegistrant.java",
       "file_type": "code",
       "source_file": "android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java",
       "source_location": "L1",
       "id": "android_app_src_main_java_io_flutter_plugins_generatedpluginregistrant_java",
-      "community": 29,
+      "community": 33,
       "norm_label": "generatedpluginregistrant.java"
     },
     {
@@ -45,7 +54,7 @@
       "source_file": "android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java",
       "source_location": "L14",
       "id": "plugins_generatedpluginregistrant_generatedpluginregistrant",
-      "community": 29,
+      "community": 33,
       "norm_label": "generatedpluginregistrant"
     },
     {
@@ -54,25 +63,25 @@
       "source_file": "android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java",
       "source_location": "L17",
       "id": "plugins_generatedpluginregistrant_generatedpluginregistrant_registerwith",
-      "community": 29,
+      "community": 33,
       "norm_label": ".registerwith()"
     },
     {
       "label": "MainActivity.kt",
       "file_type": "code",
-      "source_file": "android/app/src/main/kotlin/com/bjork/bussruta_app/MainActivity.kt",
+      "source_file": "android/app/src/main/kotlin/com/bjork/bussruta/MainActivity.kt",
       "source_location": "L1",
-      "id": "android_app_src_main_kotlin_com_bjork_bussruta_app_mainactivity_kt",
-      "community": 31,
+      "id": "android_app_src_main_kotlin_com_bjork_bussruta_mainactivity_kt",
+      "community": 37,
       "norm_label": "mainactivity.kt"
     },
     {
       "label": "MainActivity",
       "file_type": "code",
-      "source_file": "android/app/src/main/kotlin/com/bjork/bussruta_app/MainActivity.kt",
+      "source_file": "android/app/src/main/kotlin/com/bjork/bussruta/MainActivity.kt",
       "source_location": "L5",
-      "id": "bussruta_app_mainactivity_mainactivity",
-      "community": 31,
+      "id": "bussruta_mainactivity_mainactivity",
+      "community": 37,
       "norm_label": "mainactivity"
     },
     {
@@ -927,7 +936,7 @@
       "source_file": "BusRoute_web_app/bussruta.py",
       "source_location": "L1",
       "id": "busroute_web_app_bussruta_py",
-      "community": 18,
+      "community": 22,
       "norm_label": "bussruta.py"
     },
     {
@@ -936,7 +945,7 @@
       "source_file": "BusRoute_web_app/bussruta.py",
       "source_location": "L16",
       "id": "busroute_web_app_bussruta_lag_kortstokk",
-      "community": 18,
+      "community": 22,
       "norm_label": "lag_kortstokk()"
     },
     {
@@ -945,7 +954,7 @@
       "source_file": "BusRoute_web_app/bussruta.py",
       "source_location": "L26",
       "id": "busroute_web_app_bussruta_start",
-      "community": 18,
+      "community": 22,
       "norm_label": "start()"
     },
     {
@@ -954,7 +963,7 @@
       "source_file": "BusRoute_web_app/bussruta.py",
       "source_location": "L32",
       "id": "busroute_web_app_bussruta_trekk_kort",
-      "community": 18,
+      "community": 22,
       "norm_label": "trekk_kort()"
     },
     {
@@ -963,7 +972,7 @@
       "source_file": "BusRoute_web_app/bussruta.py",
       "source_location": "L39",
       "id": "busroute_web_app_bussruta_trekk",
-      "community": 18,
+      "community": 22,
       "norm_label": "trekk()"
     },
     {
@@ -972,7 +981,7 @@
       "source_file": "BusRoute_web_app/bussruta.py",
       "source_location": "L48",
       "id": "busroute_web_app_bussruta_spill",
-      "community": 18,
+      "community": 22,
       "norm_label": "spill()"
     },
     {
@@ -981,7 +990,7 @@
       "source_file": "BusRoute_web_app/bussruta.py",
       "source_location": "L77",
       "id": "busroute_web_app_bussruta_r_dt_svart",
-      "community": 18,
+      "community": 22,
       "norm_label": "r\u00f8dt_svart()"
     },
     {
@@ -990,7 +999,7 @@
       "source_file": "BusRoute_web_app/b\u00e6sso.py",
       "source_location": "L1",
       "id": "busroute_web_app_b_sso_py",
-      "community": 10,
+      "community": 12,
       "norm_label": "b\u00e6sso.py"
     },
     {
@@ -999,7 +1008,7 @@
       "source_file": "BusRoute_web_app/b\u00e6sso.py",
       "source_location": "L6",
       "id": "busroute_web_app_b_sso_kort_stokk",
-      "community": 10,
+      "community": 12,
       "norm_label": "kort_stokk()"
     },
     {
@@ -1008,7 +1017,7 @@
       "source_file": "BusRoute_web_app/b\u00e6sso.py",
       "source_location": "L18",
       "id": "busroute_web_app_b_sso_spill",
-      "community": 10,
+      "community": 12,
       "norm_label": "spill()"
     },
     {
@@ -1017,7 +1026,7 @@
       "source_file": "BusRoute_web_app/b\u00e6sso.py",
       "source_location": "L38",
       "id": "busroute_web_app_b_sso_intro",
-      "community": 10,
+      "community": 12,
       "norm_label": "intro()"
     },
     {
@@ -1026,7 +1035,7 @@
       "source_file": "BusRoute_web_app/b\u00e6sso.py",
       "source_location": "L90",
       "id": "busroute_web_app_b_sso_trekk_kort",
-      "community": 10,
+      "community": 12,
       "norm_label": "trekk_kort()"
     },
     {
@@ -1035,7 +1044,7 @@
       "source_file": "BusRoute_web_app/b\u00e6sso.py",
       "source_location": "L97",
       "id": "busroute_web_app_b_sso_print_h_nd",
-      "community": 10,
+      "community": 12,
       "norm_label": "print_hand()"
     },
     {
@@ -1044,7 +1053,7 @@
       "source_file": "BusRoute_web_app/b\u00e6sso.py",
       "source_location": "L106",
       "id": "busroute_web_app_b_sso_print_hender",
-      "community": 10,
+      "community": 12,
       "norm_label": "print_hender()"
     },
     {
@@ -1053,7 +1062,7 @@
       "source_file": "BusRoute_web_app/b\u00e6sso.py",
       "source_location": "L112",
       "id": "busroute_web_app_b_sso_farge",
-      "community": 10,
+      "community": 12,
       "norm_label": "farge()"
     },
     {
@@ -1062,7 +1071,7 @@
       "source_file": "BusRoute_web_app/b\u00e6sso.py",
       "source_location": "L146",
       "id": "busroute_web_app_b_sso_over_under",
-      "community": 10,
+      "community": 12,
       "norm_label": "over_under()"
     },
     {
@@ -1071,7 +1080,7 @@
       "source_file": "BusRoute_web_app/b\u00e6sso.py",
       "source_location": "L184",
       "id": "busroute_web_app_b_sso_mellom_eller_utenfor",
-      "community": 10,
+      "community": 12,
       "norm_label": "mellom_eller_utenfor()"
     },
     {
@@ -1080,7 +1089,7 @@
       "source_file": "BusRoute_web_app/b\u00e6sso.py",
       "source_location": "L234",
       "id": "busroute_web_app_b_sso_krhs",
-      "community": 10,
+      "community": 12,
       "norm_label": "krhs()"
     },
     {
@@ -1089,7 +1098,7 @@
       "source_file": "BusRoute_web_app/b\u00e6sso.py",
       "source_location": "L269",
       "id": "busroute_web_app_b_sso_pyramide",
-      "community": 10,
+      "community": 12,
       "norm_label": "pyramide()"
     },
     {
@@ -1098,7 +1107,7 @@
       "source_file": "BusRoute_web_app/b\u00e6sso.py",
       "source_location": "L352",
       "id": "busroute_web_app_b_sso_print_pyramide",
-      "community": 10,
+      "community": 12,
       "norm_label": "print_pyramide()"
     },
     {
@@ -1107,7 +1116,7 @@
       "source_file": "BusRoute_web_app/b\u00e6sso.py",
       "source_location": "L387",
       "id": "busroute_web_app_b_sso_sjekk_taper",
-      "community": 10,
+      "community": 12,
       "norm_label": "sjekk_taper()"
     },
     {
@@ -1116,7 +1125,7 @@
       "source_file": "BusRoute_web_app/b\u00e6sso.py",
       "source_location": "L421",
       "id": "busroute_web_app_b_sso_bussruta",
-      "community": 10,
+      "community": 12,
       "norm_label": "bussruta()"
     },
     {
@@ -1125,7 +1134,7 @@
       "source_file": "BusRoute_web_app/b\u00e6sso.py",
       "source_location": "L534",
       "id": "busroute_web_app_b_sso_print_ruta",
-      "community": 10,
+      "community": 12,
       "norm_label": "print_ruta()"
     },
     {
@@ -1134,7 +1143,7 @@
       "source_file": "ios/Flutter/ephemeral/flutter_lldb_helper.py",
       "source_location": "L1",
       "id": "ios_flutter_ephemeral_flutter_lldb_helper_py",
-      "community": 25,
+      "community": 29,
       "norm_label": "flutter_lldb_helper.py"
     },
     {
@@ -1143,7 +1152,7 @@
       "source_file": "ios/Flutter/ephemeral/flutter_lldb_helper.py",
       "source_location": "L7",
       "id": "ephemeral_flutter_lldb_helper_handle_new_rx_page",
-      "community": 25,
+      "community": 29,
       "norm_label": "handle_new_rx_page()"
     },
     {
@@ -1152,7 +1161,7 @@
       "source_file": "ios/Flutter/ephemeral/flutter_lldb_helper.py",
       "source_location": "L24",
       "id": "ephemeral_flutter_lldb_helper_lldb_init_module",
-      "community": 25,
+      "community": 29,
       "norm_label": "__lldb_init_module()"
     },
     {
@@ -1161,7 +1170,7 @@
       "source_file": "ios/Flutter/ephemeral/flutter_lldb_helper.py",
       "source_location": "L8",
       "id": "ephemeral_flutter_lldb_helper_rationale_8",
-      "community": 25,
+      "community": 29,
       "norm_label": "intercept notify_debugger_about_rx_pages and touch the pages."
     },
     {
@@ -1170,7 +1179,7 @@
       "source_file": "ios/Runner/AppDelegate.swift",
       "source_location": "L1",
       "id": "ios_runner_appdelegate_swift",
-      "community": 26,
+      "community": 30,
       "norm_label": "appdelegate.swift"
     },
     {
@@ -1179,7 +1188,7 @@
       "source_file": "ios/Runner/AppDelegate.swift",
       "source_location": "L4",
       "id": "runner_appdelegate_appdelegate",
-      "community": 26,
+      "community": 30,
       "norm_label": "appdelegate"
     },
     {
@@ -1188,7 +1197,7 @@
       "source_file": "",
       "source_location": "",
       "id": "flutterappdelegate",
-      "community": 26,
+      "community": 30,
       "norm_label": "flutterappdelegate"
     },
     {
@@ -1197,7 +1206,7 @@
       "source_file": "ios/Runner/AppDelegate.swift",
       "source_location": "L6",
       "id": "runner_appdelegate_appdelegate_application",
-      "community": 26,
+      "community": 30,
       "norm_label": ".application()"
     },
     {
@@ -1206,7 +1215,7 @@
       "source_file": "ios/Runner/GeneratedPluginRegistrant.h",
       "source_location": "L1",
       "id": "ios_runner_generatedpluginregistrant_h",
-      "community": 37,
+      "community": 43,
       "norm_label": "generatedpluginregistrant.h"
     },
     {
@@ -1215,7 +1224,7 @@
       "source_file": "ios/Runner/GeneratedPluginRegistrant.m",
       "source_location": "L1",
       "id": "ios_runner_generatedpluginregistrant_m",
-      "community": 30,
+      "community": 34,
       "norm_label": "generatedpluginregistrant.m"
     },
     {
@@ -1224,7 +1233,7 @@
       "source_file": "ios/Runner/GeneratedPluginRegistrant.m",
       "source_location": "L15",
       "id": "runner_generatedpluginregistrant_generatedpluginregistrant",
-      "community": 30,
+      "community": 34,
       "norm_label": "generatedpluginregistrant"
     },
     {
@@ -1233,7 +1242,7 @@
       "source_file": "ios/Runner/GeneratedPluginRegistrant.m",
       "source_location": "L17",
       "id": "runner_generatedpluginregistrant_generatedpluginregistrant_registerwithregistry",
-      "community": 30,
+      "community": 34,
       "norm_label": "-registerwithregistry"
     },
     {
@@ -1242,7 +1251,7 @@
       "source_file": "ios/Runner/Runner-Bridging-Header.h",
       "source_location": "L1",
       "id": "ios_runner_runner_bridging_header_h",
-      "community": 38,
+      "community": 44,
       "norm_label": "runner-bridging-header.h"
     },
     {
@@ -1251,7 +1260,7 @@
       "source_file": "ios/RunnerTests/RunnerTests.swift",
       "source_location": "L1",
       "id": "ios_runnertests_runnertests_swift",
-      "community": 27,
+      "community": 31,
       "norm_label": "runnertests.swift"
     },
     {
@@ -1260,7 +1269,7 @@
       "source_file": "ios/RunnerTests/RunnerTests.swift",
       "source_location": "L5",
       "id": "runnertests_runnertests_runnertests",
-      "community": 27,
+      "community": 31,
       "norm_label": "runnertests"
     },
     {
@@ -1269,7 +1278,7 @@
       "source_file": "",
       "source_location": "",
       "id": "xctestcase",
-      "community": 27,
+      "community": 31,
       "norm_label": "xctestcase"
     },
     {
@@ -1278,7 +1287,7 @@
       "source_file": "ios/RunnerTests/RunnerTests.swift",
       "source_location": "L7",
       "id": "runnertests_runnertests_runnertests_testexample",
-      "community": 27,
+      "community": 31,
       "norm_label": ".testexample()"
     },
     {
@@ -1287,7 +1296,7 @@
       "source_file": "lib/main.dart",
       "source_location": null,
       "id": "lib_main_dart",
-      "community": 3,
+      "community": 17,
       "norm_label": "main.dart"
     },
     {
@@ -1296,7 +1305,7 @@
       "source_file": "test/presentation/bussruta_app_onboarding_test.dart",
       "source_location": null,
       "id": "package_bussruta_app_application_game_controller_dart",
-      "community": 3,
+      "community": 17,
       "norm_label": "package:bussruta_app/application/game_controller.dart"
     },
     {
@@ -1305,7 +1314,7 @@
       "source_file": "test/presentation/bussruta_app_onboarding_test.dart",
       "source_location": null,
       "id": "package_bussruta_app_application_game_storage_dart",
-      "community": 3,
+      "community": 17,
       "norm_label": "package:bussruta_app/application/game_storage.dart"
     },
     {
@@ -1314,7 +1323,7 @@
       "source_file": "test/presentation/bussruta_app_onboarding_test.dart",
       "source_location": null,
       "id": "package_bussruta_app_domain_game_engine_dart",
-      "community": 3,
+      "community": 17,
       "norm_label": "package:bussruta_app/domain/game_engine.dart"
     },
     {
@@ -1323,7 +1332,7 @@
       "source_file": "test/presentation/bussruta_app_onboarding_test.dart",
       "source_location": null,
       "id": "package_bussruta_app_presentation_bussruta_app_dart",
-      "community": 3,
+      "community": 17,
       "norm_label": "package:bussruta_app/presentation/bussruta_app.dart"
     },
     {
@@ -1341,7 +1350,7 @@
       "source_file": "lib/application/game_controller.dart",
       "source_location": null,
       "id": "lib_application_game_controller_dart",
-      "community": 9,
+      "community": 8,
       "norm_label": "game_controller.dart"
     },
     {
@@ -1350,7 +1359,7 @@
       "source_file": "lib/application/game_controller.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_game_controller_dart_gamecontroller",
-      "community": 9,
+      "community": 8,
       "norm_label": "gamecontroller"
     },
     {
@@ -1359,7 +1368,7 @@
       "source_file": "lib/application/game_controller.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_game_controller_dart_didchangeapplifecyclestate",
-      "community": 9,
+      "community": 8,
       "norm_label": "didchangeapplifecyclestate"
     },
     {
@@ -1368,7 +1377,7 @@
       "source_file": "lib/application/game_controller.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_game_controller_dart_setlanguage",
-      "community": 9,
+      "community": 8,
       "norm_label": "setlanguage"
     },
     {
@@ -1377,7 +1386,7 @@
       "source_file": "lib/application/game_controller.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_game_controller_dart_markonboardingseen",
-      "community": 9,
+      "community": 8,
       "norm_label": "markonboardingseen"
     },
     {
@@ -1386,7 +1395,7 @@
       "source_file": "lib/application/game_controller.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_game_controller_dart_setplayercount",
-      "community": 9,
+      "community": 8,
       "norm_label": "setplayercount"
     },
     {
@@ -1395,7 +1404,7 @@
       "source_file": "lib/application/game_controller.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_game_controller_dart_addplayer",
-      "community": 9,
+      "community": 8,
       "norm_label": "addplayer"
     },
     {
@@ -1404,7 +1413,7 @@
       "source_file": "lib/application/game_controller.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_game_controller_dart_removeplayer",
-      "community": 9,
+      "community": 8,
       "norm_label": "removeplayer"
     },
     {
@@ -1413,7 +1422,7 @@
       "source_file": "lib/application/game_controller.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_game_controller_dart_removeplayerat",
-      "community": 9,
+      "community": 8,
       "norm_label": "removeplayerat"
     },
     {
@@ -1422,7 +1431,7 @@
       "source_file": "lib/application/game_controller.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_game_controller_dart_setplayername",
-      "community": 9,
+      "community": 8,
       "norm_label": "setplayername"
     },
     {
@@ -1431,7 +1440,7 @@
       "source_file": "lib/application/game_controller.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_game_controller_dart_randomizesetupnames",
-      "community": 9,
+      "community": 8,
       "norm_label": "randomizesetupnames"
     },
     {
@@ -1440,7 +1449,7 @@
       "source_file": "lib/application/game_controller.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_game_controller_dart_setreversepyramid",
-      "community": 9,
+      "community": 8,
       "norm_label": "setreversepyramid"
     },
     {
@@ -1449,7 +1458,7 @@
       "source_file": "lib/application/game_controller.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_game_controller_dart_hardresetsetup",
-      "community": 9,
+      "community": 8,
       "norm_label": "hardresetsetup"
     },
     {
@@ -1458,7 +1467,7 @@
       "source_file": "lib/application/game_controller.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_game_controller_dart_resettosetup",
-      "community": 9,
+      "community": 8,
       "norm_label": "resettosetup"
     },
     {
@@ -1467,7 +1476,7 @@
       "source_file": "lib/application/game_controller.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_game_controller_dart_startgamefromsetup",
-      "community": 9,
+      "community": 8,
       "norm_label": "startgamefromsetup"
     },
     {
@@ -1476,7 +1485,7 @@
       "source_file": "lib/application/game_controller.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_game_controller_dart_playwarmupguess",
-      "community": 9,
+      "community": 8,
       "norm_label": "playwarmupguess"
     },
     {
@@ -1485,7 +1494,7 @@
       "source_file": "lib/application/game_controller.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_game_controller_dart_revealpyramidnext",
-      "community": 9,
+      "community": 8,
       "norm_label": "revealpyramidnext"
     },
     {
@@ -1494,7 +1503,7 @@
       "source_file": "lib/application/game_controller.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_game_controller_dart_runtiebreakround",
-      "community": 9,
+      "community": 8,
       "norm_label": "runtiebreakround"
     },
     {
@@ -1503,7 +1512,7 @@
       "source_file": "lib/application/game_controller.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_game_controller_dart_beginbusroute",
-      "community": 9,
+      "community": 8,
       "norm_label": "beginbusroute"
     },
     {
@@ -1512,7 +1521,7 @@
       "source_file": "lib/application/game_controller.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_game_controller_dart_playbusguess",
-      "community": 9,
+      "community": 8,
       "norm_label": "playbusguess"
     },
     {
@@ -1521,7 +1530,7 @@
       "source_file": "lib/application/game_controller.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_game_controller_dart_setautoplaydelayms",
-      "community": 9,
+      "community": 8,
       "norm_label": "setautoplaydelayms"
     },
     {
@@ -1530,7 +1539,7 @@
       "source_file": "lib/application/game_controller.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_game_controller_dart_toggleautoplay",
-      "community": 9,
+      "community": 8,
       "norm_label": "toggleautoplay"
     },
     {
@@ -1539,7 +1548,7 @@
       "source_file": "lib/application/game_controller.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_game_controller_dart_emit",
-      "community": 9,
+      "community": 8,
       "norm_label": "_emit"
     },
     {
@@ -1548,7 +1557,7 @@
       "source_file": "lib/application/game_controller.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_game_controller_dart_syncautoplay",
-      "community": 9,
+      "community": 8,
       "norm_label": "_syncautoplay"
     },
     {
@@ -1557,16 +1566,16 @@
       "source_file": "lib/application/game_controller.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_game_controller_dart_dispose",
-      "community": 9,
+      "community": 8,
       "norm_label": "dispose"
     },
     {
       "label": "dart:async",
       "file_type": "code",
-      "source_file": "test/application/hosted_lan_transport_test.dart",
+      "source_file": "tool/internet_relay.dart",
       "source_location": null,
       "id": "dart_async",
-      "community": 15,
+      "community": 13,
       "norm_label": "dart:async"
     },
     {
@@ -1575,7 +1584,7 @@
       "source_file": "test/presentation/bussruta_app_onboarding_test.dart",
       "source_location": null,
       "id": "package_bussruta_app_domain_game_models_dart",
-      "community": 23,
+      "community": 27,
       "norm_label": "package:bussruta_app/domain/game_models.dart"
     },
     {
@@ -1584,7 +1593,7 @@
       "source_file": "lib/application/hosted_session_controller.dart",
       "source_location": null,
       "id": "package_flutter_widgets_dart",
-      "community": 9,
+      "community": 8,
       "norm_label": "package:flutter/widgets.dart"
     },
     {
@@ -1593,7 +1602,7 @@
       "source_file": "lib/application/game_storage.dart",
       "source_location": null,
       "id": "lib_application_game_storage_dart",
-      "community": 23,
+      "community": 27,
       "norm_label": "game_storage.dart"
     },
     {
@@ -1602,7 +1611,7 @@
       "source_file": "lib/application/game_storage.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_game_storage_dart_gamestorage",
-      "community": 23,
+      "community": 27,
       "norm_label": "gamestorage"
     },
     {
@@ -1611,7 +1620,7 @@
       "source_file": "lib/application/game_storage.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_game_storage_dart_sharedprefsgamestorage",
-      "community": 23,
+      "community": 27,
       "norm_label": "sharedprefsgamestorage"
     },
     {
@@ -1620,7 +1629,7 @@
       "source_file": "lib/application/game_storage.dart",
       "source_location": null,
       "id": "package_shared_preferences_shared_preferences_dart",
-      "community": 23,
+      "community": 27,
       "norm_label": "package:shared_preferences/shared_preferences.dart"
     },
     {
@@ -1959,28 +1968,28 @@
     {
       "label": "dart:convert",
       "file_type": "code",
-      "source_file": "test/application/hosted_lan_transport_test.dart",
+      "source_file": "tool/internet_relay.dart",
       "source_location": null,
       "id": "dart_convert",
-      "community": 7,
+      "community": 13,
       "norm_label": "dart:convert"
     },
     {
       "label": "dart:io",
       "file_type": "code",
-      "source_file": "test/application/hosted_lan_transport_test.dart",
+      "source_file": "tool/internet_relay.dart",
       "source_location": null,
       "id": "dart_io",
-      "community": 15,
+      "community": 13,
       "norm_label": "dart:io"
     },
     {
       "label": "dart:math",
       "file_type": "code",
-      "source_file": "lib/presentation/hosted_session_view.dart",
+      "source_file": "tool/internet_relay.dart",
       "source_location": null,
       "id": "dart_math",
-      "community": 5,
+      "community": 10,
       "norm_label": "dart:math"
     },
     {
@@ -1989,7 +1998,7 @@
       "source_file": "test/application/hosted_session_runtime_test.dart",
       "source_location": null,
       "id": "package_bussruta_app_application_hosted_session_runtime_dart",
-      "community": 15,
+      "community": 19,
       "norm_label": "package:bussruta_app/application/hosted_session_runtime.dart"
     },
     {
@@ -1998,7 +2007,7 @@
       "source_file": "test/domain/hosted_projection_test.dart",
       "source_location": null,
       "id": "package_bussruta_app_domain_hosted_models_dart",
-      "community": 28,
+      "community": 32,
       "norm_label": "package:bussruta_app/domain/hosted_models.dart"
     },
     {
@@ -2007,7 +2016,7 @@
       "source_file": "test/domain/hosted_projection_test.dart",
       "source_location": null,
       "id": "package_bussruta_app_domain_hosted_projection_dart",
-      "community": 17,
+      "community": 20,
       "norm_label": "package:bussruta_app/domain/hosted_projection.dart"
     },
     {
@@ -2340,7 +2349,7 @@
       "source_file": "test/application/hosted_lan_transport_test.dart",
       "source_location": null,
       "id": "package_bussruta_app_application_hosted_lan_transport_dart",
-      "community": 15,
+      "community": 13,
       "norm_label": "package:bussruta_app/application/hosted_lan_transport.dart"
     },
     {
@@ -2349,7 +2358,7 @@
       "source_file": "lib/application/hosted_session_runtime.dart",
       "source_location": null,
       "id": "lib_application_hosted_session_runtime_dart",
-      "community": 8,
+      "community": 7,
       "norm_label": "hosted_session_runtime.dart"
     },
     {
@@ -2358,7 +2367,7 @@
       "source_file": "lib/application/hosted_session_runtime.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_hosted_session_runtime_dart_hostedsessionruntime",
-      "community": 8,
+      "community": 7,
       "norm_label": "hostedsessionruntime"
     },
     {
@@ -2367,7 +2376,7 @@
       "source_file": "lib/application/hosted_session_runtime.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_hosted_session_runtime_dart_warmuphostedoutcome",
-      "community": 8,
+      "community": 7,
       "norm_label": "_warmuphostedoutcome"
     },
     {
@@ -2376,7 +2385,7 @@
       "source_file": "lib/application/hosted_session_runtime.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_hosted_session_runtime_dart_addparticipant",
-      "community": 8,
+      "community": 7,
       "norm_label": "addparticipant"
     },
     {
@@ -2385,7 +2394,7 @@
       "source_file": "lib/application/hosted_session_runtime.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_hosted_session_runtime_dart_updateparticipantconnection",
-      "community": 8,
+      "community": 7,
       "norm_label": "updateparticipantconnection"
     },
     {
@@ -2394,7 +2403,7 @@
       "source_file": "lib/application/hosted_session_runtime.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_hosted_session_runtime_dart_applycommand",
-      "community": 8,
+      "community": 7,
       "norm_label": "applycommand"
     },
     {
@@ -2403,7 +2412,7 @@
       "source_file": "lib/application/hosted_session_runtime.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_hosted_session_runtime_dart_handlestartgame",
-      "community": 8,
+      "community": 7,
       "norm_label": "_handlestartgame"
     },
     {
@@ -2412,7 +2421,7 @@
       "source_file": "lib/application/hosted_session_runtime.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_hosted_session_runtime_dart_reject",
-      "community": 8,
+      "community": 7,
       "norm_label": "_reject"
     },
     {
@@ -2421,7 +2430,7 @@
       "source_file": "lib/application/hosted_session_runtime.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_hosted_session_runtime_dart_handleresettosetup",
-      "community": 8,
+      "community": 7,
       "norm_label": "_handleresettosetup"
     },
     {
@@ -2430,7 +2439,7 @@
       "source_file": "lib/application/hosted_session_runtime.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_hosted_session_runtime_dart_handlewarmupguess",
-      "community": 8,
+      "community": 7,
       "norm_label": "_handlewarmupguess"
     },
     {
@@ -2439,7 +2448,7 @@
       "source_file": "lib/application/hosted_session_runtime.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_hosted_session_runtime_dart_handlerevealpyramid",
-      "community": 8,
+      "community": 7,
       "norm_label": "_handlerevealpyramid"
     },
     {
@@ -2448,7 +2457,7 @@
       "source_file": "lib/application/hosted_session_runtime.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_hosted_session_runtime_dart_handleruntiebreak",
-      "community": 8,
+      "community": 7,
       "norm_label": "_handleruntiebreak"
     },
     {
@@ -2457,7 +2466,7 @@
       "source_file": "lib/application/hosted_session_runtime.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_hosted_session_runtime_dart_handlebeginbusroute",
-      "community": 8,
+      "community": 7,
       "norm_label": "_handlebeginbusroute"
     },
     {
@@ -2466,7 +2475,7 @@
       "source_file": "lib/application/hosted_session_runtime.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_hosted_session_runtime_dart_handleplaybusguess",
-      "community": 8,
+      "community": 7,
       "norm_label": "_handleplaybusguess"
     },
     {
@@ -2475,7 +2484,7 @@
       "source_file": "lib/application/hosted_session_runtime.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_hosted_session_runtime_dart_handleassigndrinks",
-      "community": 8,
+      "community": 7,
       "norm_label": "_handleassigndrinks"
     },
     {
@@ -2484,7 +2493,7 @@
       "source_file": "lib/application/hosted_session_runtime.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_hosted_session_runtime_dart_handleacknowledgedrinks",
-      "community": 8,
+      "community": 7,
       "norm_label": "_handleacknowledgedrinks"
     },
     {
@@ -2493,7 +2502,7 @@
       "source_file": "lib/application/hosted_session_runtime.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_hosted_session_runtime_dart_handletoggleautoplay",
-      "community": 8,
+      "community": 7,
       "norm_label": "_handletoggleautoplay"
     },
     {
@@ -2502,7 +2511,7 @@
       "source_file": "lib/application/hosted_session_runtime.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_hosted_session_runtime_dart_handlesetautoplaydelayms",
-      "community": 8,
+      "community": 7,
       "norm_label": "_handlesetautoplaydelayms"
     },
     {
@@ -2511,7 +2520,7 @@
       "source_file": "lib/application/hosted_session_runtime.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_hosted_session_runtime_dart_queuedrinkdistributions",
-      "community": 8,
+      "community": 7,
       "norm_label": "_queuedrinkdistributions"
     },
     {
@@ -2520,7 +2529,7 @@
       "source_file": "lib/application/hosted_session_runtime.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_hosted_session_runtime_dart_warmupoutcome",
-      "community": 8,
+      "community": 7,
       "norm_label": "_warmupoutcome"
     },
     {
@@ -2529,7 +2538,7 @@
       "source_file": "lib/application/hosted_session_runtime.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_hosted_session_runtime_dart_appenddrinkdistributionlog",
-      "community": 8,
+      "community": 7,
       "norm_label": "_appenddrinkdistributionlog"
     },
     {
@@ -2538,7 +2547,7 @@
       "source_file": "lib/application/hosted_session_runtime.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_hosted_session_runtime_dart_ishost",
-      "community": 8,
+      "community": 7,
       "norm_label": "_ishost"
     },
     {
@@ -2547,7 +2556,7 @@
       "source_file": "lib/application/hosted_session_runtime.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_hosted_session_runtime_dart_stagefromphase",
-      "community": 8,
+      "community": 7,
       "norm_label": "_stagefromphase"
     },
     {
@@ -2556,7 +2565,7 @@
       "source_file": "lib/application/hosted_session_runtime.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_hosted_session_runtime_dart_compare",
-      "community": 8,
+      "community": 7,
       "norm_label": "_compare"
     },
     {
@@ -2565,7 +2574,7 @@
       "source_file": "lib/application/hosted_session_runtime.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_hosted_session_runtime_dart_tr",
-      "community": 8,
+      "community": 7,
       "norm_label": "_tr"
     },
     {
@@ -2574,7 +2583,7 @@
       "source_file": "lib/application/hosted_session_runtime.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_hosted_session_runtime_dart_expirestaledrinkprompts",
-      "community": 8,
+      "community": 7,
       "norm_label": "_expirestaledrinkprompts"
     },
     {
@@ -2583,7 +2592,7 @@
       "source_file": "lib/application/hosted_session_runtime.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_hosted_session_runtime_dart_autoexpirepromptcommand",
-      "community": 8,
+      "community": 7,
       "norm_label": "_autoexpirepromptcommand"
     },
     {
@@ -2592,7 +2601,7 @@
       "source_file": "lib/application/hosted_session_runtime.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_application_hosted_session_runtime_dart_samepenaltymap",
-      "community": 8,
+      "community": 7,
       "norm_label": "_samepenaltymap"
     },
     {
@@ -2925,7 +2934,7 @@
       "source_file": "lib/domain/game_models.dart",
       "source_location": null,
       "id": "lib_domain_game_models_dart",
-      "community": 7,
+      "community": 9,
       "norm_label": "game_models.dart"
     },
     {
@@ -2934,7 +2943,7 @@
       "source_file": "lib/domain/game_models.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_domain_game_models_dart_playingcard",
-      "community": 7,
+      "community": 9,
       "norm_label": "playingcard"
     },
     {
@@ -2943,7 +2952,7 @@
       "source_file": "lib/domain/game_models.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_domain_game_models_dart_playerstate",
-      "community": 7,
+      "community": 9,
       "norm_label": "playerstate"
     },
     {
@@ -2952,7 +2961,7 @@
       "source_file": "lib/domain/game_models.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_domain_game_models_dart_setupdraft",
-      "community": 7,
+      "community": 9,
       "norm_label": "setupdraft"
     },
     {
@@ -2961,7 +2970,7 @@
       "source_file": "lib/domain/game_models.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_domain_game_models_dart_autoplaystate",
-      "community": 7,
+      "community": 9,
       "norm_label": "autoplaystate"
     },
     {
@@ -2970,7 +2979,7 @@
       "source_file": "lib/domain/game_models.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_domain_game_models_dart_tiebreakdraw",
-      "community": 7,
+      "community": 9,
       "norm_label": "tiebreakdraw"
     },
     {
@@ -2979,7 +2988,7 @@
       "source_file": "lib/domain/game_models.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_domain_game_models_dart_tiebreakstate",
-      "community": 7,
+      "community": 9,
       "norm_label": "tiebreakstate"
     },
     {
@@ -2988,7 +2997,7 @@
       "source_file": "lib/domain/game_models.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_domain_game_models_dart_buszonestack",
-      "community": 7,
+      "community": 9,
       "norm_label": "buszonestack"
     },
     {
@@ -2997,7 +3006,7 @@
       "source_file": "lib/domain/game_models.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_domain_game_models_dart_buszonetone",
-      "community": 7,
+      "community": 9,
       "norm_label": "buszonetone"
     },
     {
@@ -3006,7 +3015,7 @@
       "source_file": "lib/domain/game_models.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_domain_game_models_dart_bushistoryentry",
-      "community": 7,
+      "community": 9,
       "norm_label": "bushistoryentry"
     },
     {
@@ -3015,7 +3024,7 @@
       "source_file": "lib/domain/game_models.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_domain_game_models_dart_busroutestate",
-      "community": 7,
+      "community": 9,
       "norm_label": "busroutestate"
     },
     {
@@ -3024,7 +3033,7 @@
       "source_file": "lib/domain/game_models.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_domain_game_models_dart_gamestate",
-      "community": 7,
+      "community": 9,
       "norm_label": "gamestate"
     },
     {
@@ -3033,7 +3042,7 @@
       "source_file": "lib/domain/game_models.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_domain_game_models_dart_shortlabel",
-      "community": 7,
+      "community": 9,
       "norm_label": "shortlabel"
     },
     {
@@ -3042,7 +3051,7 @@
       "source_file": "lib/domain/game_models.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_domain_game_models_dart_fromjson",
-      "community": 7,
+      "community": 9,
       "norm_label": "fromjson"
     },
     {
@@ -3051,7 +3060,7 @@
       "source_file": "lib/domain/game_models.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_domain_game_models_dart_copywith",
-      "community": 7,
+      "community": 9,
       "norm_label": "copywith"
     },
     {
@@ -3060,7 +3069,7 @@
       "source_file": "lib/domain/game_models.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_domain_game_models_dart_toencodedjson",
-      "community": 7,
+      "community": 9,
       "norm_label": "toencodedjson"
     },
     {
@@ -3069,7 +3078,7 @@
       "source_file": "lib/domain/game_models.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_domain_game_models_dart_jsonencode",
-      "community": 7,
+      "community": 9,
       "norm_label": "jsonencode"
     },
     {
@@ -3078,7 +3087,7 @@
       "source_file": "lib/domain/game_models.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_domain_game_models_dart_fromencodedjson",
-      "community": 7,
+      "community": 9,
       "norm_label": "fromencodedjson"
     },
     {
@@ -3087,7 +3096,7 @@
       "source_file": "lib/domain/hosted_models.dart",
       "source_location": null,
       "id": "lib_domain_hosted_models_dart",
-      "community": 7,
+      "community": 11,
       "norm_label": "hosted_models.dart"
     },
     {
@@ -3096,7 +3105,7 @@
       "source_file": "lib/domain/hosted_models.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_domain_hosted_models_dart_hostedsessioncommand",
-      "community": 7,
+      "community": 11,
       "norm_label": "hostedsessioncommand"
     },
     {
@@ -3105,7 +3114,7 @@
       "source_file": "lib/domain/hosted_models.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_domain_hosted_models_dart_hostedparticipant",
-      "community": 7,
+      "community": 11,
       "norm_label": "hostedparticipant"
     },
     {
@@ -3114,7 +3123,7 @@
       "source_file": "lib/domain/hosted_models.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_domain_hosted_models_dart_hostedpendingdrinkdistribution",
-      "community": 7,
+      "community": 11,
       "norm_label": "hostedpendingdrinkdistribution"
     },
     {
@@ -3123,7 +3132,7 @@
       "source_file": "lib/domain/hosted_models.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_domain_hosted_models_dart_hostedsessionstate",
-      "community": 7,
+      "community": 11,
       "norm_label": "hostedsessionstate"
     },
     {
@@ -3132,8 +3141,26 @@
       "source_file": "lib/domain/hosted_models.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_domain_hosted_models_dart_hostedpublicplayer",
-      "community": 7,
+      "community": 11,
       "norm_label": "hostedpublicplayer"
+    },
+    {
+      "label": "HostedPublicTieBreakState",
+      "file_type": "code",
+      "source_file": "lib/domain/hosted_models.dart",
+      "source_location": null,
+      "id": "c_users_bjork_dev_bussruta_lib_domain_hosted_models_dart_hostedpublictiebreakstate",
+      "community": 11,
+      "norm_label": "hostedpublictiebreakstate"
+    },
+    {
+      "label": "HostedPublicBusRouteState",
+      "file_type": "code",
+      "source_file": "lib/domain/hosted_models.dart",
+      "source_location": null,
+      "id": "c_users_bjork_dev_bussruta_lib_domain_hosted_models_dart_hostedpublicbusroutestate",
+      "community": 11,
+      "norm_label": "hostedpublicbusroutestate"
     },
     {
       "label": "HostedPublicView",
@@ -3141,7 +3168,7 @@
       "source_file": "lib/domain/hosted_models.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_domain_hosted_models_dart_hostedpublicview",
-      "community": 7,
+      "community": 11,
       "norm_label": "hostedpublicview"
     },
     {
@@ -3150,7 +3177,7 @@
       "source_file": "lib/domain/hosted_models.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_domain_hosted_models_dart_hostedprojectedview",
-      "community": 7,
+      "community": 11,
       "norm_label": "hostedprojectedview"
     },
     {
@@ -3159,7 +3186,7 @@
       "source_file": "lib/domain/hosted_models.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_domain_hosted_models_dart_fromjson",
-      "community": 7,
+      "community": 11,
       "norm_label": "fromjson"
     },
     {
@@ -3168,7 +3195,7 @@
       "source_file": "lib/domain/hosted_models.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_domain_hosted_models_dart_encode",
-      "community": 7,
+      "community": 11,
       "norm_label": "encode"
     },
     {
@@ -3177,7 +3204,7 @@
       "source_file": "lib/domain/hosted_models.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_domain_hosted_models_dart_jsonencode",
-      "community": 7,
+      "community": 11,
       "norm_label": "jsonencode"
     },
     {
@@ -3186,7 +3213,7 @@
       "source_file": "lib/domain/hosted_models.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_domain_hosted_models_dart_decode",
-      "community": 7,
+      "community": 11,
       "norm_label": "decode"
     },
     {
@@ -3195,7 +3222,7 @@
       "source_file": "lib/domain/hosted_models.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_domain_hosted_models_dart_copywith",
-      "community": 7,
+      "community": 11,
       "norm_label": "copywith"
     },
     {
@@ -3204,7 +3231,7 @@
       "source_file": "lib/domain/hosted_models.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_domain_hosted_models_dart_argumenterror",
-      "community": 7,
+      "community": 11,
       "norm_label": "argumenterror"
     },
     {
@@ -3213,7 +3240,7 @@
       "source_file": "lib/domain/hosted_models.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_domain_hosted_models_dart_validatehostedbusroute",
-      "community": 7,
+      "community": 11,
       "norm_label": "_validatehostedbusroute"
     },
     {
@@ -3222,7 +3249,7 @@
       "source_file": "lib/domain/hosted_projection.dart",
       "source_location": null,
       "id": "lib_domain_hosted_projection_dart",
-      "community": 28,
+      "community": 32,
       "norm_label": "hosted_projection.dart"
     },
     {
@@ -3231,7 +3258,7 @@
       "source_file": "lib/domain/hosted_projection.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_domain_hosted_projection_dart_projecthostedview",
-      "community": 28,
+      "community": 32,
       "norm_label": "projecthostedview"
     },
     {
@@ -3240,7 +3267,7 @@
       "source_file": "lib/domain/hosted_projection.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_domain_hosted_projection_dart_hostedprojectedview",
-      "community": 28,
+      "community": 32,
       "norm_label": "hostedprojectedview"
     },
     {
@@ -3519,7 +3546,7 @@
       "source_file": "lib/presentation/hosted_session_view.dart",
       "source_location": null,
       "id": "package_bussruta_app_presentation_strings_dart",
-      "community": 12,
+      "community": 3,
       "norm_label": "package:bussruta_app/presentation/strings.dart"
     },
     {
@@ -4248,7 +4275,7 @@
       "source_file": "lib/presentation/help_view.dart",
       "source_location": null,
       "id": "lib_presentation_help_view_dart",
-      "community": 12,
+      "community": 3,
       "norm_label": "help_view.dart"
     },
     {
@@ -4257,7 +4284,7 @@
       "source_file": "lib/presentation/help_view.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_presentation_help_view_dart_ruleshelpscreen",
-      "community": 12,
+      "community": 3,
       "norm_label": "ruleshelpscreen"
     },
     {
@@ -4266,7 +4293,7 @@
       "source_file": "lib/presentation/help_view.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_presentation_help_view_dart_onboardingintroscreen",
-      "community": 12,
+      "community": 3,
       "norm_label": "onboardingintroscreen"
     },
     {
@@ -4275,7 +4302,7 @@
       "source_file": "lib/presentation/help_view.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_presentation_help_view_dart_onboardingintroscreenstate",
-      "community": 12,
+      "community": 3,
       "norm_label": "_onboardingintroscreenstate"
     },
     {
@@ -4284,7 +4311,7 @@
       "source_file": "lib/presentation/help_view.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_presentation_help_view_dart_helpcard",
-      "community": 12,
+      "community": 3,
       "norm_label": "_helpcard"
     },
     {
@@ -4293,7 +4320,7 @@
       "source_file": "lib/presentation/help_view.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_presentation_help_view_dart_introslide",
-      "community": 12,
+      "community": 3,
       "norm_label": "_introslide"
     },
     {
@@ -4302,7 +4329,7 @@
       "source_file": "lib/presentation/help_view.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_presentation_help_view_dart_build",
-      "community": 12,
+      "community": 3,
       "norm_label": "build"
     },
     {
@@ -4311,7 +4338,7 @@
       "source_file": "lib/presentation/help_view.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_presentation_help_view_dart_scaffold",
-      "community": 12,
+      "community": 3,
       "norm_label": "scaffold"
     },
     {
@@ -4320,7 +4347,7 @@
       "source_file": "lib/presentation/help_view.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_presentation_help_view_dart_sizedbox",
-      "community": 12,
+      "community": 3,
       "norm_label": "sizedbox"
     },
     {
@@ -4329,7 +4356,7 @@
       "source_file": "lib/presentation/help_view.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_presentation_help_view_dart_dispose",
-      "community": 12,
+      "community": 3,
       "norm_label": "dispose"
     },
     {
@@ -4338,7 +4365,7 @@
       "source_file": "lib/presentation/help_view.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_presentation_help_view_dart_padding",
-      "community": 12,
+      "community": 3,
       "norm_label": "padding"
     },
     {
@@ -4347,7 +4374,7 @@
       "source_file": "lib/presentation/help_view.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_presentation_help_view_dart_animatedcontainer",
-      "community": 12,
+      "community": 3,
       "norm_label": "animatedcontainer"
     },
     {
@@ -4356,7 +4383,7 @@
       "source_file": "lib/presentation/help_view.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_presentation_help_view_dart_card",
-      "community": 12,
+      "community": 3,
       "norm_label": "card"
     },
     {
@@ -4860,7 +4887,7 @@
       "source_file": "lib/presentation/strings.dart",
       "source_location": null,
       "id": "lib_presentation_strings_dart",
-      "community": 22,
+      "community": 25,
       "norm_label": "strings.dart"
     },
     {
@@ -4869,7 +4896,7 @@
       "source_file": "lib/presentation/strings.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_presentation_strings_dart_tr",
-      "community": 22,
+      "community": 25,
       "norm_label": "tr"
     },
     {
@@ -4878,7 +4905,7 @@
       "source_file": "lib/presentation/strings.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_presentation_strings_dart_languagename",
-      "community": 22,
+      "community": 25,
       "norm_label": "languagename"
     },
     {
@@ -4887,7 +4914,7 @@
       "source_file": "lib/presentation/strings.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_presentation_strings_dart_phaselabel",
-      "community": 22,
+      "community": 25,
       "norm_label": "phaselabel"
     },
     {
@@ -4896,7 +4923,7 @@
       "source_file": "lib/presentation/strings.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_presentation_strings_dart_warmupguesslabel",
-      "community": 22,
+      "community": 25,
       "norm_label": "warmupguesslabel"
     },
     {
@@ -4905,7 +4932,7 @@
       "source_file": "lib/presentation/strings.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_lib_presentation_strings_dart_busguesslabel",
-      "community": 22,
+      "community": 25,
       "norm_label": "busguesslabel"
     },
     {
@@ -4914,7 +4941,7 @@
       "source_file": "test/application/game_controller_onboarding_test.dart",
       "source_location": null,
       "id": "test_application_game_controller_onboarding_test_dart",
-      "community": 3,
+      "community": 17,
       "norm_label": "game_controller_onboarding_test.dart"
     },
     {
@@ -4923,7 +4950,7 @@
       "source_file": "test/application/game_controller_onboarding_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_application_game_controller_onboarding_test_dart_fakestorage",
-      "community": 3,
+      "community": 17,
       "norm_label": "_fakestorage"
     },
     {
@@ -4932,16 +4959,16 @@
       "source_file": "test/application/game_controller_onboarding_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_application_game_controller_onboarding_test_dart_main",
-      "community": 3,
+      "community": 17,
       "norm_label": "main"
     },
     {
       "label": "package:flutter_test/flutter_test.dart",
       "file_type": "code",
-      "source_file": "test/presentation/bussruta_app_onboarding_test.dart",
+      "source_file": "test/tool/internet_relay_test.dart",
       "source_location": null,
       "id": "package_flutter_test_flutter_test_dart",
-      "community": 3,
+      "community": 17,
       "norm_label": "package:flutter_test/flutter_test.dart"
     },
     {
@@ -4950,7 +4977,7 @@
       "source_file": "test/application/hosted_lan_transport_test.dart",
       "source_location": null,
       "id": "test_application_hosted_lan_transport_test_dart",
-      "community": 15,
+      "community": 13,
       "norm_label": "hosted_lan_transport_test.dart"
     },
     {
@@ -4959,7 +4986,7 @@
       "source_file": "test/application/hosted_lan_transport_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_application_hosted_lan_transport_test_dart_main",
-      "community": 15,
+      "community": 13,
       "norm_label": "main"
     },
     {
@@ -4968,7 +4995,7 @@
       "source_file": "test/application/hosted_lan_transport_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_application_hosted_lan_transport_test_dart_duration",
-      "community": 15,
+      "community": 13,
       "norm_label": "duration"
     },
     {
@@ -4977,7 +5004,7 @@
       "source_file": "test/application/hosted_lan_transport_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_application_hosted_lan_transport_test_dart_expectlater",
-      "community": 15,
+      "community": 13,
       "norm_label": "expectlater"
     },
     {
@@ -4986,7 +5013,7 @@
       "source_file": "test/application/hosted_lan_transport_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_application_hosted_lan_transport_test_dart_waitfor",
-      "community": 15,
+      "community": 13,
       "norm_label": "_waitfor"
     },
     {
@@ -4995,7 +5022,7 @@
       "source_file": "test/application/hosted_lan_transport_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_application_hosted_lan_transport_test_dart_hostedprojectedview",
-      "community": 15,
+      "community": 13,
       "norm_label": "hostedprojectedview"
     },
     {
@@ -5004,7 +5031,7 @@
       "source_file": "test/application/hosted_lan_transport_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_application_hosted_lan_transport_test_dart_function",
-      "community": 15,
+      "community": 13,
       "norm_label": "function"
     },
     {
@@ -5031,7 +5058,7 @@
       "source_file": "test/application/hosted_session_runtime_test.dart",
       "source_location": null,
       "id": "test_application_hosted_session_runtime_test_dart",
-      "community": 16,
+      "community": 19,
       "norm_label": "hosted_session_runtime_test.dart"
     },
     {
@@ -5040,7 +5067,7 @@
       "source_file": "test/application/hosted_session_runtime_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_application_hosted_session_runtime_test_dart_main",
-      "community": 16,
+      "community": 19,
       "norm_label": "main"
     },
     {
@@ -5049,7 +5076,7 @@
       "source_file": "test/application/hosted_session_runtime_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_application_hosted_session_runtime_test_dart_playerstate",
-      "community": 16,
+      "community": 19,
       "norm_label": "playerstate"
     },
     {
@@ -5058,7 +5085,7 @@
       "source_file": "test/application/hosted_session_runtime_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_application_hosted_session_runtime_test_dart_hostedsessioncommand",
-      "community": 16,
+      "community": 19,
       "norm_label": "hostedsessioncommand"
     },
     {
@@ -5067,7 +5094,7 @@
       "source_file": "test/application/hosted_session_runtime_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_application_hosted_session_runtime_test_dart_warmupstate",
-      "community": 16,
+      "community": 19,
       "norm_label": "_warmupstate"
     },
     {
@@ -5076,7 +5103,7 @@
       "source_file": "test/application/hosted_session_runtime_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_application_hosted_session_runtime_test_dart_hostedsessionstate",
-      "community": 16,
+      "community": 19,
       "norm_label": "hostedsessionstate"
     },
     {
@@ -5085,7 +5112,7 @@
       "source_file": "test/application/hosted_session_runtime_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_application_hosted_session_runtime_test_dart_pyramidstate",
-      "community": 16,
+      "community": 19,
       "norm_label": "_pyramidstate"
     },
     {
@@ -5094,7 +5121,7 @@
       "source_file": "test/application/hosted_session_runtime_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_application_hosted_session_runtime_test_dart_bussetupstate",
-      "community": 16,
+      "community": 19,
       "norm_label": "_bussetupstate"
     },
     {
@@ -5103,7 +5130,7 @@
       "source_file": "test/application/hosted_session_runtime_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_application_hosted_session_runtime_test_dart_card",
-      "community": 16,
+      "community": 19,
       "norm_label": "card"
     },
     {
@@ -5112,7 +5139,7 @@
       "source_file": "test/application/hosted_session_runtime_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_application_hosted_session_runtime_test_dart_playingcard",
-      "community": 16,
+      "community": 19,
       "norm_label": "playingcard"
     },
     {
@@ -5121,7 +5148,7 @@
       "source_file": "test/domain/game_engine_test.dart",
       "source_location": null,
       "id": "test_domain_game_engine_test_dart",
-      "community": 3,
+      "community": 26,
       "norm_label": "game_engine_test.dart"
     },
     {
@@ -5130,7 +5157,7 @@
       "source_file": "test/domain/game_engine_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_domain_game_engine_test_dart_main",
-      "community": 3,
+      "community": 26,
       "norm_label": "main"
     },
     {
@@ -5139,7 +5166,7 @@
       "source_file": "test/domain/game_engine_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_domain_game_engine_test_dart_playerstate",
-      "community": 3,
+      "community": 26,
       "norm_label": "playerstate"
     },
     {
@@ -5148,7 +5175,7 @@
       "source_file": "test/domain/game_engine_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_domain_game_engine_test_dart_card",
-      "community": 3,
+      "community": 26,
       "norm_label": "card"
     },
     {
@@ -5157,7 +5184,7 @@
       "source_file": "test/domain/game_engine_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_domain_game_engine_test_dart_playingcard",
-      "community": 3,
+      "community": 26,
       "norm_label": "playingcard"
     },
     {
@@ -5166,7 +5193,7 @@
       "source_file": "test/domain/game_engine_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_domain_game_engine_test_dart_busstate",
-      "community": 3,
+      "community": 26,
       "norm_label": "busstate"
     },
     {
@@ -5175,7 +5202,7 @@
       "source_file": "test/domain/hosted_models_test.dart",
       "source_location": null,
       "id": "test_domain_hosted_models_test_dart",
-      "community": 19,
+      "community": 23,
       "norm_label": "hosted_models_test.dart"
     },
     {
@@ -5184,7 +5211,7 @@
       "source_file": "test/domain/hosted_models_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_domain_hosted_models_test_dart_main",
-      "community": 19,
+      "community": 23,
       "norm_label": "main"
     },
     {
@@ -5193,7 +5220,7 @@
       "source_file": "test/domain/hosted_models_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_domain_hosted_models_test_dart_hostedprojectedview",
-      "community": 19,
+      "community": 23,
       "norm_label": "hostedprojectedview"
     },
     {
@@ -5202,17 +5229,8 @@
       "source_file": "test/domain/hosted_models_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_domain_hosted_models_test_dart_busroute",
-      "community": 19,
+      "community": 23,
       "norm_label": "_busroute"
-    },
-    {
-      "label": "BusRouteState",
-      "file_type": "code",
-      "source_file": "test/domain/hosted_models_test.dart",
-      "source_location": null,
-      "id": "c_users_bjork_dev_bussruta_test_domain_hosted_models_test_dart_busroutestate",
-      "community": 19,
-      "norm_label": "busroutestate"
     },
     {
       "label": "_card",
@@ -5220,7 +5238,7 @@
       "source_file": "test/domain/hosted_models_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_domain_hosted_models_test_dart_card",
-      "community": 19,
+      "community": 23,
       "norm_label": "_card"
     },
     {
@@ -5229,7 +5247,7 @@
       "source_file": "test/domain/hosted_models_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_domain_hosted_models_test_dart_playingcard",
-      "community": 19,
+      "community": 23,
       "norm_label": "playingcard"
     },
     {
@@ -5238,7 +5256,7 @@
       "source_file": "test/domain/hosted_projection_test.dart",
       "source_location": null,
       "id": "test_domain_hosted_projection_test_dart",
-      "community": 17,
+      "community": 20,
       "norm_label": "hosted_projection_test.dart"
     },
     {
@@ -5247,7 +5265,7 @@
       "source_file": "test/domain/hosted_projection_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_domain_hosted_projection_test_dart_main",
-      "community": 17,
+      "community": 20,
       "norm_label": "main"
     },
     {
@@ -5256,7 +5274,7 @@
       "source_file": "test/domain/hosted_projection_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_domain_hosted_projection_test_dart_sessionstate",
-      "community": 17,
+      "community": 20,
       "norm_label": "_sessionstate"
     },
     {
@@ -5265,7 +5283,7 @@
       "source_file": "test/domain/hosted_projection_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_domain_hosted_projection_test_dart_hostedsessionstate",
-      "community": 17,
+      "community": 20,
       "norm_label": "hostedsessionstate"
     },
     {
@@ -5274,7 +5292,7 @@
       "source_file": "test/domain/hosted_projection_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_domain_hosted_projection_test_dart_busroute",
-      "community": 17,
+      "community": 20,
       "norm_label": "_busroute"
     },
     {
@@ -5283,7 +5301,7 @@
       "source_file": "test/domain/hosted_projection_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_domain_hosted_projection_test_dart_busroutestate",
-      "community": 17,
+      "community": 20,
       "norm_label": "busroutestate"
     },
     {
@@ -5292,7 +5310,7 @@
       "source_file": "test/domain/hosted_projection_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_domain_hosted_projection_test_dart_card",
-      "community": 17,
+      "community": 20,
       "norm_label": "card"
     },
     {
@@ -5301,7 +5319,7 @@
       "source_file": "test/domain/hosted_projection_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_domain_hosted_projection_test_dart_playingcard",
-      "community": 17,
+      "community": 20,
       "norm_label": "playingcard"
     },
     {
@@ -5310,7 +5328,7 @@
       "source_file": "test/presentation/bussruta_app_onboarding_test.dart",
       "source_location": null,
       "id": "test_presentation_bussruta_app_onboarding_test_dart",
-      "community": 3,
+      "community": 17,
       "norm_label": "bussruta_app_onboarding_test.dart"
     },
     {
@@ -5319,7 +5337,7 @@
       "source_file": "test/presentation/bussruta_app_onboarding_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_presentation_bussruta_app_onboarding_test_dart_fakestorage",
-      "community": 3,
+      "community": 17,
       "norm_label": "_fakestorage"
     },
     {
@@ -5328,8 +5346,206 @@
       "source_file": "test/presentation/bussruta_app_onboarding_test.dart",
       "source_location": null,
       "id": "c_users_bjork_dev_bussruta_test_presentation_bussruta_app_onboarding_test_dart_main",
-      "community": 3,
+      "community": 17,
       "norm_label": "main"
+    },
+    {
+      "label": "internet_relay_test.dart",
+      "file_type": "code",
+      "source_file": "test/tool/internet_relay_test.dart",
+      "source_location": null,
+      "id": "test_tool_internet_relay_test_dart",
+      "community": 13,
+      "norm_label": "internet_relay_test.dart"
+    },
+    {
+      "label": "main",
+      "file_type": "code",
+      "source_file": "test/tool/internet_relay_test.dart",
+      "source_location": null,
+      "id": "c_users_bjork_dev_bussruta_test_tool_internet_relay_test_dart_main",
+      "community": 13,
+      "norm_label": "main"
+    },
+    {
+      "label": "_next",
+      "file_type": "code",
+      "source_file": "test/tool/internet_relay_test.dart",
+      "source_location": null,
+      "id": "c_users_bjork_dev_bussruta_test_tool_internet_relay_test_dart_next",
+      "community": 13,
+      "norm_label": "_next"
+    },
+    {
+      "label": "Duration",
+      "file_type": "code",
+      "source_file": "test/tool/internet_relay_test.dart",
+      "source_location": null,
+      "id": "c_users_bjork_dev_bussruta_test_tool_internet_relay_test_dart_duration",
+      "community": 13,
+      "norm_label": "duration"
+    },
+    {
+      "label": "StateError",
+      "file_type": "code",
+      "source_file": "test/tool/internet_relay_test.dart",
+      "source_location": null,
+      "id": "c_users_bjork_dev_bussruta_test_tool_internet_relay_test_dart_stateerror",
+      "community": 13,
+      "norm_label": "stateerror"
+    },
+    {
+      "label": "internet_relay.dart",
+      "file_type": "code",
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "id": "tool_internet_relay_dart",
+      "community": 10,
+      "norm_label": "internet_relay.dart"
+    },
+    {
+      "label": "InternetRelayServer",
+      "file_type": "code",
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "id": "c_users_bjork_dev_bussruta_tool_internet_relay_dart_internetrelayserver",
+      "community": 10,
+      "norm_label": "internetrelayserver"
+    },
+    {
+      "label": "_RelayRoom",
+      "file_type": "code",
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "id": "c_users_bjork_dev_bussruta_tool_internet_relay_dart_relayroom",
+      "community": 10,
+      "norm_label": "_relayroom"
+    },
+    {
+      "label": "_RelayPeer",
+      "file_type": "code",
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "id": "c_users_bjork_dev_bussruta_tool_internet_relay_dart_relaypeer",
+      "community": 10,
+      "norm_label": "_relaypeer"
+    },
+    {
+      "label": "_portFromArgs",
+      "file_type": "code",
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "id": "c_users_bjork_dev_bussruta_tool_internet_relay_dart_portfromargs",
+      "community": 10,
+      "norm_label": "_portfromargs"
+    },
+    {
+      "label": "StateError",
+      "file_type": "code",
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "id": "c_users_bjork_dev_bussruta_tool_internet_relay_dart_stateerror",
+      "community": 10,
+      "norm_label": "stateerror"
+    },
+    {
+      "label": "Uri",
+      "file_type": "code",
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "id": "c_users_bjork_dev_bussruta_tool_internet_relay_dart_uri",
+      "community": 10,
+      "norm_label": "uri"
+    },
+    {
+      "label": "_handleMessage",
+      "file_type": "code",
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "id": "c_users_bjork_dev_bussruta_tool_internet_relay_dart_handlemessage",
+      "community": 10,
+      "norm_label": "_handlemessage"
+    },
+    {
+      "label": "Function",
+      "file_type": "code",
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "id": "c_users_bjork_dev_bussruta_tool_internet_relay_dart_function",
+      "community": 10,
+      "norm_label": "function"
+    },
+    {
+      "label": "_forwardClientMessage",
+      "file_type": "code",
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "id": "c_users_bjork_dev_bussruta_tool_internet_relay_dart_forwardclientmessage",
+      "community": 10,
+      "norm_label": "_forwardclientmessage"
+    },
+    {
+      "label": "_forwardHostMessage",
+      "file_type": "code",
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "id": "c_users_bjork_dev_bussruta_tool_internet_relay_dart_forwardhostmessage",
+      "community": 10,
+      "norm_label": "_forwardhostmessage"
+    },
+    {
+      "label": "_broadcastHostMessage",
+      "file_type": "code",
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "id": "c_users_bjork_dev_bussruta_tool_internet_relay_dart_broadcasthostmessage",
+      "community": 10,
+      "norm_label": "_broadcasthostmessage"
+    },
+    {
+      "label": "_closeHostRoom",
+      "file_type": "code",
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "id": "c_users_bjork_dev_bussruta_tool_internet_relay_dart_closehostroom",
+      "community": 10,
+      "norm_label": "_closehostroom"
+    },
+    {
+      "label": "_handlePeerClosed",
+      "file_type": "code",
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "id": "c_users_bjork_dev_bussruta_tool_internet_relay_dart_handlepeerclosed",
+      "community": 10,
+      "norm_label": "_handlepeerclosed"
+    },
+    {
+      "label": "_newRoomKey",
+      "file_type": "code",
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "id": "c_users_bjork_dev_bussruta_tool_internet_relay_dart_newroomkey",
+      "community": 10,
+      "norm_label": "_newroomkey"
+    },
+    {
+      "label": "_send",
+      "file_type": "code",
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "id": "c_users_bjork_dev_bussruta_tool_internet_relay_dart_send",
+      "community": 10,
+      "norm_label": "_send"
+    },
+    {
+      "label": "_sendError",
+      "file_type": "code",
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "id": "c_users_bjork_dev_bussruta_tool_internet_relay_dart_senderror",
+      "community": 10,
+      "norm_label": "_senderror"
     },
     {
       "label": "AGENTS.md",
@@ -5337,7 +5553,7 @@
       "source_file": "AGENTS.md",
       "source_location": "L1",
       "id": "agents_md",
-      "community": 32,
+      "community": 38,
       "norm_label": "agents.md"
     },
     {
@@ -5346,7 +5562,7 @@
       "source_file": "AGENTS.md",
       "source_location": "L1",
       "id": "bussruta_agents_graphify",
-      "community": 32,
+      "community": 38,
       "norm_label": "graphify"
     },
     {
@@ -5355,7 +5571,7 @@
       "source_file": "README.md",
       "source_location": "L1",
       "id": "readme_md",
-      "community": 13,
+      "community": 16,
       "norm_label": "readme.md"
     },
     {
@@ -5364,7 +5580,7 @@
       "source_file": "README.md",
       "source_location": "L1",
       "id": "bussruta_readme_bussruta",
-      "community": 13,
+      "community": 16,
       "norm_label": "bussruta"
     },
     {
@@ -5373,7 +5589,7 @@
       "source_file": "README.md",
       "source_location": "L10",
       "id": "bussruta_readme_current_status",
-      "community": 13,
+      "community": 16,
       "norm_label": "current status"
     },
     {
@@ -5382,7 +5598,7 @@
       "source_file": "README.md",
       "source_location": "L17",
       "id": "bussruta_readme_run_locally",
-      "community": 13,
+      "community": 16,
       "norm_label": "run locally"
     },
     {
@@ -5391,7 +5607,7 @@
       "source_file": "README.md",
       "source_location": "L19",
       "id": "bussruta_readme_codeblock_1",
-      "community": 13,
+      "community": 16,
       "norm_label": "code:bash (flutter pub get)"
     },
     {
@@ -5400,7 +5616,7 @@
       "source_file": "README.md",
       "source_location": "L26",
       "id": "bussruta_readme_codeblock_2",
-      "community": 13,
+      "community": 16,
       "norm_label": "code:bash (dart format --output=none --set-exit-if-changed .)"
     },
     {
@@ -5409,7 +5625,7 @@
       "source_file": "README.md",
       "source_location": "L32",
       "id": "bussruta_readme_hosted_lan_testing",
-      "community": 13,
+      "community": 16,
       "norm_label": "hosted lan testing"
     },
     {
@@ -5418,7 +5634,7 @@
       "source_file": "README.md",
       "source_location": "L40",
       "id": "bussruta_readme_project_layout",
-      "community": 13,
+      "community": 16,
       "norm_label": "project layout"
     },
     {
@@ -5427,7 +5643,7 @@
       "source_file": "README.md",
       "source_location": "L50",
       "id": "bussruta_readme_graphify",
-      "community": 13,
+      "community": 16,
       "norm_label": "graphify"
     },
     {
@@ -5436,7 +5652,7 @@
       "source_file": "README.md",
       "source_location": "L54",
       "id": "bussruta_readme_codeblock_3",
-      "community": 13,
+      "community": 16,
       "norm_label": "code:bash (graphify update .)"
     },
     {
@@ -5445,7 +5661,7 @@
       "source_file": "README.md",
       "source_location": "L58",
       "id": "bussruta_readme_release_readiness",
-      "community": 13,
+      "community": 16,
       "norm_label": "release readiness"
     },
     {
@@ -5454,7 +5670,7 @@
       "source_file": "BusRoute_web_app/README.md",
       "source_location": "L1",
       "id": "busroute_web_app_readme_md",
-      "community": 24,
+      "community": 28,
       "norm_label": "readme.md"
     },
     {
@@ -5463,7 +5679,7 @@
       "source_file": "BusRoute_web_app/README.md",
       "source_location": "L5",
       "id": "busroute_web_app_readme_run_locally",
-      "community": 24,
+      "community": 28,
       "norm_label": "run locally"
     },
     {
@@ -5472,7 +5688,7 @@
       "source_file": "BusRoute_web_app/README.md",
       "source_location": "L11",
       "id": "busroute_web_app_readme_codeblock_1",
-      "community": 24,
+      "community": 28,
       "norm_label": "code:bash (python -m http.server 8000)"
     },
     {
@@ -5481,7 +5697,7 @@
       "source_file": "BusRoute_web_app/README.md",
       "source_location": "L17",
       "id": "busroute_web_app_readme_game_flow_implemented",
-      "community": 24,
+      "community": 28,
       "norm_label": "game flow implemented"
     },
     {
@@ -5490,7 +5706,7 @@
       "source_file": "BusRoute_web_app/README.md",
       "source_location": "L74",
       "id": "busroute_web_app_readme_ui_tweaks_included",
-      "community": 24,
+      "community": 28,
       "norm_label": "ui tweaks included"
     },
     {
@@ -5499,7 +5715,7 @@
       "source_file": "docs/emulator_hosted_join_workflow.md",
       "source_location": "L1",
       "id": "docs_emulator_hosted_join_workflow_md",
-      "community": 20,
+      "community": 24,
       "norm_label": "emulator_hosted_join_workflow.md"
     },
     {
@@ -5508,7 +5724,7 @@
       "source_file": "docs/emulator_hosted_join_workflow.md",
       "source_location": "L1",
       "id": "docs_emulator_hosted_join_workflow_hosted_lan_testing_on_android_emulators",
-      "community": 20,
+      "community": 24,
       "norm_label": "hosted lan testing on android emulators"
     },
     {
@@ -5517,7 +5733,7 @@
       "source_file": "docs/emulator_hosted_join_workflow.md",
       "source_location": "L3",
       "id": "docs_emulator_hosted_join_workflow_why_join_fails_by_default",
-      "community": 20,
+      "community": 24,
       "norm_label": "why join fails by default"
     },
     {
@@ -5526,7 +5742,7 @@
       "source_file": "docs/emulator_hosted_join_workflow.md",
       "source_location": "L13",
       "id": "docs_emulator_hosted_join_workflow_recommended_emulator_workflow",
-      "community": 20,
+      "community": 24,
       "norm_label": "recommended emulator workflow"
     },
     {
@@ -5535,7 +5751,7 @@
       "source_file": "docs/emulator_hosted_join_workflow.md",
       "source_location": "L23",
       "id": "docs_emulator_hosted_join_workflow_codeblock_1",
-      "community": 20,
+      "community": 24,
       "norm_label": "code:powershell (adb -s emulator-5554 forward tcp:45879 tcp:45879)"
     },
     {
@@ -5544,7 +5760,7 @@
       "source_file": "docs/emulator_hosted_join_workflow.md",
       "source_location": "L34",
       "id": "docs_emulator_hosted_join_workflow_codeblock_2",
-      "community": 20,
+      "community": 24,
       "norm_label": "code:powershell (adb -s emulator-5554 forward --remove tcp:45879)"
     },
     {
@@ -5553,8 +5769,116 @@
       "source_file": "docs/emulator_hosted_join_workflow.md",
       "source_location": "L38",
       "id": "docs_emulator_hosted_join_workflow_real_device_expectation",
-      "community": 20,
+      "community": 24,
       "norm_label": "real-device expectation"
+    },
+    {
+      "label": "internet_relay.md",
+      "file_type": "document",
+      "source_file": "docs/internet_relay.md",
+      "source_location": "L1",
+      "id": "docs_internet_relay_md",
+      "community": 18,
+      "norm_label": "internet_relay.md"
+    },
+    {
+      "label": "Internet Relay",
+      "file_type": "document",
+      "source_file": "docs/internet_relay.md",
+      "source_location": "L1",
+      "id": "docs_internet_relay_internet_relay",
+      "community": 18,
+      "norm_label": "internet relay"
+    },
+    {
+      "label": "Run Locally",
+      "file_type": "document",
+      "source_file": "docs/internet_relay.md",
+      "source_location": "L13",
+      "id": "docs_internet_relay_run_locally",
+      "community": 18,
+      "norm_label": "run locally"
+    },
+    {
+      "label": "code:bash (dart run tool/internet_relay.dart --port 8080)",
+      "file_type": "document",
+      "source_file": "docs/internet_relay.md",
+      "source_location": "L15",
+      "id": "docs_internet_relay_codeblock_1",
+      "community": 18,
+      "norm_label": "code:bash (dart run tool/internet_relay.dart --port 8080)"
+    },
+    {
+      "label": "code:text (ws://127.0.0.1:8080/ws)",
+      "file_type": "document",
+      "source_file": "docs/internet_relay.md",
+      "source_location": "L21",
+      "id": "docs_internet_relay_codeblock_2",
+      "community": 18,
+      "norm_label": "code:text (ws://127.0.0.1:8080/ws)"
+    },
+    {
+      "label": "Relay Messages",
+      "file_type": "document",
+      "source_file": "docs/internet_relay.md",
+      "source_location": "L25",
+      "id": "docs_internet_relay_relay_messages",
+      "community": 18,
+      "norm_label": "relay messages"
+    },
+    {
+      "label": "code:json ({\"type\":\"host.create\",\"roomKey\":\"ROOM42\"})",
+      "file_type": "document",
+      "source_file": "docs/internet_relay.md",
+      "source_location": "L29",
+      "id": "docs_internet_relay_codeblock_3",
+      "community": 18,
+      "norm_label": "code:json ({\"type\":\"host.create\",\"roomkey\":\"room42\"})"
+    },
+    {
+      "label": "code:json ({\"type\":\"player.join\",\"roomKey\":\"ROOM42\",\"payload\":{\"type\":\")",
+      "file_type": "document",
+      "source_file": "docs/internet_relay.md",
+      "source_location": "L35",
+      "id": "docs_internet_relay_codeblock_4",
+      "community": 18,
+      "norm_label": "code:json ({\"type\":\"player.join\",\"roomkey\":\"room42\",\"payload\":{\"type\":\")"
+    },
+    {
+      "label": "code:json ({\"type\":\"client.message\",\"payload\":{\"type\":\"command\",\"comman)",
+      "file_type": "document",
+      "source_file": "docs/internet_relay.md",
+      "source_location": "L41",
+      "id": "docs_internet_relay_codeblock_5",
+      "community": 18,
+      "norm_label": "code:json ({\"type\":\"client.message\",\"payload\":{\"type\":\"command\",\"comman)"
+    },
+    {
+      "label": "code:json ({\"type\":\"host.message\",\"clientId\":\"client-1\",\"payload\":{\"typ)",
+      "file_type": "document",
+      "source_file": "docs/internet_relay.md",
+      "source_location": "L47",
+      "id": "docs_internet_relay_codeblock_6",
+      "community": 18,
+      "norm_label": "code:json ({\"type\":\"host.message\",\"clientid\":\"client-1\",\"payload\":{\"typ)"
+    },
+    {
+      "label": "code:json ({\"type\":\"host.broadcast\",\"payload\":{\"type\":\"session_closed\",)",
+      "file_type": "document",
+      "source_file": "docs/internet_relay.md",
+      "source_location": "L53",
+      "id": "docs_internet_relay_codeblock_7",
+      "community": 18,
+      "norm_label": "code:json ({\"type\":\"host.broadcast\",\"payload\":{\"type\":\"session_closed\",)"
+    },
+    {
+      "label": "Not Included Yet",
+      "file_type": "document",
+      "source_file": "docs/internet_relay.md",
+      "source_location": "L57",
+      "id": "docs_internet_relay_not_included_yet",
+      "community": 18,
+      "norm_label": "not included yet"
     },
     {
       "label": "manual_qa_checklist.md",
@@ -5562,7 +5886,7 @@
       "source_file": "docs/manual_qa_checklist.md",
       "source_location": "L1",
       "id": "docs_manual_qa_checklist_md",
-      "community": 11,
+      "community": 14,
       "norm_label": "manual_qa_checklist.md"
     },
     {
@@ -5571,134 +5895,161 @@
       "source_file": "docs/manual_qa_checklist.md",
       "source_location": "L1",
       "id": "docs_manual_qa_checklist_manual_qa_checklist",
-      "community": 11,
+      "community": 14,
       "norm_label": "manual qa checklist"
     },
     {
       "label": "Test setup",
       "file_type": "document",
       "source_file": "docs/manual_qa_checklist.md",
-      "source_location": "L5",
+      "source_location": "L6",
       "id": "docs_manual_qa_checklist_test_setup",
-      "community": 11,
+      "community": 14,
       "norm_label": "test setup"
     },
     {
       "label": "Local mode",
       "file_type": "document",
       "source_file": "docs/manual_qa_checklist.md",
-      "source_location": "L11",
+      "source_location": "L12",
       "id": "docs_manual_qa_checklist_local_mode",
-      "community": 11,
+      "community": 14,
       "norm_label": "local mode"
     },
     {
       "label": "Setup",
       "file_type": "document",
       "source_file": "docs/manual_qa_checklist.md",
-      "source_location": "L13",
+      "source_location": "L14",
       "id": "docs_manual_qa_checklist_setup",
-      "community": 11,
+      "community": 14,
       "norm_label": "setup"
     },
     {
       "label": "Warmup (Rounds 1-4)",
       "file_type": "document",
       "source_file": "docs/manual_qa_checklist.md",
-      "source_location": "L24",
+      "source_location": "L25",
       "id": "docs_manual_qa_checklist_warmup_rounds_1_4",
-      "community": 11,
+      "community": 14,
       "norm_label": "warmup (rounds 1-4)"
     },
     {
       "label": "Pyramid",
       "file_type": "document",
       "source_file": "docs/manual_qa_checklist.md",
-      "source_location": "L34",
+      "source_location": "L35",
       "id": "docs_manual_qa_checklist_pyramid",
-      "community": 11,
+      "community": 14,
       "norm_label": "pyramid"
     },
     {
       "label": "Tie-break",
       "file_type": "document",
       "source_file": "docs/manual_qa_checklist.md",
-      "source_location": "L44",
+      "source_location": "L45",
       "id": "docs_manual_qa_checklist_tie_break",
-      "community": 11,
+      "community": 14,
       "norm_label": "tie-break"
     },
     {
       "label": "Bus route + finish",
       "file_type": "document",
       "source_file": "docs/manual_qa_checklist.md",
-      "source_location": "L55",
+      "source_location": "L56",
       "id": "docs_manual_qa_checklist_bus_route_finish",
-      "community": 11,
+      "community": 14,
       "norm_label": "bus route + finish"
     },
     {
       "label": "Hosted LAN mode",
       "file_type": "document",
       "source_file": "docs/manual_qa_checklist.md",
-      "source_location": "L67",
+      "source_location": "L68",
       "id": "docs_manual_qa_checklist_hosted_lan_mode",
-      "community": 11,
+      "community": 14,
       "norm_label": "hosted lan mode"
     },
     {
       "label": "Host + join",
       "file_type": "document",
       "source_file": "docs/manual_qa_checklist.md",
-      "source_location": "L69",
+      "source_location": "L70",
       "id": "docs_manual_qa_checklist_host_join",
-      "community": 11,
+      "community": 14,
       "norm_label": "host + join"
     },
     {
       "label": "Reconnect + disconnect handling",
       "file_type": "document",
       "source_file": "docs/manual_qa_checklist.md",
-      "source_location": "L80",
+      "source_location": "L81",
       "id": "docs_manual_qa_checklist_reconnect_disconnect_handling",
-      "community": 11,
+      "community": 14,
       "norm_label": "reconnect + disconnect handling"
     },
     {
       "label": "Gameplay authority + privacy",
       "file_type": "document",
       "source_file": "docs/manual_qa_checklist.md",
-      "source_location": "L91",
+      "source_location": "L92",
       "id": "docs_manual_qa_checklist_gameplay_authority_privacy",
-      "community": 11,
+      "community": 14,
       "norm_label": "gameplay authority + privacy"
     },
     {
       "label": "Drink distribution + bus control",
       "file_type": "document",
       "source_file": "docs/manual_qa_checklist.md",
-      "source_location": "L101",
+      "source_location": "L102",
       "id": "docs_manual_qa_checklist_drink_distribution_bus_control",
-      "community": 11,
+      "community": 14,
       "norm_label": "drink distribution + bus control"
     },
     {
       "label": "Quick regression smoke",
       "file_type": "document",
       "source_file": "docs/manual_qa_checklist.md",
-      "source_location": "L112",
+      "source_location": "L113",
       "id": "docs_manual_qa_checklist_quick_regression_smoke",
-      "community": 11,
+      "community": 14,
       "norm_label": "quick regression smoke"
     },
     {
       "label": "Known manual-only checks",
       "file_type": "document",
       "source_file": "docs/manual_qa_checklist.md",
-      "source_location": "L121",
+      "source_location": "L122",
       "id": "docs_manual_qa_checklist_known_manual_only_checks",
-      "community": 11,
+      "community": 14,
       "norm_label": "known manual-only checks"
+    },
+    {
+      "label": "manual_qa_results.md",
+      "file_type": "document",
+      "source_file": "docs/manual_qa_results.md",
+      "source_location": "L1",
+      "id": "docs_manual_qa_results_md",
+      "community": 35,
+      "norm_label": "manual_qa_results.md"
+    },
+    {
+      "label": "Manual QA Results",
+      "file_type": "document",
+      "source_file": "docs/manual_qa_results.md",
+      "source_location": "L1",
+      "id": "docs_manual_qa_results_manual_qa_results",
+      "community": 35,
+      "norm_label": "manual qa results"
+    },
+    {
+      "label": "2026-05-09 Release Smoke",
+      "file_type": "document",
+      "source_file": "docs/manual_qa_results.md",
+      "source_location": "L3",
+      "id": "docs_manual_qa_results_2026_05_09_release_smoke",
+      "community": 35,
+      "norm_label": "2026-05-09 release smoke"
     },
     {
       "label": "multiplayer_options.md",
@@ -5706,7 +6057,7 @@
       "source_file": "docs/multiplayer_options.md",
       "source_location": "L1",
       "id": "docs_multiplayer_options_md",
-      "community": 14,
+      "community": 15,
       "norm_label": "multiplayer_options.md"
     },
     {
@@ -5715,7 +6066,7 @@
       "source_file": "docs/multiplayer_options.md",
       "source_location": "L1",
       "id": "docs_multiplayer_options_multiplayer_options_evaluation",
-      "community": 14,
+      "community": 15,
       "norm_label": "multiplayer options evaluation"
     },
     {
@@ -5724,97 +6075,97 @@
       "source_file": "docs/multiplayer_options.md",
       "source_location": "L3",
       "id": "docs_multiplayer_options_current_state_in_repo",
-      "community": 14,
+      "community": 15,
       "norm_label": "current state in repo"
     },
     {
       "label": "Internet room-key support",
       "file_type": "document",
       "source_file": "docs/multiplayer_options.md",
-      "source_location": "L12",
+      "source_location": "L13",
       "id": "docs_multiplayer_options_internet_room_key_support",
-      "community": 14,
+      "community": 15,
       "norm_label": "internet room-key support"
     },
     {
       "label": "What is required",
       "file_type": "document",
       "source_file": "docs/multiplayer_options.md",
-      "source_location": "L14",
+      "source_location": "L15",
       "id": "docs_multiplayer_options_what_is_required",
-      "community": 14,
+      "community": 15,
       "norm_label": "what is required"
     },
     {
       "label": "Smallest sane option",
       "file_type": "document",
       "source_file": "docs/multiplayer_options.md",
-      "source_location": "L19",
+      "source_location": "L20",
       "id": "docs_multiplayer_options_smallest_sane_option",
-      "community": 14,
+      "community": 15,
       "norm_label": "smallest sane option"
     },
     {
       "label": "Tradeoffs",
       "file_type": "document",
       "source_file": "docs/multiplayer_options.md",
-      "source_location": "L27",
+      "source_location": "L32",
       "id": "docs_multiplayer_options_tradeoffs",
-      "community": 14,
+      "community": 15,
       "norm_label": "tradeoffs"
     },
     {
       "label": "Bluetooth support",
       "file_type": "document",
       "source_file": "docs/multiplayer_options.md",
-      "source_location": "L38",
+      "source_location": "L43",
       "id": "docs_multiplayer_options_bluetooth_support",
-      "community": 14,
+      "community": 15,
       "norm_label": "bluetooth support"
     },
     {
       "label": "Feasibility",
       "file_type": "document",
       "source_file": "docs/multiplayer_options.md",
-      "source_location": "L40",
+      "source_location": "L45",
       "id": "docs_multiplayer_options_feasibility",
-      "community": 14,
+      "community": 15,
       "norm_label": "feasibility"
     },
     {
       "label": "Tradeoffs",
       "file_type": "document",
       "source_file": "docs/multiplayer_options.md",
-      "source_location": "L47",
-      "id": "docs_multiplayer_options_tradeoffs_47",
-      "community": 14,
+      "source_location": "L52",
+      "id": "docs_multiplayer_options_tradeoffs_52",
+      "community": 15,
       "norm_label": "tradeoffs"
     },
     {
       "label": "Recommendation",
       "file_type": "document",
       "source_file": "docs/multiplayer_options.md",
-      "source_location": "L57",
+      "source_location": "L62",
       "id": "docs_multiplayer_options_recommendation",
-      "community": 14,
+      "community": 15,
       "norm_label": "recommendation"
     },
     {
       "label": "Current product decision",
       "file_type": "document",
       "source_file": "docs/multiplayer_options.md",
-      "source_location": "L63",
+      "source_location": "L68",
       "id": "docs_multiplayer_options_current_product_decision",
-      "community": 14,
+      "community": 15,
       "norm_label": "current product decision"
     },
     {
       "label": "Decisions needed from product owner",
       "file_type": "document",
       "source_file": "docs/multiplayer_options.md",
-      "source_location": "L69",
+      "source_location": "L74",
       "id": "docs_multiplayer_options_decisions_needed_from_product_owner",
-      "community": 14,
+      "community": 15,
       "norm_label": "decisions needed from product owner"
     },
     {
@@ -5854,10 +6205,28 @@
       "norm_label": "required before release"
     },
     {
+      "label": "Local Signing Setup",
+      "file_type": "document",
+      "source_file": "docs/release_readiness.md",
+      "source_location": "L25",
+      "id": "docs_release_readiness_local_signing_setup",
+      "community": 21,
+      "norm_label": "local signing setup"
+    },
+    {
+      "label": "code:text (android/key.properties)",
+      "file_type": "document",
+      "source_file": "docs/release_readiness.md",
+      "source_location": "L29",
+      "id": "docs_release_readiness_codeblock_1",
+      "community": 21,
+      "norm_label": "code:text (android/key.properties)"
+    },
+    {
       "label": "Recommended Release Gate",
       "file_type": "document",
       "source_file": "docs/release_readiness.md",
-      "source_location": "L23",
+      "source_location": "L36",
       "id": "docs_release_readiness_recommended_release_gate",
       "community": 21,
       "norm_label": "recommended release gate"
@@ -5866,8 +6235,8 @@
       "label": "code:bash (dart format --output=none --set-exit-if-changed .)",
       "file_type": "document",
       "source_file": "docs/release_readiness.md",
-      "source_location": "L27",
-      "id": "docs_release_readiness_codeblock_1",
+      "source_location": "L40",
+      "id": "docs_release_readiness_codeblock_2",
       "community": 21,
       "norm_label": "code:bash (dart format --output=none --set-exit-if-changed .)"
     },
@@ -5875,7 +6244,7 @@
       "label": "Next Product Track",
       "file_type": "document",
       "source_file": "docs/release_readiness.md",
-      "source_location": "L35",
+      "source_location": "L48",
       "id": "docs_release_readiness_next_product_track",
       "community": 21,
       "norm_label": "next product track"
@@ -5886,7 +6255,7 @@
       "source_file": "ios/Runner/Assets.xcassets/LaunchImage.imageset/README.md",
       "source_location": "L1",
       "id": "ios_runner_assets_xcassets_launchimage_imageset_readme_md",
-      "community": 33,
+      "community": 39,
       "norm_label": "readme.md"
     },
     {
@@ -5895,15 +6264,51 @@
       "source_file": "ios/Runner/Assets.xcassets/LaunchImage.imageset/README.md",
       "source_location": "L1",
       "id": "launchimage_imageset_readme_launch_screen_assets",
-      "community": 33,
+      "community": 39,
       "norm_label": "launch screen assets"
+    },
+    {
+      "label": "MainActivity.kt",
+      "file_type": "code",
+      "source_file": "android/app/src/main/kotlin/com/bjork/bussruta_app/MainActivity.kt",
+      "source_location": "L1",
+      "community": 40,
+      "norm_label": "mainactivity.kt",
+      "id": "android_app_src_main_kotlin_com_bjork_bussruta_app_mainactivity_kt"
+    },
+    {
+      "label": "MainActivity",
+      "file_type": "code",
+      "source_file": "android/app/src/main/kotlin/com/bjork/bussruta_app/MainActivity.kt",
+      "source_location": "L5",
+      "community": 40,
+      "norm_label": "mainactivity",
+      "id": "bussruta_app_mainactivity_mainactivity"
+    },
+    {
+      "label": "BusRouteState",
+      "file_type": "code",
+      "source_file": "test/domain/hosted_models_test.dart",
+      "source_location": null,
+      "community": 23,
+      "norm_label": "busroutestate",
+      "id": "c_users_bjork_dev_bussruta_test_domain_hosted_models_test_dart_busroutestate"
+    },
+    {
+      "label": "Tradeoffs",
+      "file_type": "document",
+      "source_file": "docs/multiplayer_options.md",
+      "source_location": "L47",
+      "community": 15,
+      "norm_label": "tradeoffs",
+      "id": "docs_multiplayer_options_tradeoffs_47"
     },
     {
       "label": "bussruta_app",
       "file_type": "document",
       "source_file": "README.md",
       "source_location": "L1",
-      "community": 13,
+      "community": 16,
       "norm_label": "bussruta_app",
       "id": "bussruta_readme_bussruta_app"
     },
@@ -5912,12 +6317,22 @@
       "file_type": "document",
       "source_file": "README.md",
       "source_location": "L5",
-      "community": 13,
+      "community": 16,
       "norm_label": "getting started",
       "id": "bussruta_readme_getting_started"
     }
   ],
   "links": [
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "android/app/build.gradle.kts",
+      "source_location": "L17",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "android_app_build_gradle_kts",
+      "target": "app_build_gradle_releasekeystoreproperty"
+    },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
@@ -5941,12 +6356,12 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
-      "source_file": "android/app/src/main/kotlin/com/bjork/bussruta_app/MainActivity.kt",
+      "source_file": "android/app/src/main/kotlin/com/bjork/bussruta/MainActivity.kt",
       "source_location": "L5",
       "weight": 1.0,
       "confidence_score": 1.0,
-      "source": "android_app_src_main_kotlin_com_bjork_bussruta_app_mainactivity_kt",
-      "target": "bussruta_app_mainactivity_mainactivity"
+      "source": "android_app_src_main_kotlin_com_bjork_bussruta_mainactivity_kt",
+      "target": "bussruta_mainactivity_mainactivity"
     },
     {
       "relation": "contains",
@@ -9795,6 +10210,26 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
+      "source_file": "test/tool/internet_relay_test.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "test_tool_internet_relay_test_dart",
+      "target": "dart_async"
+    },
+    {
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "tool_internet_relay_dart",
+      "target": "dart_async"
+    },
+    {
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
       "source_file": "lib/application/game_storage.dart",
       "source_location": null,
       "weight": 1.0,
@@ -10465,10 +10900,50 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
+      "source_file": "test/tool/internet_relay_test.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "test_tool_internet_relay_test_dart",
+      "target": "dart_convert"
+    },
+    {
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "tool_internet_relay_dart",
+      "target": "dart_convert"
+    },
+    {
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
       "source_file": "test/application/hosted_lan_transport_test.dart",
       "source_location": null,
       "weight": 1.0,
       "source": "test_application_hosted_lan_transport_test_dart",
+      "target": "dart_io"
+    },
+    {
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "test/tool/internet_relay_test.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "test_tool_internet_relay_test_dart",
+      "target": "dart_io"
+    },
+    {
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "tool_internet_relay_dart",
       "target": "dart_io"
     },
     {
@@ -10509,6 +10984,16 @@
       "source_location": null,
       "weight": 1.0,
       "source": "lib_presentation_hosted_session_view_dart",
+      "target": "dart_math"
+    },
+    {
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "tool_internet_relay_dart",
       "target": "dart_math"
     },
     {
@@ -11860,6 +12345,26 @@
       "weight": 1.0,
       "source": "lib_domain_hosted_models_dart",
       "target": "c_users_bjork_dev_bussruta_lib_domain_hosted_models_dart_hostedpublicplayer"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/domain/hosted_models.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "lib_domain_hosted_models_dart",
+      "target": "c_users_bjork_dev_bussruta_lib_domain_hosted_models_dart_hostedpublictiebreakstate"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/domain/hosted_models.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "lib_domain_hosted_models_dart",
+      "target": "c_users_bjork_dev_bussruta_lib_domain_hosted_models_dart_hostedpublicbusroutestate"
     },
     {
       "relation": "defines",
@@ -13952,6 +14457,16 @@
       "target": "package_flutter_test_flutter_test_dart"
     },
     {
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "test/tool/internet_relay_test.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "test_tool_internet_relay_test_dart",
+      "target": "package_flutter_test_flutter_test_dart"
+    },
+    {
       "relation": "defines",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
@@ -14199,16 +14714,6 @@
       "source_location": null,
       "weight": 1.0,
       "source": "test_domain_hosted_models_test_dart",
-      "target": "c_users_bjork_dev_bussruta_test_domain_hosted_models_test_dart_busroutestate"
-    },
-    {
-      "relation": "defines",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "test/domain/hosted_models_test.dart",
-      "source_location": null,
-      "weight": 1.0,
-      "source": "test_domain_hosted_models_test_dart",
       "target": "c_users_bjork_dev_bussruta_test_domain_hosted_models_test_dart_card"
     },
     {
@@ -14220,6 +14725,16 @@
       "weight": 1.0,
       "source": "test_domain_hosted_models_test_dart",
       "target": "c_users_bjork_dev_bussruta_test_domain_hosted_models_test_dart_playingcard"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "test/domain/hosted_models_test.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "test_domain_hosted_models_test_dart",
+      "target": "c_users_bjork_dev_bussruta_test_domain_hosted_models_test_dart_busroutestate"
     },
     {
       "relation": "defines",
@@ -14310,6 +14825,216 @@
       "weight": 1.0,
       "source": "test_presentation_bussruta_app_onboarding_test_dart",
       "target": "c_users_bjork_dev_bussruta_test_presentation_bussruta_app_onboarding_test_dart_main"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "test/tool/internet_relay_test.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "test_tool_internet_relay_test_dart",
+      "target": "c_users_bjork_dev_bussruta_test_tool_internet_relay_test_dart_main"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "test/tool/internet_relay_test.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "test_tool_internet_relay_test_dart",
+      "target": "c_users_bjork_dev_bussruta_test_tool_internet_relay_test_dart_next"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "test/tool/internet_relay_test.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "test_tool_internet_relay_test_dart",
+      "target": "c_users_bjork_dev_bussruta_test_tool_internet_relay_test_dart_duration"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "test/tool/internet_relay_test.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "test_tool_internet_relay_test_dart",
+      "target": "c_users_bjork_dev_bussruta_test_tool_internet_relay_test_dart_stateerror"
+    },
+    {
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "test/tool/internet_relay_test.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "test_tool_internet_relay_test_dart",
+      "target": "tool_internet_relay_dart"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "tool_internet_relay_dart",
+      "target": "c_users_bjork_dev_bussruta_tool_internet_relay_dart_internetrelayserver"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "tool_internet_relay_dart",
+      "target": "c_users_bjork_dev_bussruta_tool_internet_relay_dart_relayroom"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "tool_internet_relay_dart",
+      "target": "c_users_bjork_dev_bussruta_tool_internet_relay_dart_relaypeer"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "tool_internet_relay_dart",
+      "target": "c_users_bjork_dev_bussruta_tool_internet_relay_dart_portfromargs"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "tool_internet_relay_dart",
+      "target": "c_users_bjork_dev_bussruta_tool_internet_relay_dart_stateerror"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "tool_internet_relay_dart",
+      "target": "c_users_bjork_dev_bussruta_tool_internet_relay_dart_uri"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "tool_internet_relay_dart",
+      "target": "c_users_bjork_dev_bussruta_tool_internet_relay_dart_handlemessage"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "tool_internet_relay_dart",
+      "target": "c_users_bjork_dev_bussruta_tool_internet_relay_dart_function"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "tool_internet_relay_dart",
+      "target": "c_users_bjork_dev_bussruta_tool_internet_relay_dart_forwardclientmessage"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "tool_internet_relay_dart",
+      "target": "c_users_bjork_dev_bussruta_tool_internet_relay_dart_forwardhostmessage"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "tool_internet_relay_dart",
+      "target": "c_users_bjork_dev_bussruta_tool_internet_relay_dart_broadcasthostmessage"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "tool_internet_relay_dart",
+      "target": "c_users_bjork_dev_bussruta_tool_internet_relay_dart_closehostroom"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "tool_internet_relay_dart",
+      "target": "c_users_bjork_dev_bussruta_tool_internet_relay_dart_handlepeerclosed"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "tool_internet_relay_dart",
+      "target": "c_users_bjork_dev_bussruta_tool_internet_relay_dart_newroomkey"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "tool_internet_relay_dart",
+      "target": "c_users_bjork_dev_bussruta_tool_internet_relay_dart_send"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tool/internet_relay.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "tool_internet_relay_dart",
+      "target": "c_users_bjork_dev_bussruta_tool_internet_relay_dart_senderror"
     },
     {
       "relation": "contains",
@@ -14534,6 +15259,116 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+      "source_file": "docs/internet_relay.md",
+      "source_location": "L1",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "docs_internet_relay_md",
+      "target": "docs_internet_relay_internet_relay"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/internet_relay.md",
+      "source_location": "L13",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "docs_internet_relay_internet_relay",
+      "target": "docs_internet_relay_run_locally"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/internet_relay.md",
+      "source_location": "L25",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "docs_internet_relay_internet_relay",
+      "target": "docs_internet_relay_relay_messages"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/internet_relay.md",
+      "source_location": "L57",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "docs_internet_relay_internet_relay",
+      "target": "docs_internet_relay_not_included_yet"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/internet_relay.md",
+      "source_location": "L15",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "docs_internet_relay_run_locally",
+      "target": "docs_internet_relay_codeblock_1"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/internet_relay.md",
+      "source_location": "L21",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "docs_internet_relay_run_locally",
+      "target": "docs_internet_relay_codeblock_2"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/internet_relay.md",
+      "source_location": "L29",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "docs_internet_relay_relay_messages",
+      "target": "docs_internet_relay_codeblock_3"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/internet_relay.md",
+      "source_location": "L35",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "docs_internet_relay_relay_messages",
+      "target": "docs_internet_relay_codeblock_4"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/internet_relay.md",
+      "source_location": "L41",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "docs_internet_relay_relay_messages",
+      "target": "docs_internet_relay_codeblock_5"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/internet_relay.md",
+      "source_location": "L47",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "docs_internet_relay_relay_messages",
+      "target": "docs_internet_relay_codeblock_6"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/internet_relay.md",
+      "source_location": "L53",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "docs_internet_relay_relay_messages",
+      "target": "docs_internet_relay_codeblock_7"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
       "source_file": "docs/manual_qa_checklist.md",
       "source_location": "L1",
       "weight": 1.0,
@@ -14684,6 +15519,26 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+      "source_file": "docs/manual_qa_results.md",
+      "source_location": "L1",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "docs_manual_qa_results_md",
+      "target": "docs_manual_qa_results_manual_qa_results"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/manual_qa_results.md",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "docs_manual_qa_results_manual_qa_results",
+      "target": "docs_manual_qa_results_2026_05_09_release_smoke"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
       "source_file": "docs/multiplayer_options.md",
       "source_location": "L1",
       "weight": 1.0,
@@ -14795,6 +15650,16 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "docs/multiplayer_options.md",
+      "source_location": "L52",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "docs_multiplayer_options_bluetooth_support",
+      "target": "docs_multiplayer_options_tradeoffs_52"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/multiplayer_options.md",
       "source_location": "L47",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -14835,6 +15700,16 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "docs/release_readiness.md",
+      "source_location": "L24",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "docs_release_readiness_release_readiness",
+      "target": "docs_release_readiness_local_signing_setup"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/release_readiness.md",
       "source_location": "L23",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -14855,11 +15730,31 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "docs/release_readiness.md",
+      "source_location": "L28",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "docs_release_readiness_local_signing_setup",
+      "target": "docs_release_readiness_codeblock_1"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/release_readiness.md",
       "source_location": "L27",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "docs_release_readiness_recommended_release_gate",
       "target": "docs_release_readiness_codeblock_1"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/release_readiness.md",
+      "source_location": "L39",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "docs_release_readiness_recommended_release_gate",
+      "target": "docs_release_readiness_codeblock_2"
     },
     {
       "relation": "contains",
@@ -14874,6 +15769,16 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+      "source_file": "android/app/src/main/kotlin/com/bjork/bussruta_app/MainActivity.kt",
+      "source_location": "L5",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "android_app_src_main_kotlin_com_bjork_bussruta_app_mainactivity_kt",
+      "target": "bussruta_app_mainactivity_mainactivity"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
       "source_file": "README.md",
       "source_location": "L5",
       "weight": 1.0,
@@ -14883,5 +15788,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "7b213af2c0dd31a5dacc6ec7699e16c347675f2a"
+  "built_at_commit": "b003fbd8b0b2aef767ecb61975a0f612029daa93"
 }
