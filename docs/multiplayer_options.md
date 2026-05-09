@@ -60,6 +60,12 @@
 2. Implement internet room-key next using a small relay backend.
 3. Treat Bluetooth as optional/future unless offline no-Wi-Fi play is a hard requirement.
 
+## Current product decision
+
+- Polish LAN + PIN first before starting the internet relay.
+- Treat manual real-device QA as the release gate for the current phase.
+- Revisit internet room-key work after hosted LAN join, reconnect, privacy, and bus-route authority have been validated on real devices.
+
 ## Decisions needed from product owner
 
 1. Internet backend approved now (`yes/no`)?
