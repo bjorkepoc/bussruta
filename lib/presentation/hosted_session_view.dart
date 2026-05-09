@@ -623,7 +623,7 @@ class _HostedSessionViewState extends State<HostedSessionView>
     setState(() {
       _emulatorCommandCopied = true;
     });
-    _copyFeedbackTimer = Timer(const Duration(seconds: 2), () {
+    _copyFeedbackTimer = Timer(const Duration(seconds: 4), () {
       if (!mounted) {
         return;
       }
