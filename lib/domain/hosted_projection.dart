@@ -4,6 +4,7 @@ import 'package:bussruta_app/domain/hosted_models.dart';
 HostedProjectedView projectHostedView({
   required HostedSessionState session,
   required int viewerPlayerId,
+  HostedPublicView? publicView,
 }) {
   final HostedParticipant? viewer = session.participantById(viewerPlayerId);
   final int? viewerIndex = session.playerIndexForId(viewerPlayerId);
@@ -11,10 +12,8 @@ HostedProjectedView projectHostedView({
       ? const <PlayingCard>[]
       : session.gameState.players[viewerIndex].hand;
 
-  final int? currentTurnPlayerId = _currentTurnPlayerId(session);
-  final int? busRunnerPlayerId = session.gameState.busRunnerIndex == null
-      ? null
-      : session.playerIdForIndex(session.gameState.busRunnerIndex!);
+  final HostedPublicView resolvedPublicView =
+      publicView ?? projectHostedPublicView(session: session);
   final int giveOutPromptDrinks =
       (session.pendingDrinkDistribution != null &&
           session.pendingDrinkDistribution!.sourcePlayerId == viewerPlayerId)
@@ -28,41 +27,51 @@ HostedProjectedView projectHostedView({
       session.gameState.phase == GamePhase.finished;
   final bool canControlBusRoute =
       inBus &&
-      busRunnerPlayerId == viewerPlayerId &&
+      resolvedPublicView.busRunnerPlayerId == viewerPlayerId &&
       session.pendingDrinkDistribution == null;
 
   return HostedProjectedView(
     viewerPlayerId: viewerPlayerId,
     viewerName: viewer?.name ?? 'Player $viewerPlayerId',
     isHost: session.hostPlayerId == viewerPlayerId,
-    publicView: HostedPublicView(
-      sessionPin: session.sessionPin,
-      stage: session.stage,
-      phase: session.gameState.phase,
-      language: session.gameState.language,
-      players: _buildPublicPlayers(session),
-      currentTurnPlayerId: currentTurnPlayerId,
-      warmupRound: session.gameState.warmupRound,
-      pyramidCards: session.gameState.pyramidCards,
-      pyramidRevealIndex: session.gameState.pyramidRevealIndex,
-      tieBreak: session.gameState.tieBreak == null
-          ? null
-          : HostedPublicTieBreakState.fromTieBreak(session.gameState.tieBreak!),
-      busRunnerPlayerId: busRunnerPlayerId,
-      busRoute: session.gameState.busRoute == null
-          ? null
-          : HostedPublicBusRouteState.fromBusRoute(session.gameState.busRoute!),
-      banner: session.gameState.banner,
-      bannerTone: session.gameState.bannerTone,
-      pendingDrinkDistribution: session.pendingDrinkDistribution,
-      autoPlayEnabled: session.gameState.autoPlay.enabled,
-      autoPlayDelayMs: session.gameState.autoPlay.delayMs,
-    ),
+    publicView: resolvedPublicView,
     ownHand: ownHand,
     giveOutPromptDrinks: giveOutPromptDrinks,
     drinkPromptDrinks: drinkPromptDrinks,
     canControlBusRoute: canControlBusRoute,
     canUseHostTools: session.hostPlayerId == viewerPlayerId,
+  );
+}
+
+HostedPublicView projectHostedPublicView({
+  required HostedSessionState session,
+}) {
+  final int? busRunnerPlayerId = session.gameState.busRunnerIndex == null
+      ? null
+      : session.playerIdForIndex(session.gameState.busRunnerIndex!);
+
+  return HostedPublicView(
+    sessionPin: session.sessionPin,
+    stage: session.stage,
+    phase: session.gameState.phase,
+    language: session.gameState.language,
+    players: _buildPublicPlayers(session),
+    currentTurnPlayerId: _currentTurnPlayerId(session),
+    warmupRound: session.gameState.warmupRound,
+    pyramidCards: session.gameState.pyramidCards,
+    pyramidRevealIndex: session.gameState.pyramidRevealIndex,
+    tieBreak: session.gameState.tieBreak == null
+        ? null
+        : HostedPublicTieBreakState.fromTieBreak(session.gameState.tieBreak!),
+    busRunnerPlayerId: busRunnerPlayerId,
+    busRoute: session.gameState.busRoute == null
+        ? null
+        : HostedPublicBusRouteState.fromBusRoute(session.gameState.busRoute!),
+    banner: session.gameState.banner,
+    bannerTone: session.gameState.bannerTone,
+    pendingDrinkDistribution: session.pendingDrinkDistribution,
+    autoPlayEnabled: session.gameState.autoPlay.enabled,
+    autoPlayDelayMs: session.gameState.autoPlay.delayMs,
   );
 }
 

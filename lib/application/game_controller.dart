@@ -20,7 +20,10 @@ class GameController extends ChangeNotifier with WidgetsBindingObserver {
   bool _onboardingSeen = false;
   bool _autoPlayRunning = false;
   Timer? _autoPlayTimer;
+  Timer? _setupPersistTimer;
   String? _errorMessage;
+
+  static const Duration _setupPersistDebounce = Duration(milliseconds: 600);
 
   GameState get state => _state;
 
@@ -52,7 +55,7 @@ class GameController extends ChangeNotifier with WidgetsBindingObserver {
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive ||
         state == AppLifecycleState.detached) {
-      unawaited(_persistState());
+      unawaited(_flushPendingSetupPersist());
     }
   }
 
@@ -106,10 +109,14 @@ class GameController extends ChangeNotifier with WidgetsBindingObserver {
     if (index < 0 || index >= names.length) {
       return;
     }
+    if (names[index] == value) {
+      return;
+    }
     names[index] = value;
-    _emit(
-      _state.copyWith(setupDraft: _state.setupDraft.copyWith(names: names)),
+    _state = _state.copyWith(
+      setupDraft: _state.setupDraft.copyWith(names: names),
     );
+    _scheduleSetupPersist();
   }
 
   void randomizeSetupNames() {
@@ -205,10 +212,33 @@ class GameController extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   void _emit(GameState nextState) {
+    _cancelPendingSetupPersist();
     _state = nextState;
     notifyListeners();
     unawaited(_persistState());
     _syncAutoPlay();
+  }
+
+  void _scheduleSetupPersist() {
+    _setupPersistTimer?.cancel();
+    _setupPersistTimer = Timer(_setupPersistDebounce, () {
+      _setupPersistTimer = null;
+      unawaited(_persistState());
+    });
+  }
+
+  void _cancelPendingSetupPersist() {
+    _setupPersistTimer?.cancel();
+    _setupPersistTimer = null;
+  }
+
+  Future<void> _flushPendingSetupPersist() async {
+    if (_setupPersistTimer == null) {
+      await _persistState();
+      return;
+    }
+    _cancelPendingSetupPersist();
+    await _persistState();
   }
 
   void _syncAutoPlay() {
@@ -260,7 +290,7 @@ class GameController extends ChangeNotifier with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _autoPlayTimer?.cancel();
-    unawaited(_persistState());
+    unawaited(_flushPendingSetupPersist());
     super.dispose();
   }
 }

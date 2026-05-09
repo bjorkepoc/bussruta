@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:bussruta_app/application/game_controller.dart';
 import 'package:bussruta_app/domain/game_models.dart';
+import 'package:bussruta_app/presentation/app_theme.dart';
 import 'package:bussruta_app/presentation/strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -27,7 +28,9 @@ class _GameTableViewState extends State<GameTableView> {
   final Set<int> _visibleTieSlots = <int>{};
   final Set<int> _tieFaceUpSlots = <int>{};
   final Map<String, int> _visibleBusZoneCounts = <String, int>{};
-  final List<_FlightCard> _flights = <_FlightCard>[];
+  final ValueNotifier<List<_FlightCard>> _flights =
+      ValueNotifier<List<_FlightCard>>(const <_FlightCard>[]);
+  final Set<Timer> _flightTimers = <Timer>{};
 
   Size _stageSize = Size.zero;
   int _visibleRouteCards = 0;
@@ -53,6 +56,16 @@ class _GameTableViewState extends State<GameTableView> {
   }
 
   @override
+  void dispose() {
+    for (final Timer timer in _flightTimers) {
+      timer.cancel();
+    }
+    _flightTimers.clear();
+    _flights.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
@@ -67,81 +80,87 @@ class _GameTableViewState extends State<GameTableView> {
             : null;
 
         return DecoratedBox(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: <Color>[Color(0xFFF4ECE1), Color(0xFFEAD9C8)],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-          ),
+          decoration: AppTheme.tableBackground(),
           child: Stack(
+            fit: StackFit.expand,
             clipBehavior: Clip.none,
             children: <Widget>[
-              _buildAtmosphere(),
-              _TableShell(rect: tableRect),
-              if (_showSeats(state.phase))
-                ...List<Widget>.generate(state.players.length, (int index) {
-                  final bool pyramidDock = state.phase == GamePhase.pyramid;
-                  final bool compact =
-                      pyramidDock ||
-                      (state.phase == GamePhase.warmup
-                          ? state.players.length >= 5
-                          : state.players.length >= 6);
-                  final Size seatFootprint = _seatFootprint(
-                    compact,
-                    phase: state.phase,
-                  );
-                  final Offset position = _seatCenter(
-                    index: index,
-                    total: state.players.length,
-                    phase: state.phase,
-                    rect: tableRect,
-                    warmupPanelTop: warmupPanelTop,
-                  );
-                  return Positioned(
-                    left: position.dx,
-                    top: position.dy,
-                    child: Transform.translate(
-                      offset: Offset(
-                        -seatFootprint.width / 2,
-                        -seatFootprint.height / 2,
-                      ),
-                      child: _SeatChip(
-                        player: state.players[index],
-                        language: state.language,
-                        visibleCards: state.players[index].hand
-                            .take(_visibleHandCounts[index] ?? 0)
-                            .toList(),
-                        dockMode: pyramidDock,
-                        compact: compact,
-                        active:
-                            state.phase == GamePhase.warmup &&
-                            state.currentPlayerIndex == index,
-                        winner:
-                            state.phase == GamePhase.pyramid &&
-                            state.pyramidHighlightPlayers.contains(index),
-                        runner:
-                            (state.phase == GamePhase.bussetup ||
-                                state.phase == GamePhase.bus ||
-                                state.phase == GamePhase.finished) &&
-                            state.busRunnerIndex == index,
-                      ),
-                    ),
-                  );
-                }),
-              if (state.phase == GamePhase.warmup)
-                _buildWarmupOverlay(tableRect),
-              if (state.phase == GamePhase.pyramid)
-                _buildPyramidOverlay(tableRect),
-              if (state.phase == GamePhase.tiebreak)
-                _buildTieBreakOverlay(tableRect),
-              if (state.phase == GamePhase.bussetup ||
-                  state.phase == GamePhase.bus ||
-                  state.phase == GamePhase.finished)
-                _buildBusOverlay(tableRect),
-              if (state.phase == GamePhase.finished)
-                _buildCelebration(tableRect),
-              ..._buildFlights(),
+              RepaintBoundary(
+                child: Stack(
+                  fit: StackFit.expand,
+                  clipBehavior: Clip.none,
+                  children: <Widget>[
+                    _buildAtmosphere(),
+                    _TableShell(rect: tableRect),
+                    if (_showSeats(state.phase))
+                      ...List<Widget>.generate(state.players.length, (
+                        int index,
+                      ) {
+                        final bool pyramidDock =
+                            state.phase == GamePhase.pyramid;
+                        final bool compact =
+                            pyramidDock ||
+                            (state.phase == GamePhase.warmup
+                                ? state.players.length >= 5
+                                : state.players.length >= 6);
+                        final Size seatFootprint = _seatFootprint(
+                          compact,
+                          phase: state.phase,
+                        );
+                        final Offset position = _seatCenter(
+                          index: index,
+                          total: state.players.length,
+                          phase: state.phase,
+                          rect: tableRect,
+                          warmupPanelTop: warmupPanelTop,
+                        );
+                        return Positioned(
+                          left: position.dx,
+                          top: position.dy,
+                          child: Transform.translate(
+                            offset: Offset(
+                              -seatFootprint.width / 2,
+                              -seatFootprint.height / 2,
+                            ),
+                            child: _SeatChip(
+                              player: state.players[index],
+                              language: state.language,
+                              visibleCards: state.players[index].hand
+                                  .take(_visibleHandCounts[index] ?? 0)
+                                  .toList(),
+                              dockMode: pyramidDock,
+                              compact: compact,
+                              active:
+                                  state.phase == GamePhase.warmup &&
+                                  state.currentPlayerIndex == index,
+                              winner:
+                                  state.phase == GamePhase.pyramid &&
+                                  state.pyramidHighlightPlayers.contains(index),
+                              runner:
+                                  (state.phase == GamePhase.bussetup ||
+                                      state.phase == GamePhase.bus ||
+                                      state.phase == GamePhase.finished) &&
+                                  state.busRunnerIndex == index,
+                            ),
+                          ),
+                        );
+                      }),
+                    if (state.phase == GamePhase.warmup)
+                      _buildWarmupOverlay(tableRect),
+                    if (state.phase == GamePhase.pyramid)
+                      _buildPyramidOverlay(tableRect),
+                    if (state.phase == GamePhase.tiebreak)
+                      _buildTieBreakOverlay(tableRect),
+                    if (state.phase == GamePhase.bussetup ||
+                        state.phase == GamePhase.bus ||
+                        state.phase == GamePhase.finished)
+                      _buildBusOverlay(tableRect),
+                    if (state.phase == GamePhase.finished)
+                      _buildCelebration(tableRect),
+                  ],
+                ),
+              ),
+              _buildFlightOverlay(),
             ],
           ),
         );
@@ -149,27 +168,99 @@ class _GameTableViewState extends State<GameTableView> {
     );
   }
 
+  Widget _buildFlightOverlay() {
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: RepaintBoundary(
+          child: ValueListenableBuilder<List<_FlightCard>>(
+            valueListenable: _flights,
+            builder:
+                (
+                  BuildContext context,
+                  List<_FlightCard> flights,
+                  Widget? child,
+                ) {
+                  return Stack(
+                    clipBehavior: Clip.none,
+                    children: _buildFlights(flights),
+                  );
+                },
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _addFlight(_FlightCard flight) {
+    _flights.value = <_FlightCard>[..._flights.value, flight];
+  }
+
+  void _removeFlight(int flightId) {
+    _flights.value = _flights.value
+        .where((_FlightCard item) => item.id != flightId)
+        .toList(growable: false);
+  }
+
+  void _scheduleFlightTimer(Duration delay, VoidCallback callback) {
+    late final Timer timer;
+    timer = Timer(delay, () {
+      _flightTimers.remove(timer);
+      if (!mounted) {
+        return;
+      }
+      callback();
+    });
+    _flightTimers.add(timer);
+  }
+
+  List<Widget> _buildFlights(List<_FlightCard> flights) {
+    return flights.map((_FlightCard flight) {
+      return Positioned.fill(
+        key: ValueKey<int>(flight.id),
+        child: TweenAnimationBuilder<double>(
+          tween: Tween<double>(begin: 0, end: 1),
+          duration: flight.duration,
+          curve: Curves.easeOutCubic,
+          builder: (BuildContext context, double value, Widget? child) {
+            final Offset position = Offset.lerp(flight.from, flight.to, value)!;
+            return Stack(
+              children: <Widget>[
+                Positioned(
+                  left: position.dx - flight.metrics.width / 2,
+                  top: position.dy - flight.metrics.height / 2,
+                  child: Transform.rotate(
+                    angle: (1 - value) * flight.rotation,
+                    child: child,
+                  ),
+                ),
+              ],
+            );
+          },
+          child: _PlayingCardView(
+            card: flight.card,
+            faceUp: flight.faceUp,
+            size: flight.size,
+          ),
+        ),
+      );
+    }).toList();
+  }
+
   Widget _buildAtmosphere() {
     return Positioned.fill(
       child: IgnorePointer(
-        child: Stack(
-          children: const <Widget>[
-            _GlowBlob(
-              alignment: Alignment(-0.9, -0.8),
-              color: Color(0x40FFFFFF),
-              size: 180,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              colors: <Color>[
+                AppTheme.feltGreen.withValues(alpha: 0.08),
+                Colors.transparent,
+                AppTheme.charcoal.withValues(alpha: 0.62),
+              ],
+              stops: const <double>[0.0, 0.58, 1.0],
+              radius: 1.08,
             ),
-            _GlowBlob(
-              alignment: Alignment(0.95, -0.3),
-              color: Color(0x24B3541E),
-              size: 220,
-            ),
-            _GlowBlob(
-              alignment: Alignment(0.0, 1.1),
-              color: Color(0x1F215646),
-              size: 260,
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -207,19 +298,23 @@ class _GameTableViewState extends State<GameTableView> {
           width: panelRect.width,
           child: DecoratedBox(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(20),
               gradient: const LinearGradient(
-                colors: <Color>[Color(0xCC113726), Color(0xCC1D4D37)],
+                colors: <Color>[AppTheme.surface, AppTheme.deepGreen],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              border: Border.all(color: const Color(0x66FFD89A)),
+              border: Border.all(
+                color: AppTheme.gold.withValues(alpha: 0.54),
+                width: 1.2,
+              ),
               boxShadow: const <BoxShadow>[
                 BoxShadow(
-                  color: Color(0x33000000),
-                  blurRadius: 18,
-                  offset: Offset(0, 10),
+                  color: Color(0x66000000),
+                  blurRadius: 22,
+                  offset: Offset(0, 14),
                 ),
+                BoxShadow(color: Color(0x22D4AF37), blurRadius: 18),
               ],
             ),
             child: Padding(
@@ -231,7 +326,7 @@ class _GameTableViewState extends State<GameTableView> {
                   Text(
                     _warmupRoundPrompt(lang, state.warmupRound),
                     style: const TextStyle(
-                      color: Color(0xFFF7EDDC),
+                      color: AppTheme.cream,
                       fontWeight: FontWeight.w800,
                       fontSize: 14,
                     ),
@@ -291,16 +386,18 @@ class _GameTableViewState extends State<GameTableView> {
           child: IgnorePointer(
             child: DecoratedBox(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(24),
                 gradient: const LinearGradient(
-                  colors: <Color>[Color(0x1A102E23), Color(0x121D4B3A)],
+                  colors: <Color>[Color(0xAA232927), Color(0x77153F33)],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),
-                border: Border.all(color: const Color(0x56FFD89A)),
+                border: Border.all(
+                  color: AppTheme.gold.withValues(alpha: 0.30),
+                ),
                 boxShadow: const <BoxShadow>[
                   BoxShadow(
-                    color: Color(0x33000000),
+                    color: Color(0x55000000),
                     blurRadius: 20,
                     offset: Offset(0, 10),
                   ),
@@ -329,20 +426,20 @@ class _GameTableViewState extends State<GameTableView> {
           rect: layout.hintRect,
           child: DecoratedBox(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              color: const Color(0xA61A3B2D),
-              border: Border.all(color: const Color(0x5BFFE4A7)),
+              borderRadius: BorderRadius.circular(14),
+              color: AppTheme.surface.withValues(alpha: 0.88),
+              border: Border.all(color: AppTheme.gold.withValues(alpha: 0.34)),
             ),
             child: Center(
               child: Text(
                 tr(
                   lang,
                   'Tap deck to reveal next pyramid card',
-                  'Trykk stokken for a avslore neste pyramidekort',
+                  'Trykk stokken for å avsløre neste pyramidekort',
                 ),
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  color: Color(0xFFF8F1E3),
+                  color: AppTheme.cream,
                   fontWeight: FontWeight.w700,
                   fontSize: 12.5,
                 ),
@@ -388,7 +485,7 @@ class _GameTableViewState extends State<GameTableView> {
       instruction = tr(
         lang,
         'Tap deck to deal facedown cards',
-        'Trykk stokken for a dele ut kort med baksiden opp',
+        'Trykk stokken for å dele ut kort med baksiden opp',
       );
     } else if (_tieFaceUpSlots.length < tie.lastDraws.length) {
       instruction = tr(lang, 'Dealing cards...', 'Deler ut kort...');
@@ -396,7 +493,7 @@ class _GameTableViewState extends State<GameTableView> {
       instruction = tr(
         lang,
         'Reveal complete - next tie-break action incoming',
-        'Avsloring ferdig - neste tie-break handling kommer',
+        'Avsløring ferdig - neste tie-break handling kommer',
       );
     }
 
@@ -422,12 +519,12 @@ class _GameTableViewState extends State<GameTableView> {
           rect: layout.instructionRect,
           child: DecoratedBox(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              color: const Color(0xA4203328),
+              borderRadius: BorderRadius.circular(14),
+              color: AppTheme.surface.withValues(alpha: 0.88),
               border: Border.all(
                 color: winnerLocked
-                    ? const Color(0x88FFE4A7)
-                    : const Color(0x55FFFFFF),
+                    ? AppTheme.success.withValues(alpha: 0.72)
+                    : AppTheme.gold.withValues(alpha: 0.32),
               ),
             ),
             child: Center(
@@ -435,7 +532,7 @@ class _GameTableViewState extends State<GameTableView> {
                 instruction,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  color: Color(0xFFF8F2E9),
+                  color: AppTheme.cream,
                   fontWeight: FontWeight.w700,
                   fontSize: 12.5,
                 ),
@@ -477,8 +574,8 @@ class _GameTableViewState extends State<GameTableView> {
         child: DecoratedBox(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
-            color: const Color(0x90203328),
-            border: Border.all(color: const Color(0x55FFE4A7)),
+            color: AppTheme.surface.withValues(alpha: 0.88),
+            border: Border.all(color: AppTheme.gold.withValues(alpha: 0.34)),
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
@@ -486,7 +583,7 @@ class _GameTableViewState extends State<GameTableView> {
               state.players[playerIndex].name,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: Color(0xFFF8F2E9),
+                color: AppTheme.cream,
                 fontWeight: FontWeight.w700,
                 fontSize: 11.5,
               ),
@@ -499,8 +596,8 @@ class _GameTableViewState extends State<GameTableView> {
         child: DecoratedBox(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            color: Colors.white.withValues(alpha: 0.14),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
+            color: AppTheme.surface.withValues(alpha: 0.40),
+            border: Border.all(color: AppTheme.cream.withValues(alpha: 0.18)),
           ),
           child: Center(
             child: dealt
@@ -513,7 +610,7 @@ class _GameTableViewState extends State<GameTableView> {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.2),
+                        color: AppTheme.gold.withValues(alpha: 0.24),
                       ),
                     ),
                     child: SizedBox(
@@ -551,9 +648,11 @@ class _GameTableViewState extends State<GameTableView> {
             rect: layout.instructionRect,
             child: DecoratedBox(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(18),
-                color: const Color(0xA5203328),
-                border: Border.all(color: const Color(0x55FFFFFF)),
+                borderRadius: BorderRadius.circular(14),
+                color: AppTheme.surface.withValues(alpha: 0.88),
+                border: Border.all(
+                  color: AppTheme.gold.withValues(alpha: 0.32),
+                ),
               ),
               child: Center(
                 child: Text(
@@ -566,11 +665,11 @@ class _GameTableViewState extends State<GameTableView> {
                       : tr(
                           lang,
                           'Play above, below, or same on active card',
-                          'Spill over, under eller samme pa aktivt kort',
+                          'Spill over, under eller samme på aktivt kort',
                         ),
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    color: Color(0xFFF8F2E9),
+                    color: AppTheme.cream,
                     fontWeight: FontWeight.w700,
                     fontSize: 12.5,
                   ),
@@ -595,18 +694,24 @@ class _GameTableViewState extends State<GameTableView> {
                 child: Row(
                   children: <Widget>[
                     Expanded(
-                      child: FilledButton.tonal(
+                      child: FilledButton(
                         onPressed: () =>
                             widget.controller.beginBusRoute(BusStartSide.left),
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                        ),
                         child: Text(tr(lang, 'Start Left', 'Start venstre')),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: FilledButton.tonal(
+                      child: FilledButton(
                         onPressed: () =>
                             widget.controller.beginBusRoute(BusStartSide.right),
-                        child: Text(tr(lang, 'Start Right', 'Start hoyre')),
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                        ),
+                        child: Text(tr(lang, 'Start Right', 'Start høyre')),
                       ),
                     ),
                   ],
@@ -734,14 +839,23 @@ class _GameTableViewState extends State<GameTableView> {
       width: width,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: const Color(0xFFF8E8D3).withValues(alpha: 0.92),
-          borderRadius: BorderRadius.circular(24),
+          gradient: const LinearGradient(
+            colors: <Color>[AppTheme.deepGreen, AppTheme.surface],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: AppTheme.gold.withValues(alpha: 0.58),
+            width: 1.2,
+          ),
           boxShadow: const <BoxShadow>[
             BoxShadow(
-              color: Color(0x22000000),
-              blurRadius: 18,
-              offset: Offset(0, 10),
+              color: Color(0x77000000),
+              blurRadius: 24,
+              offset: Offset(0, 14),
             ),
+            BoxShadow(color: Color(0x22D4AF37), blurRadius: 18),
           ],
         ),
         child: Padding(
@@ -754,14 +868,14 @@ class _GameTableViewState extends State<GameTableView> {
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
-                  color: Color(0xFF50301F),
+                  color: AppTheme.cream,
                 ),
               ),
               const SizedBox(height: 6),
               Text(
                 widget.state.banner,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Color(0xFF5D3B27)),
+                style: TextStyle(color: AppTheme.cream.withValues(alpha: 0.78)),
               ),
               const SizedBox(height: 12),
               SizedBox(
@@ -777,45 +891,6 @@ class _GameTableViewState extends State<GameTableView> {
         ),
       ),
     );
-  }
-
-  List<Widget> _buildFlights() {
-    return _flights.map((_FlightCard flight) {
-      return Positioned.fill(
-        key: ValueKey<int>(flight.id),
-        child: IgnorePointer(
-          child: TweenAnimationBuilder<double>(
-            tween: Tween<double>(begin: 0, end: 1),
-            duration: flight.duration,
-            curve: Curves.easeOutCubic,
-            builder: (BuildContext context, double value, Widget? child) {
-              final Offset position = Offset.lerp(
-                flight.from,
-                flight.to,
-                value,
-              )!;
-              return Stack(
-                children: <Widget>[
-                  Positioned(
-                    left: position.dx - flight.metrics.width / 2,
-                    top: position.dy - flight.metrics.height / 2,
-                    child: Transform.rotate(
-                      angle: (1 - value) * flight.rotation,
-                      child: child,
-                    ),
-                  ),
-                ],
-              );
-            },
-            child: _PlayingCardView(
-              card: flight.card,
-              faceUp: flight.faceUp,
-              size: flight.size,
-            ),
-          ),
-        ),
-      );
-    }).toList();
   }
 
   void _syncVisibleFromState(GameState state) {
@@ -1210,20 +1285,10 @@ class _GameTableViewState extends State<GameTableView> {
       rotation: (math.Random(_flightSeed).nextDouble() - 0.5) * 0.26,
     );
 
-    Future<void>.delayed(delay, () {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _flights.add(flight);
-      });
-      Future<void>.delayed(duration, () {
-        if (!mounted) {
-          return;
-        }
-        setState(() {
-          _flights.removeWhere((_FlightCard item) => item.id == flight.id);
-        });
+    _scheduleFlightTimer(delay, () {
+      _addFlight(flight);
+      _scheduleFlightTimer(duration, () {
+        _removeFlight(flight.id);
         onDone();
       });
     });
@@ -1263,7 +1328,7 @@ class _GameTableViewState extends State<GameTableView> {
         return tr(
           language,
           'Round 2: compare with first card',
-          'Runde 2: sammenlign med forste kort',
+          'Runde 2: sammenlign med første kort',
         );
       case 3:
         return tr(
@@ -1695,96 +1760,91 @@ class _TableShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double outerRadius = rect.height / 2;
+    final double railRadius = math.max(0, outerRadius - 9);
+    final double feltRadius = math.max(0, railRadius - 5);
+
     return Positioned.fromRect(
       rect: rect,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(rect.height / 2),
+          borderRadius: BorderRadius.circular(outerRadius),
           gradient: const LinearGradient(
-            colors: <Color>[Color(0xFF63402D), Color(0xFF41281D)],
+            colors: <Color>[
+              Color(0xFF111514),
+              AppTheme.charcoal,
+              Color(0xFF0B0F0E),
+            ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
+          border: Border.all(
+            color: AppTheme.gold.withValues(alpha: 0.24),
+            width: 1.1,
+          ),
           boxShadow: const <BoxShadow>[
             BoxShadow(
-              color: Color(0x33000000),
-              blurRadius: 28,
-              offset: Offset(0, 18),
+              color: Color(0x99000000),
+              blurRadius: 32,
+              offset: Offset(0, 20),
             ),
+            BoxShadow(color: Color(0x1FD4AF37), blurRadius: 22),
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(9),
           child: DecoratedBox(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(rect.height / 2),
-              gradient: const RadialGradient(
-                colors: <Color>[Color(0xFF449370), Color(0xFF1F5D46)],
-                center: Alignment(-0.1, -0.25),
-                radius: 1.15,
+              borderRadius: BorderRadius.circular(railRadius),
+              gradient: const LinearGradient(
+                colors: <Color>[
+                  Color(0xFF4A2C1D),
+                  AppTheme.copper,
+                  Color(0xFF241713),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+              border: Border.all(color: AppTheme.gold.withValues(alpha: 0.44)),
             ),
-            child: Stack(
-              children: <Widget>[
-                Positioned(
-                  left: 20,
-                  top: 18,
-                  width: rect.width * 0.4,
-                  height: rect.height * 0.25,
+            child: Padding(
+              padding: const EdgeInsets.all(5),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(feltRadius),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(feltRadius),
+                    gradient: const RadialGradient(
+                      colors: <Color>[
+                        Color(0xFF167052),
+                        AppTheme.feltGreen,
+                        Color(0xFF08281F),
+                      ],
+                      stops: <double>[0.0, 0.58, 1.0],
+                      center: Alignment(-0.08, -0.18),
+                      radius: 1.12,
+                    ),
+                    border: Border.all(
+                      color: AppTheme.cream.withValues(alpha: 0.12),
+                    ),
+                  ),
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(feltRadius),
+                      gradient: LinearGradient(
+                        colors: <Color>[
+                          AppTheme.cream.withValues(alpha: 0.07),
+                          Colors.transparent,
+                          Colors.black.withValues(alpha: 0.18),
+                        ],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
                     ),
                   ),
                 ),
-                Positioned(
-                  right: 32,
-                  bottom: 30,
-                  width: rect.width * 0.28,
-                  height: rect.height * 0.18,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.black.withValues(alpha: 0.08),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _GlowBlob extends StatelessWidget {
-  const _GlowBlob({
-    required this.alignment,
-    required this.color,
-    required this.size,
-  });
-
-  final Alignment alignment;
-  final Color color;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: alignment,
-      child: IgnorePointer(
-        child: Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: color,
-            boxShadow: <BoxShadow>[
-              BoxShadow(color: color, blurRadius: size * 0.45),
-            ],
           ),
         ),
       ),
@@ -1816,12 +1876,19 @@ class _SeatChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Color borderColor = winner
-        ? const Color(0xFF18A14B)
+        ? AppTheme.success
         : active
-        ? const Color(0xFF1F8262)
+        ? AppTheme.gold
         : runner
-        ? const Color(0xFFD66F2D)
-        : const Color(0x553B281E);
+        ? AppTheme.copper
+        : AppTheme.cream.withValues(alpha: 0.18);
+    final Color glowColor = winner
+        ? AppTheme.success
+        : active
+        ? AppTheme.gold
+        : runner
+        ? AppTheme.copper
+        : Colors.black;
     final String handCountLabel = tr(
       language,
       '${player.hand.length} cards',
@@ -1854,19 +1921,19 @@ class _SeatChip extends StatelessWidget {
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
                   color: borderColor,
-                  width: active ? 1.8 : 1.1,
+                  width: active || winner || runner ? 1.6 : 1,
                 ),
                 gradient: const LinearGradient(
-                  colors: <Color>[Color(0xF8F4EBDD), Color(0xF0E6D8C2)],
+                  colors: <Color>[AppTheme.surfaceHigh, AppTheme.surface],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 boxShadow: <BoxShadow>[
                   BoxShadow(
-                    color: active
-                        ? const Color(0x441F8262)
-                        : const Color(0x18000000),
-                    blurRadius: active ? 18 : 10,
+                    color: (active || winner || runner)
+                        ? glowColor.withValues(alpha: 0.32)
+                        : const Color(0x33000000),
+                    blurRadius: active ? 20 : 12,
                     offset: const Offset(0, 6),
                   ),
                 ],
@@ -1882,7 +1949,7 @@ class _SeatChip extends StatelessWidget {
                     style: TextStyle(
                       fontSize: compactNameSize,
                       fontWeight: FontWeight.w800,
-                      color: const Color(0xFF4A2D20),
+                      color: AppTheme.cream,
                     ),
                   ),
                   SizedBox(height: dockMode ? 1.5 : 2),
@@ -1890,7 +1957,7 @@ class _SeatChip extends StatelessWidget {
                     handCountLabel,
                     style: TextStyle(
                       fontSize: compactCountSize,
-                      color: const Color(0xFF6B5445),
+                      color: AppTheme.cream.withValues(alpha: 0.66),
                     ),
                   ),
                 ],
@@ -1906,16 +1973,16 @@ class _SeatChip extends StatelessWidget {
                 borderRadius: BorderRadius.circular(18),
                 gradient: LinearGradient(
                   colors: <Color>[
-                    Colors.white.withValues(alpha: 0.18),
-                    Colors.white.withValues(alpha: 0.06),
+                    AppTheme.charcoal.withValues(alpha: 0.64),
+                    AppTheme.deepGreen.withValues(alpha: 0.50),
                   ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),
                 border: Border.all(
                   color: active
-                      ? Colors.white.withValues(alpha: 0.44)
-                      : Colors.white.withValues(alpha: 0.22),
+                      ? AppTheme.gold.withValues(alpha: 0.42)
+                      : AppTheme.cream.withValues(alpha: 0.14),
                 ),
               ),
               child: visibleCards.isEmpty
@@ -1925,7 +1992,7 @@ class _SeatChip extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFFF1E7D8),
+                          color: AppTheme.cream,
                         ),
                       ),
                     )
@@ -1953,16 +2020,21 @@ class _SeatChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: borderColor, width: active ? 1.8 : 1.1),
+          border: Border.all(
+            color: borderColor,
+            width: active || winner || runner ? 1.7 : 1,
+          ),
           gradient: const LinearGradient(
-            colors: <Color>[Color(0xFFF4E8D8), Color(0xFFEBDCC8)],
+            colors: <Color>[AppTheme.surfaceHigh, AppTheme.surface],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           boxShadow: <BoxShadow>[
             BoxShadow(
-              color: active ? const Color(0x441F8262) : const Color(0x22000000),
-              blurRadius: active ? 20 : 12,
+              color: (active || winner || runner)
+                  ? glowColor.withValues(alpha: 0.32)
+                  : const Color(0x44000000),
+              blurRadius: active ? 22 : 12,
               offset: const Offset(0, 8),
             ),
           ],
@@ -1978,19 +2050,25 @@ class _SeatChip extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w800,
-                color: Color(0xFF4A2D20),
+                color: AppTheme.cream,
               ),
             ),
             const SizedBox(height: 2),
             Text(
               handCountLabel,
-              style: const TextStyle(fontSize: 12, color: Color(0xFF6B5445)),
+              style: TextStyle(
+                fontSize: 12,
+                color: AppTheme.cream.withValues(alpha: 0.66),
+              ),
             ),
             const SizedBox(height: 8),
             if (visibleCards.isEmpty)
               Text(
                 tr(language, 'No cards', 'Ingen kort'),
-                style: const TextStyle(fontSize: 11, color: Color(0xFF806A5A)),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AppTheme.cream.withValues(alpha: 0.58),
+                ),
               )
             else
               SizedBox(
@@ -2073,74 +2151,100 @@ class _DeckStack extends StatelessWidget {
   Widget build(BuildContext context) {
     return OverflowBox(
       minWidth: 0,
-      maxWidth: _CardMetrics.medium.width + 12,
+      maxWidth: _CardMetrics.medium.width + 40,
       minHeight: 0,
-      maxHeight: _CardMetrics.medium.height + 40,
+      maxHeight: _CardMetrics.medium.height + 38,
       alignment: Alignment.topCenter,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Stack(
-            alignment: Alignment.center,
-            children: <Widget>[
-              Transform.translate(
-                offset: const Offset(-4, 4),
-                child: const _PlayingCardView(
-                  faceUp: false,
-                  size: _CardVisualSize.medium,
-                ),
-              ),
-              Transform.translate(
-                offset: const Offset(2, -2),
-                child: const _PlayingCardView(
-                  faceUp: false,
-                  size: _CardVisualSize.medium,
-                ),
-              ),
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: ready
-                      ? const <BoxShadow>[
-                          BoxShadow(
-                            color: Color(0x55FFE69F),
-                            blurRadius: 18,
-                            spreadRadius: 2,
-                          ),
-                        ]
-                      : const <BoxShadow>[],
-                ),
-                child: const _PlayingCardView(
-                  faceUp: false,
-                  size: _CardVisualSize.medium,
-                ),
-              ),
-              SizedBox(
-                width: _CardMetrics.medium.width,
-                height: _CardMetrics.medium.height,
-                child: Center(
-                  child: Text(
-                    label,
-                    style: const TextStyle(
-                      color: Color(0xFFF7F4FF),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1.4,
-                    ),
+          SizedBox(
+            width: _CardMetrics.medium.width + 10,
+            height: _CardMetrics.medium.height + 6,
+            child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.center,
+              children: <Widget>[
+                Transform.translate(
+                  offset: const Offset(-4, 4),
+                  child: const _PlayingCardView(
+                    faceUp: false,
+                    size: _CardVisualSize.medium,
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '$deckCount',
-            style: const TextStyle(
-              color: Color(0xFFF8F2E9),
-              fontWeight: FontWeight.w800,
-              shadows: <Shadow>[
-                Shadow(color: Color(0x66000000), blurRadius: 6),
+                Transform.translate(
+                  offset: const Offset(2, -2),
+                  child: const _PlayingCardView(
+                    faceUp: false,
+                    size: _CardVisualSize.medium,
+                  ),
+                ),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: ready
+                        ? const <BoxShadow>[
+                            BoxShadow(
+                              color: Color(0x66D4AF37),
+                              blurRadius: 18,
+                              spreadRadius: 1,
+                            ),
+                          ]
+                        : const <BoxShadow>[],
+                  ),
+                  child: const _PlayingCardView(
+                    faceUp: false,
+                    size: _CardVisualSize.medium,
+                  ),
+                ),
               ],
+            ),
+          ),
+          const SizedBox(height: 5),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(99),
+              color: AppTheme.deepGreen.withValues(alpha: 0.9),
+              border: Border.all(
+                color: AppTheme.gold.withValues(alpha: ready ? 0.72 : 0.38),
+              ),
+              boxShadow: const <BoxShadow>[
+                BoxShadow(
+                  color: Color(0x33000000),
+                  blurRadius: 8,
+                  offset: Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        color: AppTheme.cream,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0,
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      '$deckCount',
+                      style: TextStyle(
+                        color: AppTheme.cream.withValues(alpha: 0.78),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ],
@@ -2177,7 +2281,7 @@ class _PyramidSlotCard extends StatelessWidget {
           boxShadow: active
               ? const <BoxShadow>[
                   BoxShadow(
-                    color: Color(0x77FFE4A7),
+                    color: Color(0x77D4AF37),
                     blurRadius: 18,
                     spreadRadius: 2,
                   ),
@@ -2207,21 +2311,24 @@ class _PyramidRevealTarget extends StatelessWidget {
       curve: Curves.easeOut,
       decoration: BoxDecoration(
         borderRadius: radius,
-        border: Border.all(color: const Color(0xAAFFE4A7), width: 1.6),
+        border: Border.all(
+          color: AppTheme.gold.withValues(alpha: 0.86),
+          width: 1.6,
+        ),
         gradient: const LinearGradient(
-          colors: <Color>[Color(0x44FFE4A7), Color(0x16FFFFFF)],
+          colors: <Color>[Color(0x55342918), Color(0x33153F33)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         boxShadow: const <BoxShadow>[
-          BoxShadow(color: Color(0x66FFE4A7), blurRadius: 14, spreadRadius: 1),
+          BoxShadow(color: Color(0x66D4AF37), blurRadius: 14, spreadRadius: 1),
         ],
       ),
       child: const Center(
         child: Text(
           '?',
           style: TextStyle(
-            color: Color(0xFFF7F1E2),
+            color: AppTheme.cream,
             fontWeight: FontWeight.w900,
             fontSize: 24,
           ),
@@ -2250,16 +2357,18 @@ class _WarmupActionCard extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(18),
               gradient: const LinearGradient(
-                colors: <Color>[Color(0xFFF8D89A), Color(0xFFE4B466)],
+                colors: <Color>[Color(0xFFE8C65E), AppTheme.gold],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              border: Border.all(color: const Color(0xB0684328)),
+              border: Border.all(
+                color: AppTheme.copper.withValues(alpha: 0.66),
+              ),
               boxShadow: const <BoxShadow>[
                 BoxShadow(
-                  color: Color(0x22000000),
-                  blurRadius: 8,
-                  offset: Offset(0, 4),
+                  color: Color(0x55000000),
+                  blurRadius: 12,
+                  offset: Offset(0, 6),
                 ),
               ],
             ),
@@ -2274,7 +2383,7 @@ class _WarmupActionCard extends StatelessWidget {
                   label,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    color: Color(0xFF422214),
+                    color: AppTheme.charcoal,
                     fontWeight: FontWeight.w800,
                     fontSize: 15,
                   ),
@@ -2310,14 +2419,20 @@ class _BusZone extends StatelessWidget {
     }
 
     final Color background = switch (tone) {
-      BannerTone.success => const Color(0x4425A363),
-      BannerTone.fail => const Color(0x48B93838),
-      _ => active ? const Color(0x20FFF4D0) : const Color(0x12FFFFFF),
+      BannerTone.success => AppTheme.success.withValues(alpha: 0.22),
+      BannerTone.fail => AppTheme.danger.withValues(alpha: 0.24),
+      _ =>
+        active
+            ? AppTheme.gold.withValues(alpha: 0.18)
+            : AppTheme.cream.withValues(alpha: 0.07),
     };
     final Color border = switch (tone) {
-      BannerTone.success => const Color(0xAA23945B),
-      BannerTone.fail => const Color(0xAAB93838),
-      _ => active ? const Color(0xCCFFE4A7) : const Color(0x52FFFFFF),
+      BannerTone.success => AppTheme.success.withValues(alpha: 0.78),
+      BannerTone.fail => AppTheme.danger.withValues(alpha: 0.78),
+      _ =>
+        active
+            ? AppTheme.gold.withValues(alpha: 0.84)
+            : AppTheme.cream.withValues(alpha: 0.24),
     };
 
     return ClipRRect(
@@ -2339,7 +2454,7 @@ class _BusZone extends StatelessWidget {
               boxShadow: active
                   ? const <BoxShadow>[
                       BoxShadow(
-                        color: Color(0x32FFE69F),
+                        color: Color(0x44D4AF37),
                         blurRadius: 14,
                         spreadRadius: 1,
                       ),
@@ -2355,7 +2470,7 @@ class _BusZone extends StatelessWidget {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.14),
+                          color: AppTheme.cream.withValues(alpha: 0.12),
                         ),
                       ),
                     ),
@@ -2376,8 +2491,8 @@ class _BusZone extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 8.5,
                         fontWeight: FontWeight.w900,
-                        color: Color(0xFFF8F2E9),
-                        letterSpacing: 0.9,
+                        color: AppTheme.cream,
+                        letterSpacing: 0,
                       ),
                     ),
                   ),
@@ -2414,12 +2529,12 @@ class _BusBase extends StatelessWidget {
     }
 
     final Color border = active
-        ? const Color(0x99FFE4A7)
+        ? AppTheme.gold.withValues(alpha: 0.86)
         : tone == BannerTone.success
-        ? const Color(0xAA23945B)
+        ? AppTheme.success.withValues(alpha: 0.78)
         : tone == BannerTone.fail
-        ? const Color(0xAAB93838)
-        : const Color(0x26FFFFFF);
+        ? AppTheme.danger.withValues(alpha: 0.78)
+        : AppTheme.cream.withValues(alpha: 0.16);
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -2427,8 +2542,10 @@ class _BusBase extends StatelessWidget {
         border: Border.all(color: border, width: active ? 1.6 : 1.1),
         gradient: LinearGradient(
           colors: <Color>[
-            active ? const Color(0x1FFFF4D0) : const Color(0x10FFFFFF),
-            const Color(0x0FFFFFFF),
+            active
+                ? AppTheme.gold.withValues(alpha: 0.16)
+                : AppTheme.cream.withValues(alpha: 0.06),
+            AppTheme.surface.withValues(alpha: 0.10),
           ],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
@@ -2436,7 +2553,7 @@ class _BusBase extends StatelessWidget {
         boxShadow: active
             ? const <BoxShadow>[
                 BoxShadow(
-                  color: Color(0x2EFFE69F),
+                  color: Color(0x44D4AF37),
                   blurRadius: 16,
                   spreadRadius: 1,
                 ),
@@ -2453,7 +2570,7 @@ class _BusBase extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.12),
+                    color: AppTheme.cream.withValues(alpha: 0.12),
                   ),
                 ),
               ),
@@ -2467,8 +2584,10 @@ class _BusBase extends StatelessWidget {
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(999),
-                  color: const Color(0xA01D3B2F),
-                  border: Border.all(color: const Color(0x66FFE4A7)),
+                  color: AppTheme.deepGreen.withValues(alpha: 0.82),
+                  border: Border.all(
+                    color: AppTheme.gold.withValues(alpha: 0.34),
+                  ),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
@@ -2478,7 +2597,7 @@ class _BusBase extends StatelessWidget {
                   child: Text(
                     '$sameCount',
                     style: const TextStyle(
-                      color: Color(0xFFF8F2E9),
+                      color: AppTheme.cream,
                       fontSize: 10,
                       fontWeight: FontWeight.w800,
                     ),
@@ -2493,6 +2612,8 @@ class _BusBase extends StatelessWidget {
               child: FilledButton.tonal(
                 onPressed: onSame,
                 style: FilledButton.styleFrom(
+                  backgroundColor: AppTheme.gold,
+                  foregroundColor: AppTheme.charcoal,
                   minimumSize: Size.zero,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
@@ -2585,9 +2706,11 @@ class _PlayingCardView extends StatelessWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(radius),
-          color: faceUp ? const Color(0xFFFFFCF7) : const Color(0xFF163E5A),
+          color: faceUp ? AppTheme.cream : AppTheme.deepGreen,
           border: Border.all(
-            color: faceUp ? const Color(0xFFCEBCA8) : const Color(0xFFB8CBE0),
+            color: faceUp
+                ? AppTheme.copper.withValues(alpha: 0.42)
+                : AppTheme.gold.withValues(alpha: 0.36),
           ),
           boxShadow: const <BoxShadow>[
             BoxShadow(
@@ -2598,12 +2721,12 @@ class _PlayingCardView extends StatelessWidget {
           ],
           gradient: faceUp
               ? const LinearGradient(
-                  colors: <Color>[Color(0xFFFFFEFB), Color(0xFFF5EFE5)],
+                  colors: <Color>[Color(0xFFFFFEFA), AppTheme.cream],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 )
               : const LinearGradient(
-                  colors: <Color>[Color(0xFF214B4A), Color(0xFF132B35)],
+                  colors: <Color>[AppTheme.deepGreen, AppTheme.charcoal],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -2628,7 +2751,7 @@ class _CardFace extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool red = card.suit == Suit.hearts || card.suit == Suit.diamonds;
-    final Color ink = red ? const Color(0xFFBE3030) : const Color(0xFF232323);
+    final Color ink = red ? AppTheme.danger : AppTheme.charcoal;
     final double cornerFont = switch (size) {
       _CardVisualSize.extraSmall => 7,
       _CardVisualSize.small => 10,
@@ -2776,7 +2899,7 @@ class _CardBack extends StatelessWidget {
           child: DecoratedBox(
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: <Color>[Color(0xFF224F4E), Color(0xFF17313F)],
+                colors: <Color>[AppTheme.deepGreen, AppTheme.charcoal],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -2807,7 +2930,7 @@ class _CardBack extends StatelessWidget {
           bottom: inset,
           child: DecoratedBox(
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.white.withValues(alpha: 0.26)),
+              border: Border.all(color: AppTheme.gold.withValues(alpha: 0.32)),
               borderRadius: BorderRadius.circular(
                 math.max(2, borderRadius - 1.4),
               ),
@@ -2821,7 +2944,7 @@ class _CardBack extends StatelessWidget {
           child: DecoratedBox(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(999),
-              color: const Color(0x33FFE08F),
+              color: AppTheme.gold.withValues(alpha: 0.25),
             ),
             child: const SizedBox(height: 3),
           ),
@@ -2833,7 +2956,7 @@ class _CardBack extends StatelessWidget {
           child: DecoratedBox(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(999),
-              color: Colors.white.withValues(alpha: 0.18),
+              color: AppTheme.cream.withValues(alpha: 0.18),
             ),
             child: const SizedBox(height: 2),
           ),
@@ -2845,7 +2968,7 @@ class _CardBack extends StatelessWidget {
               quarterTurns: 1,
               child: Icon(
                 Icons.directions_bus_filled_rounded,
-                color: const Color(0xFFFFD155),
+                color: AppTheme.gold,
                 size: iconSize,
               ),
             ),

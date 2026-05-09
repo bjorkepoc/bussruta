@@ -175,6 +175,49 @@ void main() {
       expect(server.state.participantById(seatId)?.connected, isTrue);
     });
 
+    test(
+      'join response is not followed by duplicate snapshot to same client',
+      () async {
+        final HostedLanHostServer server = await _startServer();
+        bool serverClosed = false;
+        addTearDown(() async {
+          if (serverClosed) {
+            return;
+          }
+          serverClosed = true;
+          await server.close(broadcastSessionClosed: false);
+        });
+
+        final Socket socket = await Socket.connect('127.0.0.1', server.port);
+        addTearDown(socket.destroy);
+        final Stream<String> lines = socket
+            .cast<List<int>>()
+            .transform(utf8.decoder)
+            .transform(const LineSplitter())
+            .asBroadcastStream();
+
+        socket.writeln(
+          jsonEncode(<String, dynamic>{
+            'type': 'join',
+            'pin': '1234',
+            'name': 'No duplicate',
+          }),
+        );
+        await socket.flush();
+
+        final Map<String, dynamic> first =
+            jsonDecode(await lines.first.timeout(const Duration(seconds: 2)))
+                as Map<String, dynamic>;
+        expect(first['type'], 'joined');
+
+        final String duplicate = await lines.first.timeout(
+          const Duration(milliseconds: 250),
+          onTimeout: () => '',
+        );
+        expect(duplicate, isEmpty);
+      },
+    );
+
     test('marks participant disconnected when client socket closes', () async {
       final HostedLanHostServer server = await _startServer();
       bool serverClosed = false;
@@ -302,26 +345,36 @@ Map<String, dynamic> _projectionJson({required List<dynamic> pyramidCards}) {
 }
 
 Future<HostedLanHostServer> _startServer() async {
-  final HostedSessionRuntime runtime = HostedSessionRuntime(
-    engine: GameEngine(),
-    initialState: HostedSessionState.lobby(
-      sessionPin: '1234',
-      host: const HostedParticipant(
-        playerId: 1,
-        name: 'Host',
-        isHost: true,
-        connected: true,
+  Object? lastError;
+  for (int attempt = 0; attempt < 8; attempt += 1) {
+    final HostedSessionRuntime runtime = HostedSessionRuntime(
+      engine: GameEngine(),
+      initialState: HostedSessionState.lobby(
+        sessionPin: '1234',
+        host: const HostedParticipant(
+          playerId: 1,
+          name: 'Host',
+          isHost: true,
+          connected: true,
+        ),
+        language: AppLanguage.en,
       ),
-      language: AppLanguage.en,
-    ),
-  );
-  final HostedLanHostServer server = HostedLanHostServer(
-    runtime: runtime,
-    hostName: 'Host',
-    pin: '1234',
-  );
-  await server.start();
-  return server;
+    );
+    final HostedLanHostServer server = HostedLanHostServer(
+      runtime: runtime,
+      hostName: 'Host',
+      pin: '1234',
+    );
+    try {
+      await server.start();
+      return server;
+    } on SocketException catch (error) {
+      lastError = error;
+      await server.close(broadcastSessionClosed: false);
+      await Future<void>.delayed(const Duration(milliseconds: 120));
+    }
+  }
+  throw StateError('Could not start test LAN server: $lastError');
 }
 
 Future<void> _waitFor(

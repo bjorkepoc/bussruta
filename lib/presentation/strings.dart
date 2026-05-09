@@ -32,7 +32,7 @@ String warmupGuessLabel(AppLanguage language, WarmupGuess guess) {
     case WarmupGuess.black:
       return tr(language, 'Black', 'Svart');
     case WarmupGuess.red:
-      return tr(language, 'Red', 'Rodt');
+      return tr(language, 'Red', 'Rødt');
     case WarmupGuess.above:
       return tr(language, 'Higher', 'Over');
     case WarmupGuess.below:
@@ -44,7 +44,7 @@ String warmupGuessLabel(AppLanguage language, WarmupGuess guess) {
     case WarmupGuess.same:
       return tr(language, 'Same', 'Samme');
     case WarmupGuess.clubs:
-      return tr(language, 'Clubs', 'Klover');
+      return tr(language, 'Clubs', 'Kløver');
     case WarmupGuess.diamonds:
       return tr(language, 'Diamonds', 'Ruter');
     case WarmupGuess.hearts:

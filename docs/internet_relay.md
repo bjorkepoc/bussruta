@@ -22,6 +22,23 @@ The server listens on `/ws`, for example:
 ws://127.0.0.1:8080/ws
 ```
 
+For same-network browser/mobile play, run the relay on the PC and use that PC's
+LAN IP from every device:
+
+```text
+ws://<pc-lan-ip>:8080/ws
+```
+
+Then run the Flutter web app on the network:
+
+```bash
+flutter run -d web-server --web-hostname 0.0.0.0 --web-port 8081
+```
+
+Open `http://<pc-lan-ip>:8081`, choose Hosted mode, and use the relay URL above.
+The host creates a room and shares the room key with phones or other PCs on the
+same network.
+
 ## Relay Messages
 
 Host creates a room:
@@ -33,13 +50,13 @@ Host creates a room:
 Client joins a room:
 
 ```json
-{"type":"player.join","roomKey":"ROOM42","payload":{"type":"join","name":"Client"}}
+{"type":"player.join","roomKey":"ROOM42","payload":{"type":"join","pin":"ROOM42","name":"Client"}}
 ```
 
 Client sends an existing hosted payload to the host:
 
 ```json
-{"type":"client.message","payload":{"type":"command","command":{"type":"warmupGuess"}}}
+{"type":"client.message","payload":{"type":"command","command":{"type":"warmupGuess","playerId":2}}}
 ```
 
 Host sends an existing hosted payload to one client:
@@ -56,9 +73,9 @@ Host broadcasts an existing hosted payload:
 
 ## Not Included Yet
 
-- Flutter UI for internet rooms.
-- A WebSocket transport adapter inside `HostedSessionController`.
 - TLS termination, authentication, room rate limiting, idle expiry, or deployment config.
 - Host migration.
 
-Those should be built as a separate transport integration after the relay protocol is accepted.
+Those hardening items should be added before exposing the relay on the public
+internet. The current relay flow is intended for trusted local networks or
+development use.

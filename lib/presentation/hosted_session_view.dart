@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:bussruta_app/application/hosted_lan_transport.dart';
 import 'package:bussruta_app/application/hosted_session_controller.dart';
+import 'package:bussruta_app/application/hosted_transport_models.dart';
 import 'package:bussruta_app/domain/game_models.dart';
 import 'package:bussruta_app/domain/hosted_models.dart';
+import 'package:bussruta_app/presentation/app_theme.dart';
 import 'package:bussruta_app/presentation/strings.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -32,11 +34,15 @@ class _HostedSessionViewState extends State<HostedSessionView>
   final TextEditingController _name = TextEditingController();
   final TextEditingController _pin = TextEditingController();
   final TextEditingController _host = TextEditingController();
+  final TextEditingController _relayUrl = TextEditingController();
+  final TextEditingController _relayRoom = TextEditingController();
   Map<int, int> _draftTargets = <int, int>{};
   int? _draftSource;
   bool _emulatorCommandCopied = false;
   Timer? _copyFeedbackTimer;
-  late final AnimationController _flash = AnimationController(
+  AnimationController? _flash;
+
+  AnimationController get _flashController => _flash ??= AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 620),
   )..repeat(reverse: true);
@@ -45,6 +51,7 @@ class _HostedSessionViewState extends State<HostedSessionView>
   void initState() {
     super.initState();
     _name.text = widget.language == AppLanguage.no ? 'Spiller' : 'Player';
+    _relayUrl.text = _defaultRelayUrl();
     unawaited(widget.controller.initialize(language: widget.language));
   }
 
@@ -61,9 +68,21 @@ class _HostedSessionViewState extends State<HostedSessionView>
     _name.dispose();
     _pin.dispose();
     _host.dispose();
+    _relayUrl.dispose();
+    _relayRoom.dispose();
     _copyFeedbackTimer?.cancel();
-    _flash.dispose();
+    _flash?.dispose();
     super.dispose();
+  }
+
+  String _defaultRelayUrl() {
+    final Uri base = Uri.base;
+    if (base.host.isNotEmpty &&
+        base.host != 'localhost' &&
+        base.host != '127.0.0.1') {
+      return 'ws://${base.host}:8080/ws';
+    }
+    return 'ws://127.0.0.1:8080/ws';
   }
 
   @override
@@ -85,6 +104,26 @@ class _HostedSessionViewState extends State<HostedSessionView>
     );
   }
 
+  Widget _withTopLevelBack({
+    required VoidCallback onBack,
+    required Widget child,
+  }) {
+    return PopScope<Object?>(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, Object? result) {
+        if (!didPop) {
+          onBack();
+        }
+      },
+      child: child,
+    );
+  }
+
+  void _leaveSessionAndReturnToModes() {
+    widget.controller.leaveSession();
+    widget.onBackToModeChooser();
+  }
+
   Widget _buildEntry() {
     final AppLanguage language = widget.language;
     final HostedConnectionStatus status = widget.controller.connectionStatus;
@@ -94,250 +133,335 @@ class _HostedSessionViewState extends State<HostedSessionView>
         status == HostedConnectionStatus.joining ||
         status == HostedConnectionStatus.reconnecting;
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: widget.onBackToModeChooser,
-          icon: const Icon(Icons.arrow_back),
-        ),
-        title: Text(tr(language, 'Hosted mode', 'Hostet modus')),
-      ),
-      body: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: <Color>[Color(0xFFF3ECDD), Color(0xFFE7D5C1)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+    return _withTopLevelBack(
+      onBack: widget.onBackToModeChooser,
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            tooltip: tr(language, 'Back to mode chooser', 'Tilbake til valg'),
+            onPressed: widget.onBackToModeChooser,
+            icon: const Icon(Icons.arrow_back),
           ),
+          title: Text(tr(language, 'Hosted mode', 'Hostet modus')),
         ),
-        child: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: <Widget>[
-              if (status != HostedConnectionStatus.idle)
-                _surfaceCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Row(
-                        children: <Widget>[
-                          Icon(statusVisual.icon, color: statusVisual.color),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              statusVisual.title,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        statusVisual.subtitle,
-                        style: TextStyle(color: statusVisual.color),
-                      ),
-                      if (busy) ...<Widget>[
-                        const SizedBox(height: 10),
-                        LinearProgressIndicator(
-                          borderRadius: BorderRadius.circular(99),
-                        ),
-                      ],
-                      if (networkDiagnostic != null &&
-                          networkDiagnostic.trim().isNotEmpty) ...<Widget>[
-                        const SizedBox(height: 10),
-                        ExpansionTile(
-                          tilePadding: EdgeInsets.zero,
-                          childrenPadding: EdgeInsets.zero,
-                          collapsedIconColor: const Color(0xFF6D4F33),
-                          iconColor: const Color(0xFF6D4F33),
-                          title: Text(
-                            tr(
-                              language,
-                              'Advanced diagnostics',
-                              'Avanserte diagnoser',
-                            ),
-                            style: const TextStyle(
-                              color: Color(0xFF6D4F33),
-                              fontWeight: FontWeight.w700,
-                              fontSize: 13,
-                            ),
-                          ),
+        body: DecoratedBox(
+          decoration: AppTheme.tableBackground(),
+          child: SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: <Widget>[
+                if (status != HostedConnectionStatus.idle)
+                  _surfaceCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Row(
                           children: <Widget>[
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: SelectableText(
-                                networkDiagnostic,
+                            Icon(statusVisual.icon, color: statusVisual.color),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                statusVisual.title,
                                 style: const TextStyle(
-                                  fontFamily: 'monospace',
-                                  fontSize: 12,
-                                  color: Color(0xFF4B3524),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
                                 ),
                               ),
                             ),
                           ],
                         ),
+                        const SizedBox(height: 6),
+                        Text(
+                          statusVisual.subtitle,
+                          style: TextStyle(color: statusVisual.color),
+                        ),
+                        if (busy) ...<Widget>[
+                          const SizedBox(height: 10),
+                          LinearProgressIndicator(
+                            borderRadius: BorderRadius.circular(99),
+                          ),
+                        ],
+                        if (networkDiagnostic != null &&
+                            networkDiagnostic.trim().isNotEmpty) ...<Widget>[
+                          const SizedBox(height: 10),
+                          ExpansionTile(
+                            tilePadding: EdgeInsets.zero,
+                            childrenPadding: EdgeInsets.zero,
+                            collapsedIconColor: AppTheme.gold,
+                            iconColor: AppTheme.gold,
+                            title: Text(
+                              tr(
+                                widget.language,
+                                'Advanced diagnostics',
+                                'Avanserte diagnoser',
+                              ),
+                              style: TextStyle(
+                                color: AppTheme.cream.withValues(alpha: 0.72),
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                              ),
+                            ),
+                            children: <Widget>[
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: SelectableText(
+                                  networkDiagnostic,
+                                  style: TextStyle(
+                                    fontFamily: 'monospace',
+                                    fontSize: 12,
+                                    color: AppTheme.cream.withValues(
+                                      alpha: 0.68,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
+                    ),
+                  ),
+                const SizedBox(height: 10),
+                _surfaceCard(
+                  child: TextField(
+                    controller: _name,
+                    decoration: InputDecoration(
+                      labelText: tr(language, 'Your name', 'Ditt navn'),
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                _surfaceCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        tr(
+                          widget.language,
+                          'Browser / same-network room',
+                          'Nettleser / samme nett-rom',
+                        ),
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _relayUrl,
+                        decoration: InputDecoration(
+                          labelText: tr(language, 'Relay URL', 'Relay-URL'),
+                          border: const OutlineInputBorder(),
+                          hintText: 'ws://192.168.1.10:8080/ws',
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _relayRoom,
+                        decoration: InputDecoration(
+                          labelText: tr(language, 'Room key', 'Romkode'),
+                          border: const OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        tr(
+                          widget.language,
+                          'Run the relay on one PC, then use its local network address here from browser or phone.',
+                          'Kjor relay pa en PC, og bruk lokal nettverksadresse her fra nettleser eller mobil.',
+                        ),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppTheme.cream.withValues(alpha: 0.68),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: FilledButton.icon(
+                              onPressed: busy
+                                  ? null
+                                  : () => widget.controller.startRelayHosting(
+                                      hostName: _name.text,
+                                      relayUrl: _relayUrl.text,
+                                    ),
+                              icon: const Icon(Icons.public),
+                              label: Text(
+                                tr(language, 'Host room', 'Host rom'),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: busy
+                                  ? null
+                                  : () => widget.controller.joinRelayRoom(
+                                      relayUrl: _relayUrl.text,
+                                      roomKey: _relayRoom.text,
+                                      playerName: _name.text,
+                                    ),
+                              icon: const Icon(Icons.login),
+                              label: Text(tr(language, 'Join room', 'Bli med')),
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
-              const SizedBox(height: 10),
-              _surfaceCard(
-                child: TextField(
-                  controller: _name,
-                  decoration: InputDecoration(
-                    labelText: tr(language, 'Your name', 'Ditt navn'),
-                    border: const OutlineInputBorder(),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              _surfaceCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      tr(language, 'Host a LAN game', 'Host et LAN-spill'),
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.icon(
-                        onPressed: busy
-                            ? null
-                            : () => widget.controller.startHosting(
-                                hostName: _name.text,
-                              ),
-                        icon: const Icon(Icons.wifi_tethering),
-                        label: Text(tr(language, 'Host game', 'Host spill')),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-              _surfaceCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      tr(
-                        language,
-                        'Join a hosted game',
-                        'Bli med i hostet spill',
-                      ),
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: _pin,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        labelText: tr(language, 'PIN code', 'PIN-kode'),
-                        border: const OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: _host,
-                      decoration: InputDecoration(
-                        labelText: tr(
-                          language,
-                          'Host address (host or host:port)',
-                          'Vertsadresse (host eller host:port)',
+                if (!kIsWeb) ...<Widget>[
+                  const SizedBox(height: 10),
+                  _surfaceCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          tr(language, 'Host a LAN game', 'Host et LAN-spill'),
+                          style: Theme.of(context).textTheme.titleMedium,
                         ),
-                        border: const OutlineInputBorder(),
-                        hintText: '10.0.2.2:45879',
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      tr(
-                        language,
-                        'If no LAN games appear, enter the host address shown on the host device and use the same PIN.',
-                        'Hvis ingen LAN-spill vises, skriv inn vertsadressen som vises pa vertsenheten og bruk samme PIN.',
-                      ),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFF6D4F33),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: busy
-                            ? null
-                            : () {
-                                widget.controller.joinByPin(
-                                  pin: _pin.text,
-                                  playerName: _name.text,
-                                  hostAddress: _host.text.trim().isEmpty
-                                      ? null
-                                      : _host.text.trim(),
-                                );
-                              },
-                        icon: const Icon(Icons.login),
-                        label: Text(
-                          tr(language, 'Join by PIN', 'Bli med via PIN'),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-              _surfaceCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      tr(
-                        language,
-                        'Available local games',
-                        'Tilgjengelige lokale spill',
-                      ),
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    if (widget.controller.discoveries.isEmpty)
-                      Text(
-                        tr(
-                          language,
-                          'No LAN games found yet. On Android emulators, manual host address + PIN is often needed.',
-                          'Ingen LAN-spill funnet ennå. Pa Android-emulatorer trengs ofte vertsadresse + PIN manuelt.',
-                        ),
-                      )
-                    else
-                      ...widget.controller.discoveries.map((
-                        HostedDiscoveryEntry entry,
-                      ) {
-                        return Card(
-                          child: ListTile(
-                            leading: const Icon(Icons.hub),
-                            title: Text('${entry.hostName} - PIN ${entry.pin}'),
-                            subtitle: Text(
-                              '${entry.hostAddress}:${entry.hostPort}',
-                            ),
-                            trailing: FilledButton(
-                              onPressed: busy
-                                  ? null
-                                  : () => widget.controller.joinByDiscovery(
-                                      entry: entry,
-                                      playerName: _name.text,
-                                    ),
-                              child: Text(tr(language, 'Join', 'Bli med')),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.icon(
+                            onPressed: busy
+                                ? null
+                                : () => widget.controller.startHosting(
+                                    hostName: _name.text,
+                                  ),
+                            icon: const Icon(Icons.wifi_tethering),
+                            label: Text(
+                              tr(language, 'Host game', 'Host spill'),
                             ),
                           ),
-                        );
-                      }),
-                  ],
-                ),
-              ),
-            ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  _surfaceCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          tr(
+                            widget.language,
+                            'Join a hosted game',
+                            'Bli med i hostet spill',
+                          ),
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _pin,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: tr(language, 'PIN code', 'PIN-kode'),
+                            border: const OutlineInputBorder(),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _host,
+                          decoration: InputDecoration(
+                            labelText: tr(
+                              widget.language,
+                              'Host address (host or host:port)',
+                              'Vertsadresse (host eller host:port)',
+                            ),
+                            border: const OutlineInputBorder(),
+                            hintText: '10.0.2.2:45879',
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          tr(
+                            widget.language,
+                            'If no LAN games appear, enter the host address shown on the host device and use the same PIN.',
+                            'Hvis ingen LAN-spill vises, skriv inn vertsadressen som vises på vertsenheten og bruk samme PIN.',
+                          ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: AppTheme.cream.withValues(alpha: 0.68),
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: busy
+                                ? null
+                                : () {
+                                    widget.controller.joinByPin(
+                                      pin: _pin.text,
+                                      playerName: _name.text,
+                                      hostAddress: _host.text.trim().isEmpty
+                                          ? null
+                                          : _host.text.trim(),
+                                    );
+                                  },
+                            icon: const Icon(Icons.login),
+                            label: Text(
+                              tr(language, 'Join by PIN', 'Bli med via PIN'),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  _surfaceCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          tr(
+                            widget.language,
+                            'Available local games',
+                            'Tilgjengelige lokale spill',
+                          ),
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 8),
+                        if (widget.controller.discoveries.isEmpty)
+                          Text(
+                            tr(
+                              widget.language,
+                              'No LAN games found yet. On Android emulators, manual host address + PIN is often needed.',
+                              'Ingen LAN-spill funnet ennå. På Android-emulatorer trengs ofte vertsadresse + PIN manuelt.',
+                            ),
+                          )
+                        else
+                          ...widget.controller.discoveries.map((
+                            HostedDiscoveryEntry entry,
+                          ) {
+                            return Card(
+                              child: ListTile(
+                                leading: const Icon(Icons.hub),
+                                title: Text(
+                                  '${entry.hostName} - PIN ${entry.pin}',
+                                ),
+                                subtitle: Text(
+                                  '${entry.hostAddress}:${entry.hostPort}',
+                                ),
+                                trailing: FilledButton(
+                                  onPressed: busy
+                                      ? null
+                                      : () => widget.controller.joinByDiscovery(
+                                          entry: entry,
+                                          playerName: _name.text,
+                                        ),
+                                  child: Text(tr(language, 'Join', 'Bli med')),
+                                ),
+                              ),
+                            );
+                          }),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
         ),
       ),
@@ -361,257 +485,472 @@ class _HostedSessionViewState extends State<HostedSessionView>
     final bool emulatorAddress = hostAddress != null
         ? hostedAddressLooksLikeEmulatorNat(hostAddress)
         : false;
+    final String? relayUrl = widget.controller.relayUrl;
+    final String? relayRoomKey = widget.controller.relayRoomKey;
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: () {
-            widget.controller.leaveSession();
-            widget.onBackToModeChooser();
-          },
-          icon: const Icon(Icons.arrow_back),
-        ),
-        title: Text(tr(language, 'Hosted lobby', 'Hostet lobby')),
-        actions: <Widget>[
-          TextButton(
-            onPressed: widget.controller.leaveSession,
-            child: Text(tr(language, 'Leave', 'Forlat')),
+    return _withTopLevelBack(
+      onBack: _leaveSessionAndReturnToModes,
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            tooltip: tr(language, 'Back to mode chooser', 'Tilbake til valg'),
+            onPressed: _leaveSessionAndReturnToModes,
+            icon: const Icon(Icons.arrow_back),
           ),
-        ],
-      ),
-      body: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: <Color>[Color(0xFFF3ECDD), Color(0xFFE7D5C1)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
+          title: Text(tr(language, 'Hosted lobby', 'Hostet lobby')),
+          actions: <Widget>[
+            TextButton(
+              onPressed: widget.controller.leaveSession,
+              child: Text(tr(language, 'Leave', 'Forlat')),
+            ),
+          ],
         ),
-        child: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: <Widget>[
-              _surfaceCard(
-                child: Row(
-                  children: <Widget>[
-                    Icon(visual.icon, color: visual.color),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        visual.title,
-                        style: const TextStyle(fontWeight: FontWeight.w800),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-              _surfaceCard(
-                color: const Color(0xFFF8E8D3),
-                child: Column(
-                  children: <Widget>[
-                    Text(
-                      tr(language, 'Session PIN', 'Sesjon PIN'),
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      view.sessionPin,
-                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 3,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      tr(
-                        language,
-                        '$connectedCount / ${view.players.length} connected',
-                        '$connectedCount / ${view.players.length} tilkoblet',
-                      ),
-                    ),
-                    if (hostAddress != null) ...<Widget>[
-                      const SizedBox(height: 10),
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF174A36),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0x66FFD89A)),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
-                          ),
-                          child: Column(
-                            children: <Widget>[
-                              Text(
-                                tr(
-                                  language,
-                                  'Use this for emulator/manual join',
-                                  'Bruk dette for emulator/manuell joining',
-                                ),
-                                style: const TextStyle(
-                                  color: Color(0xFFF4E8D6),
-                                  fontWeight: FontWeight.w700,
-                                ),
+        body: DecoratedBox(
+          decoration: AppTheme.tableBackground(),
+          child: SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: <Widget>[
+                _surfaceCard(
+                  child: Row(
+                    children: <Widget>[
+                      Icon(visual.icon, color: visual.color),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text(
+                              visual.title,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
                               ),
-                              const SizedBox(height: 6),
-                              SelectableText(
-                                '$hostAddress:$joinPort',
-                                style: const TextStyle(
-                                  color: Color(0xFFFFD06A),
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 0.5,
-                                ),
+                            ),
+                            Text(
+                              visual.subtitle,
+                              style: TextStyle(
+                                color: AppTheme.cream.withValues(alpha: 0.66),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
                               ),
-                              if (emulatorAddress) ...<Widget>[
-                                const SizedBox(height: 8),
-                                Text(
-                                  tr(
-                                    language,
-                                    'Emulator fallback target (after adb forward): 10.0.2.2:$joinPort',
-                                    'Emulator-fallback (etter adb forward): 10.0.2.2:$joinPort',
-                                  ),
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    color: Color(0xFFF4E8D6),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                SelectableText(
-                                  emulatorForwardCommand,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    color: Color(0xFFFFD06A),
-                                    fontFamily: 'monospace',
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                OutlinedButton.icon(
-                                  onPressed: () {
-                                    unawaited(
-                                      Clipboard.setData(
-                                        ClipboardData(
-                                          text: emulatorForwardCommand,
-                                        ),
-                                      ),
-                                    );
-                                    _markEmulatorCommandCopied();
-                                  },
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: const Color(0xFFF4E8D6),
-                                    side: BorderSide(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.65,
-                                      ),
-                                    ),
-                                  ),
-                                  icon: Icon(
-                                    _emulatorCommandCopied
-                                        ? Icons.check
-                                        : Icons.copy,
-                                    size: 18,
-                                  ),
-                                  label: Text(
-                                    _emulatorCommandCopied
-                                        ? tr(language, 'Copied', 'Kopiert')
-                                        : tr(
-                                            language,
-                                            'Copy adb command',
-                                            'Kopier adb-kommando',
-                                          ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
-                  ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              _surfaceCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      tr(language, 'Players', 'Spillere'),
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    ...view.players.asMap().entries.map((
-                      MapEntry<int, HostedPublicPlayer> entry,
-                    ) {
-                      final HostedPublicPlayer player = entry.value;
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF8F3EA),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: player.connected
-                                  ? const Color(0xFFB9D5C1)
-                                  : const Color(0xFFE1C5C5),
+                const SizedBox(height: 10),
+                _surfaceCard(
+                  color: AppTheme.deepGreen,
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+                  child: Column(
+                    children: <Widget>[
+                      Text(
+                        tr(language, 'Session PIN', 'Sesjon PIN'),
+                        style: TextStyle(
+                          color: AppTheme.gold.withValues(alpha: 0.92),
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          view.sessionPin,
+                          style: Theme.of(context).textTheme.displaySmall
+                              ?.copyWith(
+                                color: AppTheme.cream,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 5,
+                              ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      _tag(
+                        tr(
+                          widget.language,
+                          '$connectedCount / ${view.players.length} connected',
+                          '$connectedCount / ${view.players.length} tilkoblet',
+                        ),
+                        AppTheme.success,
+                      ),
+                      if (hostAddress != null) ...<Widget>[
+                        const SizedBox(height: 8),
+                        Theme(
+                          data: Theme.of(context).copyWith(
+                            dividerColor: Colors.transparent,
+                            splashColor: AppTheme.gold.withValues(alpha: 0.08),
+                          ),
+                          child: ExpansionTile(
+                            tilePadding: EdgeInsets.zero,
+                            childrenPadding: EdgeInsets.zero,
+                            collapsedIconColor: AppTheme.gold,
+                            iconColor: AppTheme.gold,
+                            title: Text(
+                              tr(
+                                widget.language,
+                                'Manual join details',
+                                'Detaljer for manuell joining',
+                              ),
+                              style: TextStyle(
+                                color: AppTheme.cream.withValues(alpha: 0.76),
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                              ),
+                            ),
+                            children: <Widget>[
+                              DecoratedBox(
+                                decoration: BoxDecoration(
+                                  color: AppTheme.charcoal.withValues(
+                                    alpha: 0.42,
+                                  ),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: AppTheme.gold.withValues(
+                                      alpha: 0.18,
+                                    ),
+                                  ),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 10,
+                                  ),
+                                  child: Column(
+                                    children: <Widget>[
+                                      Text(
+                                        tr(
+                                          widget.language,
+                                          'Host address',
+                                          'Vertsadresse',
+                                        ),
+                                        style: TextStyle(
+                                          color: AppTheme.cream.withValues(
+                                            alpha: 0.68,
+                                          ),
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      SelectableText(
+                                        '$hostAddress:$joinPort',
+                                        style: const TextStyle(
+                                          color: AppTheme.gold,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                      ),
+                                      if (emulatorAddress) ...<Widget>[
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          tr(
+                                            widget.language,
+                                            'Emulator fallback target (after adb forward): 10.0.2.2:$joinPort',
+                                            'Emulator-fallback (etter adb forward): 10.0.2.2:$joinPort',
+                                          ),
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            color: AppTheme.cream.withValues(
+                                              alpha: 0.68,
+                                            ),
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        SelectableText(
+                                          emulatorForwardCommand,
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(
+                                            color: AppTheme.gold,
+                                            fontFamily: 'monospace',
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        OutlinedButton.icon(
+                                          onPressed: () {
+                                            unawaited(
+                                              Clipboard.setData(
+                                                ClipboardData(
+                                                  text: emulatorForwardCommand,
+                                                ),
+                                              ),
+                                            );
+                                            _markEmulatorCommandCopied();
+                                          },
+                                          icon: Icon(
+                                            _emulatorCommandCopied
+                                                ? Icons.check
+                                                : Icons.copy,
+                                            size: 18,
+                                          ),
+                                          label: Text(
+                                            _emulatorCommandCopied
+                                                ? tr(
+                                                    widget.language,
+                                                    'Copied',
+                                                    'Kopiert',
+                                                  )
+                                                : tr(
+                                                    widget.language,
+                                                    'Copy adb command',
+                                                    'Kopier adb-kommando',
+                                                  ),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      if (relayUrl != null && relayRoomKey != null) ...<Widget>[
+                        const SizedBox(height: 8),
+                        Theme(
+                          data: Theme.of(context).copyWith(
+                            dividerColor: Colors.transparent,
+                            splashColor: AppTheme.gold.withValues(alpha: 0.08),
+                          ),
+                          child: ExpansionTile(
+                            tilePadding: EdgeInsets.zero,
+                            childrenPadding: EdgeInsets.zero,
+                            collapsedIconColor: AppTheme.gold,
+                            iconColor: AppTheme.gold,
+                            title: Text(
+                              tr(
+                                widget.language,
+                                'Relay join details',
+                                'Relay-detaljer',
+                              ),
+                              style: TextStyle(
+                                color: AppTheme.cream.withValues(alpha: 0.76),
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                              ),
+                            ),
+                            children: <Widget>[
+                              DecoratedBox(
+                                decoration: BoxDecoration(
+                                  color: AppTheme.charcoal.withValues(
+                                    alpha: 0.42,
+                                  ),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: AppTheme.gold.withValues(
+                                      alpha: 0.18,
+                                    ),
+                                  ),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 10,
+                                  ),
+                                  child: Column(
+                                    children: <Widget>[
+                                      Text(
+                                        tr(language, 'Relay URL', 'Relay-URL'),
+                                        style: TextStyle(
+                                          color: AppTheme.cream.withValues(
+                                            alpha: 0.68,
+                                          ),
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      SelectableText(
+                                        relayUrl,
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                          color: AppTheme.gold,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        tr(language, 'Room key', 'Romkode'),
+                                        style: TextStyle(
+                                          color: AppTheme.cream.withValues(
+                                            alpha: 0.68,
+                                          ),
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      SelectableText(
+                                        relayRoomKey,
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                          color: AppTheme.gold,
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                _surfaceCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        tr(language, 'Players', 'Spillere'),
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        tr(
+                          widget.language,
+                          '$connectedCount seats connected',
+                          '$connectedCount plasser tilkoblet',
+                        ),
+                        style: TextStyle(
+                          color: AppTheme.cream.withValues(alpha: 0.64),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ...view.players.asMap().entries.map((
+                        MapEntry<int, HostedPublicPlayer> entry,
+                      ) {
+                        final HostedPublicPlayer player = entry.value;
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: AppTheme.surfaceHigh,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: player.connected
+                                    ? AppTheme.success.withValues(alpha: 0.28)
+                                    : AppTheme.danger.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 9,
+                              ),
+                              child: Row(
+                                children: <Widget>[
+                                  CircleAvatar(
+                                    radius: 17,
+                                    backgroundColor: AppTheme.deepGreen,
+                                    foregroundColor: AppTheme.gold,
+                                    child: Text('${entry.key + 1}'),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: <Widget>[
+                                        Text(
+                                          player.name,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            color: AppTheme.cream,
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                        ),
+                                        if (player.isHost) ...<Widget>[
+                                          const SizedBox(height: 4),
+                                          _tag(
+                                            tr(language, 'Host', 'Vert'),
+                                            AppTheme.gold,
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  _tag(
+                                    player.connected
+                                        ? tr(language, 'Connected', 'Tilkoblet')
+                                        : tr(
+                                            widget.language,
+                                            'Disconnected',
+                                            'Frakoblet',
+                                          ),
+                                    player.connected
+                                        ? AppTheme.success
+                                        : AppTheme.danger,
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: const Color(0xFFE5D4BE),
-                              child: Text('${entry.key + 1}'),
-                            ),
-                            title: Row(
-                              children: <Widget>[
-                                Expanded(child: Text(player.name)),
-                                if (player.isHost)
-                                  _tag(
-                                    tr(language, 'Host', 'Vert'),
-                                    const Color(0xFF1C6A43),
-                                  ),
-                              ],
-                            ),
-                            trailing: _tag(
-                              player.connected
-                                  ? tr(language, 'Connected', 'Tilkoblet')
-                                  : tr(language, 'Disconnected', 'Frakoblet'),
-                              player.connected
-                                  ? const Color(0xFF1B8A49)
-                                  : const Color(0xFFB93838),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                if (projection.canUseHostTools)
+                  _surfaceCard(
+                    color: AppTheme.deepGreen,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        FilledButton.icon(
+                          onPressed: widget.controller.startHostedGame,
+                          icon: const Icon(Icons.play_arrow),
+                          style: FilledButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                          label: Text(
+                            tr(
+                              widget.language,
+                              'Start hosted game',
+                              'Start hostet spill',
                             ),
                           ),
                         ),
-                      );
-                    }),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-              if (projection.canUseHostTools)
-                FilledButton.icon(
-                  onPressed: widget.controller.startHostedGame,
-                  icon: const Icon(Icons.play_arrow),
-                  label: Text(
-                    tr(language, 'Start hosted game', 'Start hostet spill'),
-                  ),
-                )
-              else
-                _surfaceCard(
-                  child: Text(
-                    tr(
-                      language,
-                      'Waiting for host to start the game.',
-                      'Venter pa at verten starter spillet.',
+                        const SizedBox(height: 8),
+                        Text(
+                          tr(
+                            widget.language,
+                            'Game will start for all connected players.',
+                            'Spillet starter for alle tilkoblede spillere.',
+                          ),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: AppTheme.cream.withValues(alpha: 0.62),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  _surfaceCard(
+                    child: Text(
+                      tr(
+                        widget.language,
+                        'Waiting for host to start the game.',
+                        'Venter på at verten starter spillet.',
+                      ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -645,190 +984,199 @@ class _HostedSessionViewState extends State<HostedSessionView>
         pending != null && pending.sourcePlayerId == projection.viewerPlayerId;
     final bool blocked = pending != null;
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: () {
-            widget.controller.leaveSession();
-            widget.onBackToModeChooser();
-          },
-          icon: const Icon(Icons.arrow_back),
-        ),
-        title: Text('Hosted - PIN ${view.sessionPin}'),
-        actions: <Widget>[
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: Center(child: _connectionChip(_connectionVisual(status))),
+    return _withTopLevelBack(
+      onBack: _leaveSessionAndReturnToModes,
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            tooltip: tr(language, 'Back to mode chooser', 'Tilbake til valg'),
+            onPressed: _leaveSessionAndReturnToModes,
+            icon: const Icon(Icons.arrow_back),
           ),
-          if (projection.canUseHostTools)
-            IconButton(
-              onPressed: connected ? _showAutoPlaySheet : null,
-              icon: const Icon(Icons.smart_toy),
-            ),
-          if (projection.canUseHostTools)
-            IconButton(
-              onPressed: _showLogSheet,
-              icon: const Icon(Icons.article),
-            ),
-          if (projection.canUseHostTools)
-            IconButton(
-              onPressed: connected
-                  ? widget.controller.resetHostedGameToLobby
-                  : null,
-              icon: const Icon(Icons.restart_alt),
-            ),
-        ],
-      ),
-      body: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: <Color>[Color(0xFFEFE2D2), Color(0xFFE4CFB8)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+          title: Text(
+            tr(language, 'Hosted', 'Hostet'),
+            overflow: TextOverflow.ellipsis,
           ),
+          actions: <Widget>[
+            Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: Center(child: _connectionBadge(_connectionVisual(status))),
+            ),
+            if (projection.canUseHostTools)
+              IconButton(
+                tooltip: tr(language, 'Auto play', 'Autospill'),
+                onPressed: connected ? _showAutoPlaySheet : null,
+                icon: const Icon(Icons.smart_toy),
+              ),
+            if (projection.canUseHostTools)
+              IconButton(
+                tooltip: tr(language, 'Game log', 'Spilllogg'),
+                onPressed: _showLogSheet,
+                icon: const Icon(Icons.article),
+              ),
+            if (projection.canUseHostTools)
+              IconButton(
+                tooltip: tr(
+                  widget.language,
+                  'Reset hosted game',
+                  'Nullstill hostet spill',
+                ),
+                onPressed: connected
+                    ? widget.controller.resetHostedGameToLobby
+                    : null,
+                icon: const Icon(Icons.restart_alt),
+              ),
+          ],
         ),
-        child: SafeArea(
-          child: LayoutBuilder(
-            builder: (BuildContext context, BoxConstraints constraints) {
-              return SingleChildScrollView(
-                padding: const EdgeInsets.all(12),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: <Widget>[
-                      _surfaceCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Wrap(
-                              spacing: 10,
-                              runSpacing: 10,
-                              children: <Widget>[
-                                _phaseChip(
-                                  icon: Icons.style,
-                                  label: phaseLabel(
-                                    language,
-                                    view.phase,
-                                    view.warmupRound,
-                                  ),
-                                ),
-                                _phaseChip(
-                                  icon: Icons.person,
-                                  label: _turnText(
-                                    language: language,
-                                    view: view,
-                                    myTurn: myTurn,
-                                    viewerName: projection.viewerName,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              tr(
-                                language,
-                                'You are ${projection.viewerName}.',
-                                'Du er ${projection.viewerName}.',
-                              ),
-                              style: const TextStyle(
-                                color: Color(0xFF5B422D),
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (status !=
-                          HostedConnectionStatus.connected) ...<Widget>[
-                        const SizedBox(height: 8),
+        body: DecoratedBox(
+          decoration: AppTheme.tableBackground(),
+          child: SafeArea(
+            child: LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) {
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.all(12),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
                         _surfaceCard(
-                          color: const Color(0xFFFFF3DE),
-                          child: Row(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
-                              Icon(
-                                _connectionVisual(status).icon,
-                                color: _connectionVisual(status).color,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  _connectionVisual(status).subtitle,
-                                  style: TextStyle(
-                                    color: _connectionVisual(status).color,
-                                    fontWeight: FontWeight.w700,
+                              Wrap(
+                                spacing: 10,
+                                runSpacing: 10,
+                                children: <Widget>[
+                                  _phaseChip(
+                                    icon: Icons.style,
+                                    label: phaseLabel(
+                                      widget.language,
+                                      view.phase,
+                                      view.warmupRound,
+                                    ),
                                   ),
+                                  _phaseChip(
+                                    icon: Icons.person,
+                                    label: _turnText(
+                                      language: language,
+                                      view: view,
+                                      myTurn: myTurn,
+                                      viewerName: projection.viewerName,
+                                    ),
+                                  ),
+                                  _phaseChip(
+                                    icon: Icons.vpn_key,
+                                    label: 'PIN ${view.sessionPin}',
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                tr(
+                                  widget.language,
+                                  'You are ${projection.viewerName}.',
+                                  'Du er ${projection.viewerName}.',
+                                ),
+                                style: TextStyle(
+                                  color: AppTheme.cream.withValues(alpha: 0.72),
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                      ],
-                      if (view.banner.trim().isNotEmpty) ...<Widget>[
-                        const SizedBox(height: 8),
-                        _bannerCard(view.banner, view.bannerTone),
-                      ],
-                      const SizedBox(height: 10),
-                      _tablePanel(
-                        projection: projection,
-                        connected: connected,
-                        blocked: blocked,
-                        myTurn: myTurn,
-                      ),
-                      if (projection.giveOutPromptDrinks > 0) ...<Widget>[
-                        const SizedBox(height: 8),
-                        _promptCard(
-                          label: tr(
-                            language,
-                            'Give out drinks',
-                            'Del ut drikker',
-                          ),
-                          amount: projection.giveOutPromptDrinks,
-                          color: const Color(0xFF1A8B47),
-                          action: null,
-                        ),
-                      ],
-                      if (projection.drinkPromptDrinks > 0) ...<Widget>[
-                        const SizedBox(height: 8),
-                        _promptCard(
-                          label: tr(language, 'You drink', 'Du drikker'),
-                          amount: projection.drinkPromptDrinks,
-                          color: const Color(0xFFB93838),
-                          action: connected
-                              ? widget.controller.acknowledgeDrinks
-                              : null,
-                        ),
-                      ],
-                      if (isPendingSource) ...<Widget>[
-                        const SizedBox(height: 8),
-                        _distributionCard(pending, view.players, connected),
-                      ],
-                      if (blocked && !isPendingSource) ...<Widget>[
-                        const SizedBox(height: 8),
-                        _surfaceCard(
-                          color: const Color(0xFFF8F2E8),
-                          child: Text(
-                            tr(
-                              language,
-                              'Waiting for another player to distribute drinks.',
-                              'Venter pa at en annen spiller fordeler drikker.',
-                            ),
-                            style: const TextStyle(
-                              color: Color(0xFF684C34),
-                              fontWeight: FontWeight.w700,
+                        if (status !=
+                            HostedConnectionStatus.connected) ...<Widget>[
+                          const SizedBox(height: 8),
+                          _surfaceCard(
+                            child: Row(
+                              children: <Widget>[
+                                Icon(
+                                  _connectionVisual(status).icon,
+                                  color: _connectionVisual(status).color,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    _connectionVisual(status).subtitle,
+                                    style: TextStyle(
+                                      color: _connectionVisual(status).color,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ),
-                      ],
-                      if (view.phase != GamePhase.finished) ...<Widget>[
+                        ],
+                        if (view.banner.trim().isNotEmpty) ...<Widget>[
+                          const SizedBox(height: 8),
+                          _bannerCard(view.banner, view.bannerTone),
+                        ],
                         const SizedBox(height: 10),
-                        _ownHandPanel(projection.ownHand),
+                        _tablePanel(
+                          projection: projection,
+                          connected: connected,
+                          blocked: blocked,
+                          myTurn: myTurn,
+                        ),
+                        if (projection.giveOutPromptDrinks > 0) ...<Widget>[
+                          const SizedBox(height: 8),
+                          _promptCard(
+                            label: tr(
+                              widget.language,
+                              'Give out drinks',
+                              'Del ut drikker',
+                            ),
+                            amount: projection.giveOutPromptDrinks,
+                            color: AppTheme.success,
+                            action: null,
+                          ),
+                        ],
+                        if (projection.drinkPromptDrinks > 0) ...<Widget>[
+                          const SizedBox(height: 8),
+                          _promptCard(
+                            label: tr(language, 'You drink', 'Du drikker'),
+                            amount: projection.drinkPromptDrinks,
+                            color: AppTheme.danger,
+                            action: connected
+                                ? widget.controller.acknowledgeDrinks
+                                : null,
+                          ),
+                        ],
+                        if (isPendingSource) ...<Widget>[
+                          const SizedBox(height: 8),
+                          _distributionCard(pending, view.players, connected),
+                        ],
+                        if (blocked && !isPendingSource) ...<Widget>[
+                          const SizedBox(height: 8),
+                          _surfaceCard(
+                            child: Text(
+                              tr(
+                                widget.language,
+                                'Waiting for another player to distribute drinks.',
+                                'Venter på at en annen spiller fordeler drikker.',
+                              ),
+                              style: TextStyle(
+                                color: AppTheme.cream.withValues(alpha: 0.76),
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                        if (view.phase != GamePhase.finished) ...<Widget>[
+                          const SizedBox(height: 10),
+                          _ownHandPanel(projection.ownHand),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
       ),
@@ -838,21 +1186,21 @@ class _HostedSessionViewState extends State<HostedSessionView>
   Widget _phaseChip({required IconData icon, required String label}) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F1E6),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2C2A8)),
+        color: AppTheme.surfaceHigh,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.gold.withValues(alpha: 0.24)),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Icon(icon, size: 18, color: const Color(0xFFA45A35)),
+            Icon(icon, size: 18, color: AppTheme.gold),
             const SizedBox(width: 8),
             Text(
               label,
               style: const TextStyle(
-                color: Color(0xFF5F4229),
+                color: AppTheme.cream,
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -870,21 +1218,21 @@ class _HostedSessionViewState extends State<HostedSessionView>
       IconData icon,
     ) = switch (tone) {
       BannerTone.success => (
-        const Color(0xFFE0F0E0),
-        const Color(0xFF2F9A57),
-        const Color(0xFF20663B),
+        AppTheme.success.withValues(alpha: 0.14),
+        AppTheme.success.withValues(alpha: 0.56),
+        AppTheme.success,
         Icons.check_circle_outline,
       ),
       BannerTone.fail => (
-        const Color(0xFFF6E4DE),
-        const Color(0xFFD26D5F),
-        const Color(0xFF8F3A2F),
+        AppTheme.danger.withValues(alpha: 0.15),
+        AppTheme.danger.withValues(alpha: 0.58),
+        AppTheme.danger,
         Icons.error_outline,
       ),
       _ => (
-        const Color(0xFFF5ECDC),
-        const Color(0xFFD3B18A),
-        const Color(0xFF6A4D2F),
+        AppTheme.gold.withValues(alpha: 0.13),
+        AppTheme.gold.withValues(alpha: 0.46),
+        AppTheme.gold,
         Icons.info_outline,
       ),
     };
@@ -944,17 +1292,20 @@ class _HostedSessionViewState extends State<HostedSessionView>
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(24),
         gradient: const LinearGradient(
-          colors: <Color>[Color(0xFF226C4D), Color(0xFF1A563D)],
+          colors: <Color>[AppTheme.deepGreen, AppTheme.feltGreen],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        border: Border.all(color: const Color(0xFF6D432D), width: 1.6),
+        border: Border.all(
+          color: AppTheme.gold.withValues(alpha: 0.32),
+          width: 1.2,
+        ),
         boxShadow: const <BoxShadow>[
           BoxShadow(
-            color: Color(0x26000000),
-            blurRadius: 18,
+            color: Color(0x4D000000),
+            blurRadius: 22,
             offset: Offset(0, 12),
           ),
         ],
@@ -969,7 +1320,7 @@ class _HostedSessionViewState extends State<HostedSessionView>
                 Text(
                   sectionTitle,
                   style: const TextStyle(
-                    color: Color(0xFFF8E9D8),
+                    color: AppTheme.cream,
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
                   ),
@@ -978,7 +1329,7 @@ class _HostedSessionViewState extends State<HostedSessionView>
                 if (view.busRunnerPlayerId != null)
                   _tag(
                     _nameForPlayer(view.players, view.busRunnerPlayerId),
-                    const Color(0xFFE2B356),
+                    AppTheme.gold,
                   ),
               ],
             ),
@@ -1046,17 +1397,17 @@ class _HostedSessionViewState extends State<HostedSessionView>
         final bool activeTurn = currentTurnPlayerId == player.playerId;
         final bool isViewer = player.playerId == viewerPlayerId;
         final Color color = !player.connected
-            ? const Color(0xFF8A6E64)
+            ? AppTheme.surfaceHigh
             : activeTurn
-            ? const Color(0xFF2E9C5B)
+            ? AppTheme.success
             : isViewer
-            ? const Color(0xFFE2B356)
-            : const Color(0xFFF2E8D5);
+            ? AppTheme.gold
+            : AppTheme.surfaceHigh;
         final Color textColor = !player.connected
-            ? const Color(0xFFEBD8D1)
+            ? AppTheme.cream.withValues(alpha: 0.56)
             : (activeTurn || isViewer)
-            ? const Color(0xFF183728)
-            : const Color(0xFF5E422D);
+            ? AppTheme.charcoal
+            : AppTheme.cream;
         final String label =
             '${player.name} - ${player.handCount} ${tr(widget.language, 'cards', 'kort')}';
         return DecoratedBox(
@@ -1065,8 +1416,8 @@ class _HostedSessionViewState extends State<HostedSessionView>
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: activeTurn
-                  ? const Color(0xFFA3E2B9)
-                  : const Color(0x40FFFFFF),
+                  ? AppTheme.cream.withValues(alpha: 0.7)
+                  : AppTheme.gold.withValues(alpha: 0.16),
             ),
           ),
           child: Padding(
@@ -1101,17 +1452,33 @@ class _HostedSessionViewState extends State<HostedSessionView>
 
   Widget _ownHandPanel(List<PlayingCard> hand) {
     return _surfaceCard(
-      color: const Color(0xFF1F4A38),
+      color: AppTheme.deepGreen,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(
-            tr(widget.language, 'Your hand', 'Din hand'),
-            style: const TextStyle(
-              color: Color(0xFFF6EFE3),
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-            ),
+          Row(
+            children: <Widget>[
+              const Icon(Icons.style, color: AppTheme.gold, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  tr(widget.language, 'Your hand', 'Din hånd'),
+                  style: const TextStyle(
+                    color: AppTheme.cream,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              _tag(
+                tr(
+                  widget.language,
+                  '${hand.length} cards',
+                  '${hand.length} kort',
+                ),
+                AppTheme.gold,
+              ),
+            ],
           ),
           const SizedBox(height: 6),
           SizedBox(
@@ -1120,7 +1487,9 @@ class _HostedSessionViewState extends State<HostedSessionView>
                 ? Center(
                     child: Text(
                       tr(widget.language, 'No cards yet', 'Ingen kort ennå'),
-                      style: const TextStyle(color: Color(0xFFE9DDCA)),
+                      style: TextStyle(
+                        color: AppTheme.cream.withValues(alpha: 0.72),
+                      ),
                     ),
                   )
                 : LayoutBuilder(
@@ -1179,12 +1548,15 @@ class _HostedSessionViewState extends State<HostedSessionView>
     required VoidCallback? action,
   }) {
     return FadeTransition(
-      opacity: CurvedAnimation(parent: _flash, curve: Curves.easeInOut),
+      opacity: CurvedAnimation(
+        parent: _flashController,
+        curve: Curves.easeInOut,
+      ),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withValues(alpha: 0.55), width: 1.2),
+          color: AppTheme.surfaceHigh,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withValues(alpha: 0.58), width: 1.2),
           boxShadow: <BoxShadow>[
             BoxShadow(
               color: color.withValues(alpha: 0.18),
@@ -1201,12 +1573,20 @@ class _HostedSessionViewState extends State<HostedSessionView>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text(
-                      label,
-                      style: TextStyle(
-                        color: color,
-                        fontWeight: FontWeight.w800,
-                      ),
+                    Row(
+                      children: <Widget>[
+                        Icon(Icons.local_bar, color: color, size: 18),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            label,
+                            style: TextStyle(
+                              color: color,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     Text(
                       '$amount',
@@ -1245,7 +1625,7 @@ class _HostedSessionViewState extends State<HostedSessionView>
     final int remain = pending.remainingDrinks - draftTotal;
 
     return _surfaceCard(
-      color: const Color(0xFFF1E7D8),
+      color: AppTheme.surface,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -1257,16 +1637,21 @@ class _HostedSessionViewState extends State<HostedSessionView>
             ),
             style: const TextStyle(
               fontWeight: FontWeight.w900,
-              color: Color(0xFF5B422D),
+              color: AppTheme.cream,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             pending.reason,
-            style: const TextStyle(
-              color: Color(0xFF846145),
+            style: TextStyle(
+              color: AppTheme.cream.withValues(alpha: 0.66),
               fontWeight: FontWeight.w600,
             ),
+          ),
+          const SizedBox(height: 6),
+          _tag(
+            tr(widget.language, '$remain unassigned', '$remain ufordelt'),
+            remain == 0 ? AppTheme.success : AppTheme.gold,
           ),
           const SizedBox(height: 8),
           for (final HostedPublicPlayer player in targets)
@@ -1274,9 +1659,11 @@ class _HostedSessionViewState extends State<HostedSessionView>
               padding: const EdgeInsets.only(bottom: 8),
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF9F4EC),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE3CFB8)),
+                  color: AppTheme.surfaceHigh,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: AppTheme.gold.withValues(alpha: 0.14),
+                  ),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
@@ -1289,12 +1676,17 @@ class _HostedSessionViewState extends State<HostedSessionView>
                         child: Text(
                           player.name,
                           style: const TextStyle(
-                            color: Color(0xFF5B422D),
+                            color: AppTheme.cream,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
                       ),
                       IconButton(
+                        tooltip: tr(
+                          widget.language,
+                          'Remove one drink from ${player.name}',
+                          'Fjern én drikk fra ${player.name}',
+                        ),
                         onPressed: !enabled
                             ? null
                             : () {
@@ -1316,16 +1708,21 @@ class _HostedSessionViewState extends State<HostedSessionView>
                                 });
                               },
                         icon: const Icon(Icons.remove_circle_outline),
-                        color: const Color(0xFFA45A35),
+                        color: AppTheme.gold,
                       ),
                       Text(
                         '${_draftTargets[player.playerId] ?? 0}',
                         style: const TextStyle(
                           fontWeight: FontWeight.w800,
-                          color: Color(0xFF5B422D),
+                          color: AppTheme.cream,
                         ),
                       ),
                       IconButton(
+                        tooltip: tr(
+                          widget.language,
+                          'Add one drink to ${player.name}',
+                          'Legg én drikk til ${player.name}',
+                        ),
                         onPressed: !enabled || remain <= 0
                             ? null
                             : () {
@@ -1339,7 +1736,7 @@ class _HostedSessionViewState extends State<HostedSessionView>
                                 });
                               },
                         icon: const Icon(Icons.add_circle_outline),
-                        color: const Color(0xFFA45A35),
+                        color: AppTheme.gold,
                       ),
                     ],
                   ),
@@ -1357,8 +1754,8 @@ class _HostedSessionViewState extends State<HostedSessionView>
                     });
                   },
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFFA45A35),
-              foregroundColor: Colors.white,
+              backgroundColor: AppTheme.gold,
+              foregroundColor: AppTheme.charcoal,
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
             icon: const Icon(Icons.send),
@@ -1409,9 +1806,9 @@ class _HostedSessionViewState extends State<HostedSessionView>
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        color: const Color(0xAA143E2D),
-        border: Border.all(color: const Color(0x66FFD89A)),
+        borderRadius: BorderRadius.circular(18),
+        color: AppTheme.charcoal.withValues(alpha: 0.34),
+        border: Border.all(color: AppTheme.gold.withValues(alpha: 0.24)),
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
@@ -1421,7 +1818,7 @@ class _HostedSessionViewState extends State<HostedSessionView>
             Text(
               title,
               style: const TextStyle(
-                color: Color(0xFFF8E9D8),
+                color: AppTheme.cream,
                 fontWeight: FontWeight.w900,
               ),
             ),
@@ -1443,8 +1840,8 @@ class _HostedSessionViewState extends State<HostedSessionView>
                             ? () => widget.controller.submitWarmupGuess(guess)
                             : null,
                         style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFFF3C978),
-                          foregroundColor: const Color(0xFF513514),
+                          backgroundColor: AppTheme.gold,
+                          foregroundColor: AppTheme.charcoal,
                           padding: const EdgeInsets.symmetric(vertical: 15),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18),
@@ -1485,9 +1882,9 @@ class _HostedSessionViewState extends State<HostedSessionView>
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        color: const Color(0xAA143E2D),
-        border: Border.all(color: const Color(0x66FFD89A)),
+        borderRadius: BorderRadius.circular(18),
+        color: AppTheme.charcoal.withValues(alpha: 0.34),
+        border: Border.all(color: AppTheme.gold.withValues(alpha: 0.24)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -1497,7 +1894,7 @@ class _HostedSessionViewState extends State<HostedSessionView>
             Text(
               tr(widget.language, 'Pyramid reveal', 'Pyramideavdekking'),
               style: const TextStyle(
-                color: Color(0xFFF8E9D8),
+                color: AppTheme.cream,
                 fontWeight: FontWeight.w900,
               ),
             ),
@@ -1577,9 +1974,9 @@ class _HostedSessionViewState extends State<HostedSessionView>
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        color: const Color(0xAA143E2D),
-        border: Border.all(color: const Color(0x66FFD89A)),
+        borderRadius: BorderRadius.circular(18),
+        color: AppTheme.charcoal.withValues(alpha: 0.34),
+        border: Border.all(color: AppTheme.gold.withValues(alpha: 0.24)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -1589,7 +1986,7 @@ class _HostedSessionViewState extends State<HostedSessionView>
             Text(
               tr(widget.language, 'Pyramid reveal', 'Pyramideavdekking'),
               style: const TextStyle(
-                color: Color(0xFFF8E9D8),
+                color: AppTheme.cream,
                 fontWeight: FontWeight.w900,
               ),
             ),
@@ -1602,8 +1999,8 @@ class _HostedSessionViewState extends State<HostedSessionView>
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: canReveal
-                          ? const Color(0xFFE9C172)
-                          : const Color(0x66FFFFFF),
+                          ? AppTheme.gold
+                          : AppTheme.cream.withValues(alpha: 0.34),
                       width: canReveal ? 2 : 1,
                     ),
                   ),
@@ -1629,7 +2026,7 @@ class _HostedSessionViewState extends State<HostedSessionView>
                           ? 'Tap deck to reveal next pyramid card.'
                           : 'Host reveals next pyramid card from the deck.',
                       canReveal
-                          ? 'Trykk stokken for a avslore neste pyramidekort.'
+                          ? 'Trykk stokken for å avsløre neste pyramidekort.'
                           : 'Verten avdekker neste pyramidekort fra stokken.',
                     )
                   : tr(
@@ -1637,8 +2034,8 @@ class _HostedSessionViewState extends State<HostedSessionView>
                       'All pyramid cards are revealed.',
                       'Alle pyramidekort er avdekket.',
                     ),
-              style: const TextStyle(
-                color: Color(0xFFF2E7D7),
+              style: TextStyle(
+                color: AppTheme.cream.withValues(alpha: 0.74),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -1646,8 +2043,10 @@ class _HostedSessionViewState extends State<HostedSessionView>
             DecoratedBox(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(18),
-                color: const Color(0x33000000),
-                border: Border.all(color: const Color(0x38FFFFFF)),
+                color: AppTheme.charcoal.withValues(alpha: 0.32),
+                border: Border.all(
+                  color: AppTheme.cream.withValues(alpha: 0.14),
+                ),
               ),
               child: Padding(
                 padding: const EdgeInsets.symmetric(
@@ -1688,11 +2087,15 @@ class _HostedSessionViewState extends State<HostedSessionView>
       height: 74,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
-        color: const Color(0x22313C34),
-        border: Border.all(color: const Color(0x44FFFFFF)),
+        color: AppTheme.surface.withValues(alpha: 0.48),
+        border: Border.all(color: AppTheme.cream.withValues(alpha: 0.18)),
       ),
-      child: const Center(
-        child: Icon(Icons.circle, size: 8, color: Color(0x55FFFFFF)),
+      child: Center(
+        child: Icon(
+          Icons.circle,
+          size: 8,
+          color: AppTheme.cream.withValues(alpha: 0.28),
+        ),
       ),
     );
   }
@@ -1707,9 +2110,9 @@ class _HostedSessionViewState extends State<HostedSessionView>
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        color: const Color(0xAA143E2D),
-        border: Border.all(color: const Color(0x66FFD89A)),
+        borderRadius: BorderRadius.circular(18),
+        color: AppTheme.charcoal.withValues(alpha: 0.34),
+        border: Border.all(color: AppTheme.gold.withValues(alpha: 0.24)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -1719,7 +2122,7 @@ class _HostedSessionViewState extends State<HostedSessionView>
             Text(
               tr(widget.language, 'Tie-break reveal', 'Tie-break-avdekking'),
               style: const TextStyle(
-                color: Color(0xFFF8E9D8),
+                color: AppTheme.cream,
                 fontWeight: FontWeight.w900,
               ),
             ),
@@ -1757,7 +2160,7 @@ class _HostedSessionViewState extends State<HostedSessionView>
                       player?.name ??
                           '${tr(widget.language, 'Player', 'Spiller')} ${playerIndex + 1}',
                       style: const TextStyle(
-                        color: Color(0xFFF2E7D7),
+                        color: AppTheme.cream,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -1778,8 +2181,8 @@ class _HostedSessionViewState extends State<HostedSessionView>
               FilledButton.icon(
                 onPressed: onRunRound,
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFFF3C978),
-                  foregroundColor: const Color(0xFF513514),
+                  backgroundColor: AppTheme.gold,
+                  foregroundColor: AppTheme.charcoal,
                 ),
                 icon: const Icon(Icons.casino),
                 label: Text(
@@ -1814,9 +2217,9 @@ class _HostedSessionViewState extends State<HostedSessionView>
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        color: const Color(0xAA143E2D),
-        border: Border.all(color: const Color(0x66FFD89A)),
+        borderRadius: BorderRadius.circular(18),
+        color: AppTheme.charcoal.withValues(alpha: 0.34),
+        border: Border.all(color: AppTheme.gold.withValues(alpha: 0.24)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -1826,7 +2229,7 @@ class _HostedSessionViewState extends State<HostedSessionView>
             Text(
               tr(widget.language, 'Bus route (public)', 'Bussrute (offentlig)'),
               style: const TextStyle(
-                color: Color(0xFFF8E9D8),
+                color: AppTheme.cream,
                 fontWeight: FontWeight.w900,
               ),
             ),
@@ -1848,8 +2251,8 @@ class _HostedSessionViewState extends State<HostedSessionView>
                       'Deck: ${route.deckCount}',
                       'Stokk: ${route.deckCount}',
                     ),
-                    style: const TextStyle(
-                      color: Color(0xFFF2E7D7),
+                    style: TextStyle(
+                      color: AppTheme.cream.withValues(alpha: 0.74),
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -1880,13 +2283,13 @@ class _HostedSessionViewState extends State<HostedSessionView>
                             decoration: BoxDecoration(
                               border: Border.all(
                                 color: isActive
-                                    ? const Color(0xFFE2B356)
-                                    : const Color(0x28000000),
+                                    ? AppTheme.gold
+                                    : AppTheme.cream.withValues(alpha: 0.10),
                                 width: isActive ? 2.2 : 1.0,
                               ),
                               borderRadius: BorderRadius.circular(14),
                               color: isActive
-                                  ? const Color(0x22FFD88A)
+                                  ? AppTheme.gold.withValues(alpha: 0.10)
                                   : Colors.transparent,
                             ),
                             child: Padding(
@@ -1911,7 +2314,7 @@ class _HostedSessionViewState extends State<HostedSessionView>
               Center(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8E8D3).withValues(alpha: 0.92),
+                    color: AppTheme.gold.withValues(alpha: 0.92),
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: const <BoxShadow>[
                       BoxShadow(
@@ -1929,7 +2332,7 @@ class _HostedSessionViewState extends State<HostedSessionView>
                     child: Text(
                       tr(widget.language, 'Route finished', 'Rute ferdig'),
                       style: const TextStyle(
-                        color: Color(0xFF50301F),
+                        color: AppTheme.charcoal,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
@@ -1946,8 +2349,8 @@ class _HostedSessionViewState extends State<HostedSessionView>
                       onPressed: () =>
                           widget.controller.beginBusRoute(BusStartSide.left),
                       style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFFF3C978),
-                        foregroundColor: const Color(0xFF513514),
+                        backgroundColor: AppTheme.gold,
+                        foregroundColor: AppTheme.charcoal,
                       ),
                       child: Text(
                         tr(widget.language, 'Start left', 'Start venstre'),
@@ -1960,11 +2363,11 @@ class _HostedSessionViewState extends State<HostedSessionView>
                       onPressed: () =>
                           widget.controller.beginBusRoute(BusStartSide.right),
                       style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFFF3C978),
-                        foregroundColor: const Color(0xFF513514),
+                        backgroundColor: AppTheme.gold,
+                        foregroundColor: AppTheme.charcoal,
                       ),
                       child: Text(
-                        tr(widget.language, 'Start right', 'Start hoyre'),
+                        tr(widget.language, 'Start right', 'Start høyre'),
                       ),
                     ),
                   ),
@@ -1981,8 +2384,8 @@ class _HostedSessionViewState extends State<HostedSessionView>
                       (BusGuess guess) => FilledButton(
                         onPressed: () => widget.controller.playBusGuess(guess),
                         style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFFF3C978),
-                          foregroundColor: const Color(0xFF513514),
+                          backgroundColor: AppTheme.gold,
+                          foregroundColor: AppTheme.charcoal,
                         ),
                         child: Text(busGuessLabel(widget.language, guess)),
                       ),
@@ -1998,8 +2401,8 @@ class _HostedSessionViewState extends State<HostedSessionView>
                   'Public view only. $runnerName is actively playing the bus route.',
                   'Offentlig visning. $runnerName spiller bussruta aktivt.',
                 ),
-                style: const TextStyle(
-                  color: Color(0xFFF2E7D7),
+                style: TextStyle(
+                  color: AppTheme.cream.withValues(alpha: 0.74),
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -2172,13 +2575,15 @@ class _HostedSessionViewState extends State<HostedSessionView>
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(radius),
         border: Border.all(
-          color: back ? const Color(0xFFB8CBE0) : const Color(0xFFCEBCA8),
+          color: back
+              ? AppTheme.gold.withValues(alpha: 0.42)
+              : const Color(0xFFCEBCA8),
           width: emphasized ? 1.4 : 1.0,
         ),
-        color: back ? const Color(0xFF163E5A) : const Color(0xFFFFFCF7),
+        color: back ? AppTheme.deepGreen : const Color(0xFFFFFCF7),
         gradient: back
             ? const LinearGradient(
-                colors: <Color>[Color(0xFF214B4A), Color(0xFF132B35)],
+                colors: <Color>[AppTheme.feltGreen, AppTheme.charcoal],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               )
@@ -2273,7 +2678,7 @@ class _HostedSessionViewState extends State<HostedSessionView>
           child: DecoratedBox(
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: <Color>[Color(0xFF224F4E), Color(0xFF17313F)],
+                colors: <Color>[AppTheme.deepGreen, AppTheme.charcoal],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -2315,7 +2720,7 @@ class _HostedSessionViewState extends State<HostedSessionView>
           child: DecoratedBox(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(999),
-              color: const Color(0x33FFE08F),
+              color: AppTheme.gold.withValues(alpha: 0.2),
             ),
             child: const SizedBox(height: 3),
           ),
@@ -2337,7 +2742,7 @@ class _HostedSessionViewState extends State<HostedSessionView>
             quarterTurns: 1,
             child: Icon(
               Icons.directions_bus_filled_rounded,
-              color: Color(0xFFFFD155),
+              color: AppTheme.gold,
               size: 22,
             ),
           ),
@@ -2359,40 +2764,54 @@ class _HostedSessionViewState extends State<HostedSessionView>
     }
   }
 
-  Widget _surfaceCard({required Widget child, Color? color}) {
+  Widget _surfaceCard({
+    required Widget child,
+    Color? color,
+    EdgeInsetsGeometry padding = const EdgeInsets.all(14),
+  }) {
+    final Color background = color ?? AppTheme.surface;
+    final bool lightSurface =
+        ThemeData.estimateBrightnessForColor(background) == Brightness.light;
+    final Color foreground = lightSurface ? AppTheme.charcoal : AppTheme.cream;
+    final Color border = lightSurface
+        ? AppTheme.copper.withValues(alpha: 0.22)
+        : AppTheme.gold.withValues(alpha: 0.22);
+
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: color ?? const Color(0xFFF7F0E6),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFFDF8F0)),
+        color: background,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: border),
         boxShadow: const <BoxShadow>[
           BoxShadow(
-            color: Color(0x14000000),
+            color: Color(0x33000000),
             blurRadius: 18,
-            offset: Offset(0, 9),
+            offset: Offset(0, 10),
           ),
         ],
       ),
-      child: Padding(padding: const EdgeInsets.all(12), child: child),
+      child: IconTheme.merge(
+        data: IconThemeData(color: foreground),
+        child: DefaultTextStyle.merge(
+          style: TextStyle(color: foreground),
+          child: Padding(padding: padding, child: child),
+        ),
+      ),
     );
   }
 
-  Widget _connectionChip(_ConnectionVisual visual) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(99),
-        color: visual.color.withValues(alpha: 0.12),
-        border: Border.all(color: visual.color.withValues(alpha: 0.5)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        child: Text(
-          visual.title,
-          style: TextStyle(
-            color: visual.color,
-            fontWeight: FontWeight.w700,
-            fontSize: 12,
-          ),
+  Widget _connectionBadge(_ConnectionVisual visual) {
+    return Tooltip(
+      message: visual.title,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(99),
+          color: visual.color.withValues(alpha: 0.12),
+          border: Border.all(color: visual.color.withValues(alpha: 0.5)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Icon(visual.icon, color: visual.color, size: 18),
         ),
       ),
     );
@@ -2431,12 +2850,12 @@ class _HostedSessionViewState extends State<HostedSessionView>
     final String actor = _nameForPlayer(view.players, view.currentTurnPlayerId);
     if (actor.isEmpty) {
       return tr(
-        language,
+        widget.language,
         'Waiting for next action',
-        'Venter pa neste handling',
+        'Venter på neste handling',
       );
     }
-    return tr(language, 'Waiting for $actor', 'Venter pa $actor');
+    return tr(language, 'Waiting for $actor', 'Venter på $actor');
   }
 
   String _nameForPlayer(List<HostedPublicPlayer> players, int? playerId) {
@@ -2456,66 +2875,66 @@ class _HostedSessionViewState extends State<HostedSessionView>
     return switch (status) {
       HostedConnectionStatus.idle => _ConnectionVisual(
         icon: Icons.pause_circle_outline,
-        color: const Color(0xFF6F6F6F),
+        color: AppTheme.cream.withValues(alpha: 0.62),
         title: tr(language, 'Idle', 'Inaktiv'),
         subtitle: tr(
-          language,
+          widget.language,
           'Not connected to a hosted session.',
           'Ikke koblet til en hostet sesjon.',
         ),
       ),
       HostedConnectionStatus.joining => _ConnectionVisual(
         icon: Icons.sync,
-        color: const Color(0xFF335E98),
+        color: AppTheme.gold,
         title: tr(language, 'Joining', 'Kobler til'),
         subtitle: tr(
-          language,
+          widget.language,
           'Joining host session.',
           'Kobler til host-sesjon.',
         ),
       ),
       HostedConnectionStatus.connected => _ConnectionVisual(
         icon: Icons.wifi,
-        color: const Color(0xFF1B8A49),
+        color: AppTheme.success,
         title: tr(language, 'Connected', 'Tilkoblet'),
         subtitle: tr(
-          language,
+          widget.language,
           'Live session is active.',
           'Live sesjon er aktiv.',
         ),
       ),
       HostedConnectionStatus.reconnecting => _ConnectionVisual(
         icon: Icons.wifi_find,
-        color: const Color(0xFF9E6A13),
+        color: AppTheme.copper,
         title: tr(language, 'Reconnecting', 'Kobler til igjen'),
         subtitle: tr(
-          language,
+          widget.language,
           'Trying to reclaim your seat.',
-          'Prover a hente tilbake plassen din.',
+          'Prøver å hente tilbake plassen din.',
         ),
       ),
       HostedConnectionStatus.disconnected => _ConnectionVisual(
         icon: Icons.wifi_off,
-        color: const Color(0xFFB36319),
+        color: AppTheme.copper,
         title: tr(language, 'Disconnected', 'Frakoblet'),
         subtitle: tr(language, 'Connection dropped.', 'Tilkoblingen falt ut.'),
       ),
       HostedConnectionStatus.hostUnavailable => _ConnectionVisual(
         icon: Icons.portable_wifi_off,
-        color: const Color(0xFFB93838),
+        color: AppTheme.danger,
         title: tr(language, 'Host unavailable', 'Vert utilgjengelig'),
         subtitle: tr(
-          language,
+          widget.language,
           'Host cannot be reached.',
           'Finner ikke verten.',
         ),
       ),
       HostedConnectionStatus.sessionClosed => _ConnectionVisual(
         icon: Icons.event_busy,
-        color: const Color(0xFF7A4D9B),
+        color: AppTheme.copper,
         title: tr(language, 'Session closed', 'Sesjon avsluttet'),
         subtitle: tr(
-          language,
+          widget.language,
           'Host ended the session.',
           'Verten avsluttet sesjonen.',
         ),

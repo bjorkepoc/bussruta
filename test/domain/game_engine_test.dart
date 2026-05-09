@@ -191,6 +191,22 @@ void main() {
       expect(next.phase, GamePhase.finished);
       expect(next.banner.toLowerCase(), contains('first try'));
     });
+
+    test('norwegian non-first-try finish text uses native letters', () {
+      final GameEngine engine = GameEngine();
+      final GameState state = busState(
+        progress: 4,
+        firstTry: false,
+        draw: card(Suit.hearts, 6),
+        language: AppLanguage.no,
+      );
+
+      final GameState next = engine.playBusGuess(state, BusGuess.above);
+
+      expect(next.phase, GamePhase.finished);
+      expect(next.banner, 'A fullførte bussruta.');
+      expect(next.banner, isNot(contains('fullforte')));
+    });
   });
 }
 
@@ -202,8 +218,10 @@ GameState busState({
   required int progress,
   required bool firstTry,
   required PlayingCard draw,
+  AppLanguage language = AppLanguage.en,
 }) {
   return GameState.initial().copyWith(
+    language: language,
     phase: GamePhase.bus,
     players: const <PlayerState>[PlayerState(name: 'A', hand: <PlayingCard>[])],
     busRunnerIndex: 0,

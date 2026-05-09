@@ -181,12 +181,12 @@ class GameEngine {
           ? _tr(
               language,
               'Pyramid drinks are reversed: bottom = 5, top = 1.',
-              'Pyramide er reversert: nederst = 5, overst = 1.',
+              'Pyramide er reversert: nederst = 5, øverst = 1.',
             )
           : _tr(
               language,
               'Pyramid drinks are normal: bottom = 1, top = 5.',
-              'Pyramide er normal: nederst = 1, overst = 5.',
+              'Pyramide er normal: nederst = 1, øverst = 5.',
             ),
     );
     _pushLog(
@@ -481,7 +481,7 @@ class GameEngine {
         _tr(
           state.language,
           '${state.players[winner].name} has most cards ($maxCount) and takes bus route.',
-          '${state.players[winner].name} har flest kort ($maxCount) og ma ta bussruta.',
+          '${state.players[winner].name} har flest kort ($maxCount) og må ta bussruta.',
         ),
       );
       return _startBusRoute(state.copyWith(busRunnerIndex: winner, log: logs));
@@ -516,7 +516,7 @@ class GameEngine {
       banner: _tr(
         state.language,
         'Tie-break: deal facedown, then reveal highest card.',
-        'Tie-break: del ut med baksiden opp, sa avslor hoyeste kort.',
+        'Tie-break: del ut med baksiden opp, så avslør høyeste kort.',
       ),
       log: logs,
     );
@@ -544,7 +544,7 @@ class GameEngine {
         _tr(
           state.language,
           'Tie-break deck reshuffled.',
-          'Tie-break-stokk stokket pa nytt.',
+          'Tie-break-stokk stokket på nytt.',
         ),
       );
     }
@@ -608,7 +608,7 @@ class GameEngine {
         banner: _tr(
           state.language,
           '${state.players[winner].name} wins tie-break. Revealing all cards...',
-          '${state.players[winner].name} vinner tie-break. Avslorer alle kort...',
+          '${state.players[winner].name} vinner tie-break. Avslører alle kort...',
         ),
         log: logs,
       );
@@ -625,7 +625,7 @@ class GameEngine {
       banner: _tr(
         state.language,
         '${nextContenders.length} players are still tied. Reveal done, tap deck for next round.',
-        '${nextContenders.length} spillere er fortsatt likt. Avsloring ferdig, trykk stokken for neste runde.',
+        '${nextContenders.length} spillere er fortsatt likt. Avsløring ferdig, trykk stokken for neste runde.',
       ),
       log: logs,
     );
@@ -640,7 +640,7 @@ class GameEngine {
         _tr(
           state.language,
           'Auto play paused for bus route. Press Auto Play again to continue automatically.',
-          'Autospill stoppet ved bussruta. Trykk Autospill igjen for a fortsette automatisk.',
+          'Autospill stoppet ved bussruta. Trykk Autospill igjen for å fortsette automatisk.',
         ),
       );
     }
@@ -686,7 +686,7 @@ class GameEngine {
     final String banner = _tr(
       state.language,
       '$runnerName must choose start side after the route cards are dealt.$pausedNote',
-      '$runnerName ma velge startside etter at rutekortene er lagt ut.$pausedNote',
+      '$runnerName må velge startside etter at rutekortene er lagt ut.$pausedNote',
     );
     _pushLog(logs, banner);
 
@@ -713,7 +713,7 @@ class GameEngine {
     final String message = _tr(
       state.language,
       '${state.players[state.busRunnerIndex!].name} starts the bus route from the ${startSide.name}.',
-      '${state.players[state.busRunnerIndex!].name} starter bussruta fra ${startSide == BusStartSide.right ? 'hoyre' : 'venstre'}.',
+      '${state.players[state.busRunnerIndex!].name} starter bussruta fra ${startSide == BusStartSide.right ? 'høyre' : 'venstre'}.',
     );
     final List<String> logs = List<String>.from(state.log);
     _pushLog(logs, message);
@@ -758,7 +758,7 @@ class GameEngine {
       message = _tr(
         state.language,
         'Correct: ${draw.shortLabel()} is higher than ${target.shortLabel()}.',
-        'Riktig: ${draw.shortLabel()} er hoyere enn ${target.shortLabel()}.',
+        'Riktig: ${draw.shortLabel()} er høyere enn ${target.shortLabel()}.',
       );
     } else if (guess == BusGuess.below && relation < 0) {
       correct = true;
@@ -788,7 +788,7 @@ class GameEngine {
       message = _tr(
         state.language,
         'Wrong with ${draw.shortLabel()}. Drink ${progress + 1} and restart route.',
-        'Feil med ${draw.shortLabel()}. Drikk ${progress + 1} og start ruta pa nytt.',
+        'Feil med ${draw.shortLabel()}. Drikk ${progress + 1} og start ruta på nytt.',
       );
     }
 
@@ -886,12 +886,12 @@ class GameEngine {
           ? _tr(
               state.language,
               '${state.players[state.busRunnerIndex!].name} finished on first try. Everyone else finishes drinks.',
-              '${state.players[state.busRunnerIndex!].name} klarte det pa forste forsok. Alle andre ma fullfore enheten sin.',
+              '${state.players[state.busRunnerIndex!].name} klarte det på første forsøk. Alle andre må fullføre enheten sin.',
             )
           : _tr(
               state.language,
               '${state.players[state.busRunnerIndex!].name} completed the bus route.',
-              '${state.players[state.busRunnerIndex!].name} fullforte bussruta.',
+              '${state.players[state.busRunnerIndex!].name} fullførte bussruta.',
             );
       final List<String> finishedLogs = List<String>.from(next.log);
       _pushLog(finishedLogs, finishText);
@@ -1189,7 +1189,7 @@ class GameEngine {
             message: _tr(
               language,
               '${player.name} drew ${drawnCard.shortLabel()} matching edge cards. Correct, give out 6 drinks.',
-              '${player.name} trakk ${drawnCard.shortLabel()} pa kantkort. Riktig, del ut 6.',
+              '${player.name} trakk ${drawnCard.shortLabel()} på kantkort. Riktig, del ut 6.',
             ),
           );
         }
@@ -1304,7 +1304,7 @@ class GameEngine {
         _tr(
           language,
           'Deck was empty and has been reshuffled.',
-          'Stokken var tom og ble stokket pa nytt.',
+          'Stokken var tom og ble stokket på nytt.',
         ),
       );
     }
@@ -1324,7 +1324,7 @@ class GameEngine {
         _tr(
           language,
           'Bus route deck was empty and has been reshuffled.',
-          'Bussruta-stokken var tom og ble stokket pa nytt.',
+          'Bussruta-stokken var tom og ble stokket på nytt.',
         ),
       );
     }

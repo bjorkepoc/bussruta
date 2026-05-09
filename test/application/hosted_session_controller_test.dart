@@ -60,5 +60,16 @@ void main() {
         );
       },
     );
+
+    test('normalizes relay host input to websocket URL', () {
+      expect(
+        parseHostedRelayUri('192.168.1.20:8080').toString(),
+        'ws://192.168.1.20:8080/ws',
+      );
+      expect(
+        parseHostedRelayUri('wss://relay.example/ws').toString(),
+        'wss://relay.example/ws',
+      );
+    });
   });
 }

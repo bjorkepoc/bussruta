@@ -686,12 +686,12 @@ class HostedProjectedView {
   final bool canControlBusRoute;
   final bool canUseHostTools;
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toJson({Map<String, dynamic>? publicViewJson}) {
     return <String, dynamic>{
       'viewerPlayerId': viewerPlayerId,
       'viewerName': viewerName,
       'isHost': isHost,
-      'publicView': publicView.toJson(),
+      'publicView': publicViewJson ?? publicView.toJson(),
       'ownHand': ownHand.map((PlayingCard card) => card.toJson()).toList(),
       'giveOutPromptDrinks': giveOutPromptDrinks,
       'drinkPromptDrinks': drinkPromptDrinks,

@@ -318,7 +318,7 @@ class HostedSessionRuntime {
         _tr(
           _state.gameState.language,
           'Only host can run tie-break round.',
-          'Kun verten kan kjore tie-break-runde.',
+          'Kun verten kan kjøre tie-break-runde.',
         ),
       );
     }
@@ -451,7 +451,7 @@ class HostedSessionRuntime {
         _tr(
           _state.gameState.language,
           'Assigned drinks exceed remaining amount.',
-          'Fordelte drikker overstiger gjenstaende antall.',
+          'Fordelte drikker overstiger gjenstående antall.',
         ),
       );
     }

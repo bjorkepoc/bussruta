@@ -4,71 +4,16 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:bussruta_app/application/hosted_session_runtime.dart';
+import 'package:bussruta_app/application/hosted_transport_models.dart';
 import 'package:bussruta_app/domain/hosted_models.dart';
 import 'package:bussruta_app/domain/hosted_projection.dart';
 
-const int hostedDiscoveryPort = 45878;
-const int hostedSessionPort = 45879;
+export 'hosted_transport_models.dart';
+
 const String _announcementType = 'bussruta-host-v1';
 const int _maxHostedLanMessageBytes = 64 * 1024;
 const int _lineFeed = 10;
 const int _carriageReturn = 13;
-
-enum HostedClientIssueCode {
-  genericError,
-  disconnected,
-  hostUnavailable,
-  sessionClosed,
-}
-
-class HostedClientIssue {
-  const HostedClientIssue({required this.code, required this.message});
-
-  final HostedClientIssueCode code;
-  final String message;
-}
-
-class HostedDiscoveryEntry {
-  const HostedDiscoveryEntry({
-    required this.pin,
-    required this.hostName,
-    required this.hostAddress,
-    required this.hostPort,
-    required this.lastSeenUtcMillis,
-  });
-
-  final String pin;
-  final String hostName;
-  final String hostAddress;
-  final int hostPort;
-  final int lastSeenUtcMillis;
-
-  HostedDiscoveryEntry copyWith({
-    String? pin,
-    String? hostName,
-    String? hostAddress,
-    int? hostPort,
-    int? lastSeenUtcMillis,
-  }) {
-    return HostedDiscoveryEntry(
-      pin: pin ?? this.pin,
-      hostName: hostName ?? this.hostName,
-      hostAddress: hostAddress ?? this.hostAddress,
-      hostPort: hostPort ?? this.hostPort,
-      lastSeenUtcMillis: lastSeenUtcMillis ?? this.lastSeenUtcMillis,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return <String, dynamic>{
-      'pin': pin,
-      'hostName': hostName,
-      'hostAddress': hostAddress,
-      'hostPort': hostPort,
-      'lastSeenUtcMillis': lastSeenUtcMillis,
-    };
-  }
-}
 
 StreamSubscription<List<int>> _listenForHostedLanLines({
   required Socket socket,
@@ -435,7 +380,7 @@ class HostedLanHostServer {
       'projection': projectionForPlayer(playerId).toJson(),
     });
     _emitState();
-    _broadcastSnapshots();
+    _broadcastSnapshots(exceptPlayerId: playerId);
   }
 
   void _handleCommand(Socket socket, Map<String, dynamic> envelope) {
@@ -536,7 +481,7 @@ class HostedLanHostServer {
       'projection': projectionForPlayer(playerId).toJson(),
     });
     _emitState();
-    _broadcastSnapshots();
+    _broadcastSnapshots(exceptPlayerId: playerId);
   }
 
   String _ensureTokenForPlayer(int playerId) {
@@ -590,13 +535,29 @@ class HostedLanHostServer {
     );
   }
 
-  void _broadcastSnapshots() {
+  void _broadcastSnapshots({int? exceptPlayerId}) {
     final List<MapEntry<int, Socket>> entries = _socketByPlayerId.entries
         .toList(growable: false);
+    if (entries.isEmpty) {
+      return;
+    }
+    final HostedSessionState session = runtime.state;
+    final HostedPublicView publicView = projectHostedPublicView(
+      session: session,
+    );
+    final Map<String, dynamic> publicViewJson = publicView.toJson();
     for (final MapEntry<int, Socket> entry in entries) {
+      if (entry.key == exceptPlayerId) {
+        continue;
+      }
+      final HostedProjectedView projection = projectHostedView(
+        session: session,
+        viewerPlayerId: entry.key,
+        publicView: publicView,
+      );
       _send(entry.value, <String, dynamic>{
         'type': 'snapshot',
-        'projection': projectionForPlayer(entry.key).toJson(),
+        'projection': projection.toJson(publicViewJson: publicViewJson),
       });
     }
   }

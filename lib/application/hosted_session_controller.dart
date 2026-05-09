@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:bussruta_app/application/hosted_lan_transport.dart';
+import 'package:bussruta_app/application/hosted_lan_transport_platform.dart';
+import 'package:bussruta_app/application/hosted_relay_transport.dart';
 import 'package:bussruta_app/application/hosted_session_runtime.dart';
 import 'package:bussruta_app/domain/game_engine.dart';
 import 'package:bussruta_app/domain/game_models.dart';
@@ -35,6 +36,8 @@ class HostedSessionController extends ChangeNotifier {
   int? _localPlayerId;
   HostedLanHostServer? _hostServer;
   HostedLanClientConnection? _clientConnection;
+  HostedRelayHostConnection? _relayHost;
+  HostedRelayClientConnection? _relayClient;
   HostedProjectedView? _projection;
   List<HostedDiscoveryEntry> _discoveries = const <HostedDiscoveryEntry>[];
   String? _errorMessage;
@@ -57,6 +60,8 @@ class HostedSessionController extends ChangeNotifier {
   String? _lastPlayerName;
   String? _lastPlayerToken;
   int? _lastPlayerId;
+  Uri? _lastRelayUri;
+  String? _lastRelayRoomKey;
   int _reconnectAttempt = 0;
   bool _reconnectAttemptInFlight = false;
 
@@ -70,11 +75,19 @@ class HostedSessionController extends ChangeNotifier {
   String? get sessionPin => _projection?.publicView.sessionPin;
   String? get hostAddress => _hostServer?.hostAddress;
   int? get hostPort => _hostServer?.port;
+  String? get relayUrl => _lastRelayUri?.toString();
+  String? get relayRoomKey => _relayHost?.roomKey ?? _lastRelayRoomKey;
   String? get networkDiagnostic => _networkDiagnostic;
   List<String> get hostGameLog =>
-      _hostServer?.state.gameState.log ?? const <String>[];
+      _hostServer?.state.gameState.log ??
+      _relayHost?.state.gameState.log ??
+      const <String>[];
   bool get hasActiveSession =>
-      _hostServer != null || _clientConnection != null || _projection != null;
+      _hostServer != null ||
+      _relayHost != null ||
+      _clientConnection != null ||
+      _relayClient != null ||
+      _projection != null;
 
   String? consumeErrorMessage() {
     final String? value = _errorMessage;
@@ -92,15 +105,28 @@ class HostedSessionController extends ChangeNotifier {
     _language = language;
     await _discoverySub?.cancel();
     _discoverySub = null;
+    if (_disposed) {
+      await _discovery.stop();
+      return;
+    }
     await _discovery.start();
+    if (_disposed) {
+      await _discovery.stop();
+      return;
+    }
     _discoverySub = _discovery.updates.listen((
       List<HostedDiscoveryEntry> list,
     ) {
+      if (_disposed) {
+        return;
+      }
       _discoveries = list;
       notifyListeners();
     });
     _discoveries = _discovery.entries;
-    notifyListeners();
+    if (!_disposed) {
+      notifyListeners();
+    }
   }
 
   void setLanguage(AppLanguage language) {
@@ -134,6 +160,8 @@ class HostedSessionController extends ChangeNotifier {
 
     _hostServer = server;
     _clientConnection = null;
+    _relayHost = null;
+    _relayClient = null;
     _isHost = true;
     _localPlayerId = host.playerId;
     _flowState = HostedFlowState.hostingLobby;
@@ -161,6 +189,92 @@ class HostedSessionController extends ChangeNotifier {
     _bindHostServer(server);
     _syncHostAutoPlay();
     notifyListeners();
+  }
+
+  Future<void> startRelayHosting({
+    required String hostName,
+    required String relayUrl,
+  }) async {
+    final Uri relayUri;
+    try {
+      relayUri = parseHostedRelayUri(relayUrl);
+    } on FormatException {
+      _connectionStatus = HostedConnectionStatus.hostUnavailable;
+      _errorMessage = _tr(
+        'Relay URL is invalid. Use ws://host:port/ws.',
+        'Relay-URL er ugyldig. Bruk ws://host:port/ws.',
+      );
+      notifyListeners();
+      return;
+    }
+    await leaveSession();
+    final String pin = _generatePin();
+    final HostedParticipant host = HostedParticipant(
+      playerId: 1,
+      name: hostName.trim().isEmpty ? _fallbackHostName() : hostName.trim(),
+      isHost: true,
+      connected: true,
+    );
+    final HostedSessionRuntime runtime = HostedSessionRuntime(
+      engine: _engine,
+      initialState: HostedSessionState.lobby(
+        sessionPin: pin,
+        host: host,
+        language: _language,
+      ),
+    );
+    _flowState = HostedFlowState.hostingLobby;
+    _connectionStatus = HostedConnectionStatus.joining;
+    _networkDiagnostic = 'Connecting to relay $relayUri';
+    notifyListeners();
+
+    try {
+      final HostedRelayHostConnection relay =
+          await HostedRelayHostConnection.start(
+            relayUri: relayUri,
+            runtime: runtime,
+            hostName: host.name,
+            roomKey: pin,
+          );
+      _hostServer = null;
+      _clientConnection = null;
+      _relayHost = relay;
+      _relayClient = null;
+      _isHost = true;
+      _localPlayerId = host.playerId;
+      _flowState = HostedFlowState.hostingLobby;
+      _connectionStatus = HostedConnectionStatus.connected;
+      _projection = projectHostedView(
+        session: relay.state,
+        viewerPlayerId: host.playerId,
+      );
+      _lastHostAddress = null;
+      _lastHostPort = null;
+      _lastPin = pin;
+      _lastPlayerName = host.name;
+      _lastPlayerToken = null;
+      _lastPlayerId = host.playerId;
+      _lastRelayUri = relayUri;
+      _lastRelayRoomKey = relay.roomKey;
+      _reconnectAttempt = 0;
+      _infoMessage = _tr(
+        'Relay room started. Share room ${relay.roomKey}.',
+        'Relay-rom startet. Del rom ${relay.roomKey}.',
+      );
+      _networkDiagnostic = 'Relay room ${relay.roomKey} at $relayUri';
+      _bindRelayHost(relay);
+      _syncHostAutoPlay();
+      notifyListeners();
+    } catch (error) {
+      _flowState = HostedFlowState.idle;
+      _connectionStatus = HostedConnectionStatus.hostUnavailable;
+      _networkDiagnostic = 'Relay hosting failed: $error';
+      _errorMessage = _tr(
+        'Could not host relay room. Check relay URL and network connectivity.',
+        'Kunne ikke hoste relay-rom. Sjekk relay-URL og nettverkstilkobling.',
+      );
+      notifyListeners();
+    }
   }
 
   Future<void> joinByDiscovery({
@@ -220,7 +334,7 @@ class HostedSessionController extends ChangeNotifier {
     if (address == null || port == null) {
       _errorMessage = _tr(
         'PIN was not found automatically. Enter the host address shown by the host device.',
-        'PIN ble ikke funnet automatisk. Skriv inn vertsadressen som vises pa verts-enheten.',
+        'PIN ble ikke funnet automatisk. Skriv inn vertsadressen som vises på verts-enheten.',
       );
       notifyListeners();
       return;
@@ -289,6 +403,8 @@ class HostedSessionController extends ChangeNotifier {
             );
         _clientConnection = client;
         _hostServer = null;
+        _relayHost = null;
+        _relayClient = null;
         _isHost = false;
         _localPlayerId = client.playerId;
         _projection = client.projection;
@@ -300,6 +416,8 @@ class HostedSessionController extends ChangeNotifier {
         _lastPlayerName = resolvedName;
         _lastPlayerToken = client.playerToken;
         _lastPlayerId = client.playerId;
+        _lastRelayUri = null;
+        _lastRelayRoomKey = null;
         _reconnectAttempt = 0;
         _networkDiagnostic = 'Connected to $candidateAddress:$targetPort';
         if (candidateAddress != target.host) {
@@ -326,6 +444,83 @@ class HostedSessionController extends ChangeNotifier {
       'Kunne ikke bli med i hostet spill. Sjekk PIN, vertsadresse og nettverkstilkobling.',
     );
     notifyListeners();
+  }
+
+  Future<void> joinRelayRoom({
+    required String relayUrl,
+    required String roomKey,
+    required String playerName,
+  }) async {
+    await leaveSession();
+    final Uri relayUri;
+    try {
+      relayUri = parseHostedRelayUri(relayUrl);
+    } on FormatException {
+      _flowState = HostedFlowState.idle;
+      _connectionStatus = HostedConnectionStatus.hostUnavailable;
+      _networkDiagnostic = null;
+      _errorMessage = _tr(
+        'Relay URL is invalid. Use ws://host:port/ws.',
+        'Relay-URL er ugyldig. Bruk ws://host:port/ws.',
+      );
+      notifyListeners();
+      return;
+    }
+    final String normalizedRoomKey = roomKey.trim();
+    if (normalizedRoomKey.isEmpty) {
+      _errorMessage = _tr('Please enter room key.', 'Skriv inn romkode.');
+      notifyListeners();
+      return;
+    }
+    _flowState = HostedFlowState.joiningLobby;
+    _connectionStatus = HostedConnectionStatus.joining;
+    _networkDiagnostic =
+        'Connecting to relay room $normalizedRoomKey at $relayUri';
+    notifyListeners();
+    final String resolvedName = playerName.trim().isEmpty
+        ? _fallbackGuestName()
+        : playerName.trim();
+
+    try {
+      final HostedRelayClientConnection client =
+          await HostedRelayClientConnection.connect(
+            relayUri: relayUri,
+            roomKey: normalizedRoomKey,
+            pin: normalizedRoomKey,
+            playerName: resolvedName,
+          );
+      _clientConnection = null;
+      _hostServer = null;
+      _relayHost = null;
+      _relayClient = client;
+      _isHost = false;
+      _localPlayerId = client.playerId;
+      _projection = client.projection;
+      _flowState = HostedFlowState.inGame;
+      _connectionStatus = HostedConnectionStatus.connected;
+      _lastHostAddress = null;
+      _lastHostPort = null;
+      _lastPin = normalizedRoomKey;
+      _lastPlayerName = resolvedName;
+      _lastPlayerToken = client.playerToken;
+      _lastPlayerId = client.playerId;
+      _lastRelayUri = relayUri;
+      _lastRelayRoomKey = normalizedRoomKey;
+      _reconnectAttempt = 0;
+      _networkDiagnostic =
+          'Connected to relay room $normalizedRoomKey at $relayUri';
+      _bindRelayClient(client);
+      notifyListeners();
+    } catch (error) {
+      _flowState = HostedFlowState.idle;
+      _connectionStatus = HostedConnectionStatus.hostUnavailable;
+      _networkDiagnostic = 'Relay join failed: $error';
+      _errorMessage = _tr(
+        'Could not join relay room. Check room key, relay URL, and network connectivity.',
+        'Kunne ikke bli med i relay-rom. Sjekk romkode, relay-URL og nettverkstilkobling.',
+      );
+      notifyListeners();
+    }
   }
 
   void startHostedGame() {
@@ -476,23 +671,36 @@ class HostedSessionController extends ChangeNotifier {
   void _dispatch(HostedSessionCommand command) {
     if (_hostServer != null && _isHost) {
       final HostedSessionState state = _hostServer!.applyLocalCommand(command);
-      _projection = projectHostedView(
-        session: state,
-        viewerPlayerId: _localPlayerId!,
-      );
-      _flowState = state.gameState.phase == GamePhase.setup
-          ? HostedFlowState.hostingLobby
-          : HostedFlowState.inGame;
-      if (state.lastError != null && state.lastError!.trim().isNotEmpty) {
-        _errorMessage = state.lastError;
-      }
-      _syncHostAutoPlay();
-      notifyListeners();
+      _applyHostStateToController(state);
+      return;
+    }
+    if (_relayHost != null && _isHost) {
+      final HostedSessionState state = _relayHost!.applyLocalCommand(command);
+      _applyHostStateToController(state);
       return;
     }
     if (_clientConnection != null) {
       _clientConnection!.sendCommand(command);
+      return;
     }
+    if (_relayClient != null) {
+      _relayClient!.sendCommand(command);
+    }
+  }
+
+  void _applyHostStateToController(HostedSessionState state) {
+    _projection = projectHostedView(
+      session: state,
+      viewerPlayerId: _localPlayerId!,
+    );
+    _flowState = state.gameState.phase == GamePhase.setup
+        ? HostedFlowState.hostingLobby
+        : HostedFlowState.inGame;
+    if (state.lastError != null && state.lastError!.trim().isNotEmpty) {
+      _errorMessage = state.lastError;
+    }
+    _syncHostAutoPlay();
+    notifyListeners();
   }
 
   void _bindHostServer(HostedLanHostServer server) {
@@ -513,6 +721,29 @@ class HostedSessionController extends ChangeNotifier {
       notifyListeners();
     });
     _hostErrorsSub = server.errors.listen((String message) {
+      _errorMessage = message;
+      notifyListeners();
+    });
+  }
+
+  void _bindRelayHost(HostedRelayHostConnection relay) {
+    _hostStateSub?.cancel();
+    _hostErrorsSub?.cancel();
+    _hostStateSub = relay.stateUpdates.listen((HostedSessionState state) {
+      if (_localPlayerId == null) {
+        return;
+      }
+      _projection = projectHostedView(
+        session: state,
+        viewerPlayerId: _localPlayerId!,
+      );
+      _flowState = state.gameState.phase == GamePhase.setup
+          ? HostedFlowState.hostingLobby
+          : HostedFlowState.inGame;
+      _syncHostAutoPlay();
+      notifyListeners();
+    });
+    _hostErrorsSub = relay.errors.listen((String message) {
       _errorMessage = message;
       notifyListeners();
     });
@@ -544,6 +775,32 @@ class HostedSessionController extends ChangeNotifier {
     });
   }
 
+  void _bindRelayClient(HostedRelayClientConnection client) {
+    _clientProjectionSub?.cancel();
+    _clientIssuesSub?.cancel();
+    _clientProjectionSub = client.projectionUpdates.listen((
+      HostedProjectedView projection,
+    ) {
+      _projection = projection;
+      _flowState = projection.publicView.phase == GamePhase.setup
+          ? HostedFlowState.joiningLobby
+          : HostedFlowState.inGame;
+      _connectionStatus = HostedConnectionStatus.connected;
+      _localPlayerId = client.playerId;
+      _lastPlayerId = client.playerId;
+      _lastPlayerToken = client.playerToken ?? _lastPlayerToken;
+      _reconnectAttempt = 0;
+      _reconnectTimer?.cancel();
+      _reconnectTimer = null;
+      _networkDiagnostic =
+          'Connected as player ${client.playerId} via relay ${_lastRelayUri ?? '-'} room ${_lastRelayRoomKey ?? '-'}';
+      notifyListeners();
+    });
+    _clientIssuesSub = client.issues.listen((HostedClientIssue issue) {
+      _handleClientIssue(issue);
+    });
+  }
+
   void _handleClientIssue(HostedClientIssue issue) {
     if (_sessionCloseInProgress || _disposed) {
       return;
@@ -566,11 +823,12 @@ class HostedSessionController extends ChangeNotifier {
         _connectionStatus = HostedConnectionStatus.disconnected;
         _infoMessage = _tr(
           'Connection dropped. Trying to reconnect...',
-          'Tilkoblingen falt ut. Prover a koble til igjen...',
+          'Tilkoblingen falt ut. Prøver å koble til igjen...',
         );
         _startReconnectLoop();
-        _networkDiagnostic =
-            'Disconnected from ${_lastHostAddress ?? '-'}:${_lastHostPort ?? 0}';
+        _networkDiagnostic = _lastRelayUri == null
+            ? 'Disconnected from ${_lastHostAddress ?? '-'}:${_lastHostPort ?? 0}'
+            : 'Disconnected from relay ${_lastRelayUri ?? '-'} room ${_lastRelayRoomKey ?? '-'}';
         notifyListeners();
         return;
       case HostedClientIssueCode.hostUnavailable:
@@ -595,12 +853,7 @@ class HostedSessionController extends ChangeNotifier {
     if (_isHost) {
       return;
     }
-    if (_lastHostAddress == null ||
-        _lastHostPort == null ||
-        _lastPin == null ||
-        _lastPlayerName == null ||
-        _lastPlayerToken == null ||
-        _lastPlayerId == null) {
+    if (!_hasLanReconnectIdentity && !_hasRelayReconnectIdentity) {
       _connectionStatus = HostedConnectionStatus.hostUnavailable;
       unawaited(_clearRemoteSessionState());
       notifyListeners();
@@ -643,12 +896,7 @@ class HostedSessionController extends ChangeNotifier {
     if (_reconnectAttemptInFlight) {
       return;
     }
-    if (_lastHostAddress == null ||
-        _lastHostPort == null ||
-        _lastPin == null ||
-        _lastPlayerName == null ||
-        _lastPlayerToken == null ||
-        _lastPlayerId == null) {
+    if (!_hasLanReconnectIdentity && !_hasRelayReconnectIdentity) {
       return;
     }
     _reconnectAttemptInFlight = true;
@@ -659,30 +907,56 @@ class HostedSessionController extends ChangeNotifier {
       _clientIssuesSub = null;
       await _clientConnection?.close();
       _clientConnection = null;
+      await _relayClient?.close();
+      _relayClient = null;
 
-      final HostedLanClientConnection client =
-          await HostedLanClientConnection.connect(
-            hostAddress: _lastHostAddress!,
-            hostPort: _lastHostPort!,
-            pin: _lastPin!,
-            playerName: _lastPlayerName!,
-            playerToken: _lastPlayerToken,
-            requestedPlayerId: _lastPlayerId,
-            timeout: const Duration(seconds: 4),
-          );
-      _clientConnection = client;
-      _projection = client.projection;
-      _localPlayerId = client.playerId;
-      _lastPlayerId = client.playerId;
-      _lastPlayerToken = client.playerToken ?? _lastPlayerToken;
-      _flowState = _projection?.publicView.phase == GamePhase.setup
-          ? HostedFlowState.joiningLobby
-          : HostedFlowState.inGame;
-      _bindClient(client);
+      if (_hasRelayReconnectIdentity) {
+        final HostedRelayClientConnection client =
+            await HostedRelayClientConnection.connect(
+              relayUri: _lastRelayUri!,
+              roomKey: _lastRelayRoomKey!,
+              pin: _lastPin!,
+              playerName: _lastPlayerName!,
+              playerToken: _lastPlayerToken,
+              requestedPlayerId: _lastPlayerId,
+              timeout: const Duration(seconds: 4),
+            );
+        _relayClient = client;
+        _projection = client.projection;
+        _localPlayerId = client.playerId;
+        _lastPlayerId = client.playerId;
+        _lastPlayerToken = client.playerToken ?? _lastPlayerToken;
+        _flowState = _projection?.publicView.phase == GamePhase.setup
+            ? HostedFlowState.joiningLobby
+            : HostedFlowState.inGame;
+        _bindRelayClient(client);
+        _networkDiagnostic =
+            'Reconnected to relay ${_lastRelayUri!} room ${_lastRelayRoomKey!}';
+      } else {
+        final HostedLanClientConnection client =
+            await HostedLanClientConnection.connect(
+              hostAddress: _lastHostAddress!,
+              hostPort: _lastHostPort!,
+              pin: _lastPin!,
+              playerName: _lastPlayerName!,
+              playerToken: _lastPlayerToken,
+              requestedPlayerId: _lastPlayerId,
+              timeout: const Duration(seconds: 4),
+            );
+        _clientConnection = client;
+        _projection = client.projection;
+        _localPlayerId = client.playerId;
+        _lastPlayerId = client.playerId;
+        _lastPlayerToken = client.playerToken ?? _lastPlayerToken;
+        _flowState = _projection?.publicView.phase == GamePhase.setup
+            ? HostedFlowState.joiningLobby
+            : HostedFlowState.inGame;
+        _bindClient(client);
+        _networkDiagnostic =
+            'Reconnected to ${_lastHostAddress!}:${_lastHostPort!}';
+      }
       _connectionStatus = HostedConnectionStatus.connected;
       _infoMessage = _tr('Reconnected.', 'Koblet til igjen.');
-      _networkDiagnostic =
-          'Reconnected to ${_lastHostAddress!}:${_lastHostPort!}';
       _reconnectTimer?.cancel();
       _reconnectTimer = null;
       _reconnectAttempt = 0;
@@ -694,6 +968,22 @@ class HostedSessionController extends ChangeNotifier {
     }
   }
 
+  bool get _hasLanReconnectIdentity =>
+      _lastHostAddress != null &&
+      _lastHostPort != null &&
+      _lastPin != null &&
+      _lastPlayerName != null &&
+      _lastPlayerToken != null &&
+      _lastPlayerId != null;
+
+  bool get _hasRelayReconnectIdentity =>
+      _lastRelayUri != null &&
+      _lastRelayRoomKey != null &&
+      _lastPin != null &&
+      _lastPlayerName != null &&
+      _lastPlayerToken != null &&
+      _lastPlayerId != null;
+
   Future<void> _clearRemoteSessionState() async {
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
@@ -704,6 +994,8 @@ class HostedSessionController extends ChangeNotifier {
     _clientIssuesSub = null;
     await _clientConnection?.close();
     _clientConnection = null;
+    await _relayClient?.close();
+    _relayClient = null;
     _projection = null;
     _localPlayerId = null;
     _isHost = false;
@@ -733,8 +1025,15 @@ class HostedSessionController extends ChangeNotifier {
       broadcastSessionClosed: true,
     );
     _hostServer = null;
+    await _relayHost?.close(
+      reason: _tr('Host ended the session.', 'Verten avsluttet sesjonen.'),
+      broadcastSessionClosed: true,
+    );
+    _relayHost = null;
     await _clientConnection?.close();
     _clientConnection = null;
+    await _relayClient?.close();
+    _relayClient = null;
     _projection = null;
     _localPlayerId = null;
     _isHost = false;
@@ -756,6 +1055,8 @@ class HostedSessionController extends ChangeNotifier {
     _lastPlayerName = null;
     _lastPlayerToken = null;
     _lastPlayerId = null;
+    _lastRelayUri = null;
+    _lastRelayRoomKey = null;
   }
 
   String _generatePin() {
@@ -787,10 +1088,10 @@ class HostedSessionController extends ChangeNotifier {
   void _syncHostAutoPlay() {
     _autoPlayTimer?.cancel();
     _autoPlayTimer = null;
-    if (!_isHost || _hostServer == null) {
+    final HostedSessionState? state = _hostAuthorityState;
+    if (!_isHost || state == null) {
       return;
     }
-    final HostedSessionState state = _hostServer!.state;
     if (!state.gameState.autoPlay.enabled ||
         _autoPlayRunning ||
         state.pendingDrinkDistribution != null ||
@@ -805,12 +1106,12 @@ class HostedSessionController extends ChangeNotifier {
   }
 
   void _runHostAutoPlayStep() {
-    if (_autoPlayRunning || !_isHost || _hostServer == null) {
+    final HostedSessionState? state = _hostAuthorityState;
+    if (_autoPlayRunning || !_isHost || state == null) {
       return;
     }
     _autoPlayRunning = true;
     try {
-      final HostedSessionState state = _hostServer!.state;
       if (!state.gameState.autoPlay.enabled) {
         return;
       }
@@ -819,7 +1120,7 @@ class HostedSessionController extends ChangeNotifier {
       if (pending != null) {
         final int? target = _firstAutoTarget(state, pending.sourcePlayerId);
         if (target != null) {
-          _hostServer!.applyLocalCommand(
+          _applyHostAuthorityCommand(
             HostedSessionCommand(
               type: HostedCommandType.assignDrinks,
               playerId: pending.sourcePlayerId,
@@ -837,7 +1138,7 @@ class HostedSessionController extends ChangeNotifier {
       if (game.phase == GamePhase.warmup) {
         final WarmupGuess guess = _engine.chooseWarmupGuessByStats(game);
         final int actor = state.playerOrder[game.currentPlayerIndex];
-        _hostServer!.applyLocalCommand(
+        _applyHostAuthorityCommand(
           HostedSessionCommand(
             type: HostedCommandType.warmupGuess,
             playerId: actor,
@@ -845,14 +1146,14 @@ class HostedSessionController extends ChangeNotifier {
           ),
         );
       } else if (game.phase == GamePhase.pyramid) {
-        _hostServer!.applyLocalCommand(
+        _applyHostAuthorityCommand(
           HostedSessionCommand(
             type: HostedCommandType.revealPyramid,
             playerId: state.hostPlayerId,
           ),
         );
       } else if (game.phase == GamePhase.tiebreak) {
-        _hostServer!.applyLocalCommand(
+        _applyHostAuthorityCommand(
           HostedSessionCommand(
             type: HostedCommandType.runTieBreakRound,
             playerId: state.hostPlayerId,
@@ -863,7 +1164,7 @@ class HostedSessionController extends ChangeNotifier {
             ? null
             : state.playerIdForIndex(game.busRunnerIndex!);
         if (busRunnerId != null) {
-          _hostServer!.applyLocalCommand(
+          _applyHostAuthorityCommand(
             HostedSessionCommand(
               type: HostedCommandType.beginBusRoute,
               playerId: busRunnerId,
@@ -877,7 +1178,7 @@ class HostedSessionController extends ChangeNotifier {
             : state.playerIdForIndex(game.busRunnerIndex!);
         if (busRunnerId != null) {
           final BusGuess guess = _engine.chooseBusGuessByStats(game);
-          _hostServer!.applyLocalCommand(
+          _applyHostAuthorityCommand(
             HostedSessionCommand(
               type: HostedCommandType.playBusGuess,
               playerId: busRunnerId,
@@ -891,6 +1192,21 @@ class HostedSessionController extends ChangeNotifier {
       _syncHostAutoPlay();
       notifyListeners();
     }
+  }
+
+  HostedSessionState? get _hostAuthorityState =>
+      _hostServer?.state ?? _relayHost?.state;
+
+  HostedSessionState _applyHostAuthorityCommand(HostedSessionCommand command) {
+    final HostedLanHostServer? hostServer = _hostServer;
+    if (hostServer != null) {
+      return hostServer.applyLocalCommand(command);
+    }
+    final HostedRelayHostConnection? relayHost = _relayHost;
+    if (relayHost != null) {
+      return relayHost.applyLocalCommand(command);
+    }
+    throw StateError('No hosted authority is active.');
   }
 
   int? _firstAutoTarget(HostedSessionState state, int sourcePlayerId) {
@@ -930,6 +1246,19 @@ String hostedEmulatorForwardCommand(int port) {
 
 bool hostedAddressLooksLikeEmulatorNat(String address) {
   return address.startsWith('10.0.2.');
+}
+
+Uri parseHostedRelayUri(String raw) {
+  final String trimmed = raw.trim();
+  if (trimmed.isEmpty) {
+    throw const FormatException('Relay URL is empty.');
+  }
+  final String withScheme = trimmed.contains('://') ? trimmed : 'ws://$trimmed';
+  final Uri uri = Uri.parse(withScheme);
+  if (uri.host.trim().isEmpty || (uri.scheme != 'ws' && uri.scheme != 'wss')) {
+    throw const FormatException('Relay URL must use ws or wss.');
+  }
+  return uri.path.isEmpty ? uri.replace(path: '/ws') : uri;
 }
 
 class HostedJoinHostInput {

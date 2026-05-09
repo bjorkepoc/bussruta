@@ -5,6 +5,39 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Hosted projection', () {
+    test('public data is stable across projected viewers', () {
+      final HostedSessionState session = _sessionState();
+
+      final HostedProjectedView bobView = projectHostedView(
+        session: session,
+        viewerPlayerId: 102,
+      );
+      final HostedProjectedView charlieView = projectHostedView(
+        session: session,
+        viewerPlayerId: 103,
+      );
+
+      expect(bobView.publicView.toJson(), charlieView.publicView.toJson());
+      expect(bobView.viewerPlayerId, 102);
+      expect(charlieView.viewerPlayerId, 103);
+    });
+
+    test('HostedProjectedView.toJson round-trips public and private data', () {
+      final HostedProjectedView view = projectHostedView(
+        session: _sessionState(),
+        viewerPlayerId: 102,
+      );
+
+      final Map<String, dynamic> encoded = view.toJson();
+
+      expect(encoded['publicView'], view.publicView.toJson());
+      expect(encoded['ownHand'], <Map<String, dynamic>>[
+        card(Suit.hearts, 8).toJson(),
+        card(Suit.spades, 11).toJson(),
+      ]);
+      expect(HostedProjectedView.fromJson(encoded).toJson(), view.toJson());
+    });
+
     test('only exposes own hand as private cards', () {
       final HostedSessionState session = _sessionState();
 

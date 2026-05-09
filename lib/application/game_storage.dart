@@ -20,6 +20,7 @@ class SharedPrefsGameStorage implements GameStorage {
   static const String _onboardingSeenKey = 'bussruta.onboarding_seen.v1';
 
   SharedPreferences? _prefs;
+  String? _lastSavedGameStatePayload;
 
   Future<SharedPreferences> _instance() async {
     if (_prefs != null) {
@@ -37,23 +38,32 @@ class SharedPrefsGameStorage implements GameStorage {
       return null;
     }
     try {
-      return GameState.fromEncodedJson(payload);
+      final GameState state = GameState.fromEncodedJson(payload);
+      _lastSavedGameStatePayload = payload;
+      return state;
     } catch (_) {
       await prefs.remove(_gameStateKey);
+      _lastSavedGameStatePayload = null;
       return null;
     }
   }
 
   @override
   Future<void> saveGameState(GameState state) async {
+    final String payload = state.toEncodedJson();
+    if (payload == _lastSavedGameStatePayload) {
+      return;
+    }
     final SharedPreferences prefs = await _instance();
-    await prefs.setString(_gameStateKey, state.toEncodedJson());
+    await prefs.setString(_gameStateKey, payload);
+    _lastSavedGameStatePayload = payload;
   }
 
   @override
   Future<void> clearGameState() async {
     final SharedPreferences prefs = await _instance();
     await prefs.remove(_gameStateKey);
+    _lastSavedGameStatePayload = null;
   }
 
   @override

@@ -7,7 +7,7 @@
   - LAN discovery (same Wi-Fi)
   - PIN-based join
   - direct host address + PIN
-- A minimal Dart WebSocket relay exists at `tool/internet_relay.dart`, but the Flutter UI/controller is not wired to it yet.
+- A Dart WebSocket relay exists at `tool/internet_relay.dart`, and Flutter hosted mode can use it for browser/mobile/PC play on the same network.
 - No Bluetooth plugin is added yet.
 
 ## Internet room-key support
@@ -26,8 +26,9 @@
 - Keep existing hosted command/projection protocol, but swap transport from LAN TCP to backend WebSocket.
 
 Current relay status:
-- `tool/internet_relay.dart` implements the first backend skeleton for room creation and host/client message forwarding.
-- Flutter-side internet room transport and UI are still future work.
+- `tool/internet_relay.dart` implements room creation and host/client message forwarding.
+- Flutter hosted mode includes a relay transport and UI fields for Relay URL + room key.
+- The current relay flow is suitable for trusted LAN/development use; public internet deployment still needs hardening.
 
 ### Tradeoffs
 
@@ -62,14 +63,14 @@ Current relay status:
 ## Recommendation
 
 1. Keep current LAN + PIN as the baseline.
-2. Implement internet room-key next using a small relay backend.
+2. Harden the relay before public internet use.
 3. Treat Bluetooth as optional/future unless offline no-Wi-Fi play is a hard requirement.
 
 ## Current product decision
 
 - Polish LAN + PIN first before starting the internet relay.
 - Treat manual real-device QA as the release gate for the current phase.
-- Revisit internet room-key work after hosted LAN join, reconnect, privacy, and bus-route authority have been validated on real devices.
+- Use relay rooms for browser/mobile/PC play on the same trusted network, then revisit public internet deployment after hosted LAN join, reconnect, privacy, and bus-route authority have been validated on real devices.
 
 ## Decisions needed from product owner
 

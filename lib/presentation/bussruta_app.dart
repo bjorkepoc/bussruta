@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:bussruta_app/application/game_controller.dart';
 import 'package:bussruta_app/application/hosted_session_controller.dart';
 import 'package:bussruta_app/domain/game_models.dart';
+import 'package:bussruta_app/presentation/app_theme.dart';
 import 'package:bussruta_app/presentation/game_table_view.dart';
 import 'package:bussruta_app/presentation/help_view.dart';
 import 'package:bussruta_app/presentation/hosted_session_view.dart';
@@ -31,50 +32,43 @@ class _BussrutaAppState extends State<BussrutaApp> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: widget.controller,
-      builder: (BuildContext context, _) {
-        final GameState state = widget.controller.state;
-        if (_selectedMode == _AppMode.hosted &&
-            state.phase != GamePhase.setup) {
-          _selectedMode = _AppMode.local;
-        }
-        if (_selectedMode == null && state.phase != GamePhase.setup) {
-          _selectedMode = _AppMode.local;
-        }
+    return MaterialApp(
+      title: 'Bussruta',
+      debugShowCheckedModeBanner: false,
+      navigatorKey: _navigatorKey,
+      scaffoldMessengerKey: _scaffoldMessengerKey,
+      theme: AppTheme.buildTheme(),
+      home: AnimatedBuilder(
+        animation: widget.controller,
+        builder: (BuildContext context, _) {
+          final GameState state = widget.controller.state;
+          if (_selectedMode == _AppMode.hosted &&
+              state.phase != GamePhase.setup) {
+            _selectedMode = _AppMode.local;
+          }
+          if (_selectedMode == null && state.phase != GamePhase.setup) {
+            _selectedMode = _AppMode.local;
+          }
 
-        if (_selectedMode != _AppMode.hosted) {
-          _maybeShowTransient(state);
-        }
-        if (widget.controller.initialized &&
-            !_onboardingLaunchQueued &&
-            !widget.controller.onboardingSeen &&
-            _selectedMode == null &&
-            state.phase == GamePhase.setup) {
-          _onboardingLaunchQueued = true;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            unawaited(
-              _openIntro(language: state.language, markSeenOnExit: true),
-            );
-          });
-        }
+          if (_selectedMode != _AppMode.hosted) {
+            _maybeShowTransient(state);
+          }
+          if (widget.controller.initialized &&
+              !_onboardingLaunchQueued &&
+              !widget.controller.onboardingSeen &&
+              _selectedMode == null &&
+              state.phase == GamePhase.setup) {
+            _onboardingLaunchQueued = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              unawaited(
+                _openIntro(language: state.language, markSeenOnExit: true),
+              );
+            });
+          }
 
-        return MaterialApp(
-          title: 'Bussruta',
-          debugShowCheckedModeBanner: false,
-          navigatorKey: _navigatorKey,
-          scaffoldMessengerKey: _scaffoldMessengerKey,
-          theme: ThemeData(
-            useMaterial3: true,
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color(0xFF9A4726),
-              brightness: Brightness.light,
-            ),
-            scaffoldBackgroundColor: const Color(0xFFF3EBDD),
-          ),
-          home: _buildHome(state),
-        );
-      },
+          return _buildHome(state);
+        },
+      ),
     );
   }
 
@@ -219,13 +213,15 @@ class _SetupScreen extends StatelessWidget {
     final AppLanguage lang = state.language;
     final SetupDraft draft = state.setupDraft;
     final List<String> names = draft.names;
+    final VoidCallback? backToModeChooser = onBackToModeChooser;
 
-    return Scaffold(
+    final Widget scaffold = Scaffold(
       appBar: AppBar(
-        leading: onBackToModeChooser == null
+        leading: backToModeChooser == null
             ? null
             : IconButton(
-                onPressed: onBackToModeChooser,
+                tooltip: tr(lang, 'Back to mode chooser', 'Tilbake til valg'),
+                onPressed: backToModeChooser,
                 icon: const Icon(Icons.arrow_back),
               ),
         title: Text(tr(lang, 'Bussruta Setup', 'Bussruta Oppsett')),
@@ -233,53 +229,46 @@ class _SetupScreen extends StatelessWidget {
           _LanguageMenu(language: lang, onSelected: controller.setLanguage),
         ],
       ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: <Widget>[
-            Card(
-              color: const Color(0xFFF8E6D1),
-              child: Padding(
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      tr(lang, 'Ready to deal?', 'Klar til a dele ut?'),
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      tr(
-                        lang,
-                        'Start game begins warmup immediately with current setup.',
-                        'Start spill begynner oppvarmingen umiddelbart med valgt oppsett.',
-                      ),
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.icon(
-                        onPressed: controller.startGameFromSetup,
-                        icon: const Icon(Icons.play_arrow),
-                        style: FilledButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                        ),
-                        label: Text(
-                          tr(lang, 'Start game', 'Start spill'),
-                          style: const TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                      ),
-                    ),
-                  ],
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        child: AppSurfaceCard(
+          tone: AppSurfaceTone.accent,
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                tr(lang, 'Ready to deal?', 'Klar til å dele ut?'),
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: controller.startGameFromSetup,
+                  icon: const Icon(Icons.play_arrow),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  label: Text(
+                    tr(lang, 'Start game', 'Start spill'),
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
+            ],
+          ),
+        ),
+      ),
+      body: DecoratedBox(
+        decoration: AppTheme.tableBackground(),
+        child: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: <Widget>[
+              AppSurfaceCard(
+                tone: AppSurfaceTone.accent,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
@@ -290,6 +279,15 @@ class _SetupScreen extends StatelessWidget {
                         'Spillere: ${draft.playerCount}',
                       ),
                       style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      tr(
+                        lang,
+                        'Choose the table size before dealing.',
+                        'Velg bordstørrelse for utdeling.',
+                      ),
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                     Slider(
                       min: 1,
@@ -335,12 +333,10 @@ class _SetupScreen extends StatelessWidget {
                   ],
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
+              const SizedBox(height: 12),
+              AppSurfaceCard(
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
@@ -350,11 +346,16 @@ class _SetupScreen extends StatelessWidget {
                         tr(
                           lang,
                           'Reverse pyramid drinks (bottom = 5, top = 1)',
-                          'Reverser pyramide (nederst = 5, overst = 1)',
+                          'Reverser pyramide (nederst = 5, øverst = 1)',
                         ),
                       ),
                     ),
                     const Divider(),
+                    Text(
+                      tr(lang, 'Player names', 'Spillernavn'),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 10),
                     for (int i = 0; i < names.length; i += 1)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8),
@@ -376,6 +377,11 @@ class _SetupScreen extends StatelessWidget {
                             ),
                             const SizedBox(width: 8),
                             IconButton(
+                              tooltip: tr(
+                                lang,
+                                'Remove player ${i + 1}',
+                                'Fjern spiller ${i + 1}',
+                              ),
                               onPressed: () => controller.removePlayerAt(i),
                               icon: const Icon(Icons.close),
                             ),
@@ -385,19 +391,31 @@ class _SetupScreen extends StatelessWidget {
                   ],
                 ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              tr(
-                lang,
-                'Flow: 4 warmup rounds -> pyramid -> tie-break if needed -> bus route.',
-                'Flyt: 4 oppvarmingsrunder -> pyramide -> tie-break ved behov -> bussrute.',
+              const SizedBox(height: 12),
+              Text(
+                tr(
+                  lang,
+                  'Flow: 4 warmup rounds -> pyramid -> tie-break if needed -> bus route.',
+                  'Flyt: 4 oppvarmingsrunder -> pyramide -> tie-break ved behov -> bussrute.',
+                ),
+                style: Theme.of(context).textTheme.bodySmall,
               ),
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
+            ],
+          ),
         ),
       ),
+    );
+    if (backToModeChooser == null) {
+      return scaffold;
+    }
+    return PopScope<Object?>(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, Object? result) {
+        if (!didPop) {
+          backToModeChooser();
+        }
+      },
+      child: scaffold,
     );
   }
 }
@@ -471,36 +489,39 @@ class _GameScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: SafeArea(
-        child: Column(
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-              child: _StatusStrip(controller: controller),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Stack(
-                  children: <Widget>[
-                    Positioned.fill(
-                      child: GameTableView(
-                        controller: controller,
-                        state: state,
+      body: DecoratedBox(
+        decoration: AppTheme.tableBackground(),
+        child: SafeArea(
+          child: Column(
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+                child: _StatusStrip(controller: controller),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Stack(
+                    children: <Widget>[
+                      Positioned.fill(
+                        child: GameTableView(
+                          controller: controller,
+                          state: state,
+                        ),
                       ),
-                    ),
-                    if (state.banner.isNotEmpty)
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        top: 0,
-                        child: _BannerCard(state: state),
-                      ),
-                  ],
+                      if (state.banner.isNotEmpty)
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          top: 0,
+                          child: _BannerCard(state: state),
+                        ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -515,33 +536,36 @@ class _GameScreen extends StatelessWidget {
         final AppLanguage lang = state.language;
         return Padding(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                tr(lang, 'Game log', 'Spilllogg'),
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 12),
-              Expanded(
-                child: state.log.isEmpty
-                    ? Center(
-                        child: Text(
-                          tr(lang, 'No events yet.', 'Ingen hendelser ennå.'),
+          child: AppSurfaceCard(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  tr(lang, 'Game log', 'Spilllogg'),
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: state.log.isEmpty
+                      ? Center(
+                          child: Text(
+                            tr(lang, 'No events yet.', 'Ingen hendelser ennå.'),
+                          ),
+                        )
+                      : ListView.separated(
+                          itemCount: state.log.length,
+                          separatorBuilder: (_, _) => const Divider(height: 1),
+                          itemBuilder: (BuildContext context, int index) {
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              child: Text(state.log[index]),
+                            );
+                          },
                         ),
-                      )
-                    : ListView.separated(
-                        itemCount: state.log.length,
-                        separatorBuilder: (_, _) => const Divider(height: 1),
-                        itemBuilder: (BuildContext context, int index) {
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            child: Text(state.log[index]),
-                          );
-                        },
-                      ),
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -564,40 +588,43 @@ class _GameScreen extends StatelessWidget {
             final AppLanguage lang = state.language;
             return Padding(
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    tr(lang, 'Auto play', 'Autospill'),
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 12),
-                  SwitchListTile(
-                    value: state.autoPlay.enabled,
-                    onChanged: controller.toggleAutoPlay,
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(
-                      tr(lang, 'Enable auto play', 'Aktiver autospill'),
+              child: AppSurfaceCard(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      tr(lang, 'Auto play', 'Autospill'),
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
-                  ),
-                  Text(
-                    tr(
-                      lang,
-                      'Delay: ${(state.autoPlay.delayMs / 1000).toStringAsFixed(1)}s',
-                      'Forsinkelse: ${(state.autoPlay.delayMs / 1000).toStringAsFixed(1)}s',
+                    const SizedBox(height: 12),
+                    SwitchListTile(
+                      value: state.autoPlay.enabled,
+                      onChanged: controller.toggleAutoPlay,
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(
+                        tr(lang, 'Enable auto play', 'Aktiver autospill'),
+                      ),
                     ),
-                  ),
-                  Slider(
-                    min: 350,
-                    max: 60000,
-                    divisions: 40,
-                    value: state.autoPlay.delayMs.toDouble(),
-                    onChanged: (double value) {
-                      controller.setAutoPlayDelayMs(value.round());
-                    },
-                  ),
-                ],
+                    Text(
+                      tr(
+                        lang,
+                        'Delay: ${(state.autoPlay.delayMs / 1000).toStringAsFixed(1)}s',
+                        'Forsinkelse: ${(state.autoPlay.delayMs / 1000).toStringAsFixed(1)}s',
+                      ),
+                    ),
+                    Slider(
+                      min: 350,
+                      max: 60000,
+                      divisions: 40,
+                      value: state.autoPlay.delayMs.toDouble(),
+                      onChanged: (double value) {
+                        controller.setAutoPlayDelayMs(value.round());
+                      },
+                    ),
+                  ],
+                ),
               ),
             );
           },
@@ -617,36 +644,24 @@ class _StatusStrip extends StatelessWidget {
     final GameState state = controller.state;
     final AppLanguage lang = state.language;
 
-    return Container(
-      width: double.infinity,
+    return AppSurfaceCard(
+      tone: AppSurfaceTone.accent,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.66),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.8)),
-        boxShadow: const <BoxShadow>[
-          BoxShadow(
-            color: Color(0x14000000),
-            blurRadius: 18,
-            offset: Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: <Widget>[
-          Chip(
-            avatar: const Icon(Icons.style, size: 18),
-            label: Text(phaseLabel(lang, state.phase, state.warmupRound)),
-          ),
-          if (_focusLabel(state, lang) case final String focus)
-            Chip(
-              avatar: const Icon(Icons.person, size: 18),
-              label: Text(focus),
+      child: SizedBox(
+        width: double.infinity,
+        child: Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: <Widget>[
+            AppStatusChip(
+              icon: Icons.style,
+              label: phaseLabel(lang, state.phase, state.warmupRound),
             ),
-        ],
+            if (_focusLabel(state, lang) case final String focus)
+              AppStatusChip(icon: Icons.person, label: focus),
+          ],
+        ),
       ),
     );
   }
@@ -666,7 +681,7 @@ class _StatusStrip extends StatelessWidget {
       return tr(
         lang,
         'Runner: ${state.players[state.busRunnerIndex!].name}',
-        'Kjorer: ${state.players[state.busRunnerIndex!].name}',
+        'Kjører: ${state.players[state.busRunnerIndex!].name}',
       );
     }
     if (state.phase == GamePhase.tiebreak && state.tieBreak != null) {
@@ -687,55 +702,13 @@ class _BannerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color tone = switch (state.bannerTone) {
-      BannerTone.info => const Color(0xFF2D5B96),
-      BannerTone.success => const Color(0xFF18824A),
-      BannerTone.fail => const Color(0xFFB93838),
-    };
-    final IconData icon = switch (state.bannerTone) {
-      BannerTone.info => Icons.info_outline,
-      BannerTone.success => Icons.check_circle_outline,
-      BannerTone.fail => Icons.error_outline,
-    };
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: tone.withValues(alpha: 0.92),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-        boxShadow: const <BoxShadow>[
-          BoxShadow(
-            color: Color(0x33000000),
-            blurRadius: 14,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.only(top: 1),
-              child: Icon(icon, color: const Color(0xFFF8F2E9), size: 18),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                state.banner,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Color(0xFFF8F2E9),
-                  fontWeight: FontWeight.w700,
-                  height: 1.25,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+    return AppBanner(
+      message: state.banner,
+      tone: switch (state.bannerTone) {
+        BannerTone.info => AppBannerTone.info,
+        BannerTone.success => AppBannerTone.success,
+        BannerTone.fail => AppBannerTone.fail,
+      },
     );
   }
 }
@@ -764,82 +737,184 @@ class _StartModeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Bussruta'),
-        actions: <Widget>[
-          _LanguageMenu(language: language, onSelected: onLanguageSelected),
-        ],
-      ),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  Text(
-                    tr(language, 'Choose game mode', 'Velg spillmodus'),
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 20),
-                  FilledButton.icon(
-                    onPressed: onSelectLocal,
-                    icon: const Icon(Icons.table_restaurant),
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                    ),
-                    label: Text(tr(language, 'Local', 'Lokal')),
-                  ),
-                  const SizedBox(height: 12),
-                  FilledButton.icon(
-                    onPressed: onSelectHosted,
-                    icon: const Icon(Icons.hub),
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                    ),
-                    label: Text(tr(language, 'Hosted', 'Hostet')),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    tr(
-                      language,
-                      'Local: everyone plays on one device. Hosted: one player per device.',
-                      'Lokal: alle spiller pa en enhet. Hostet: en spiller per enhet.',
-                    ),
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: onOpenRules,
-                          icon: const Icon(Icons.menu_book),
-                          label: Text(
-                            tr(language, 'How to play', 'Hvordan spille'),
-                          ),
+      body: SizedBox.expand(
+        child: Stack(
+          children: <Widget>[
+            Positioned.fill(
+              child: DecoratedBox(decoration: AppTheme.tableBackground()),
+            ),
+            SafeArea(
+              child: LayoutBuilder(
+                builder: (BuildContext context, BoxConstraints constraints) {
+                  final double topPadding = constraints.maxHeight < 680
+                      ? 10
+                      : 14;
+                  return SingleChildScrollView(
+                    padding: EdgeInsets.fromLTRB(20, topPadding, 20, 24),
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 430),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: <Widget>[
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: _LanguageMenu(
+                                language: language,
+                                onSelected: onLanguageSelected,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            const Icon(
+                              Icons.local_bar,
+                              color: AppTheme.gold,
+                              size: 36,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Bussruta',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.displaySmall
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w900,
+                                    color: AppTheme.cream,
+                                  ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              tr(
+                                language,
+                                'The social card game. Local on one device or hosted over your network.',
+                                'Det sosiale kortspillet. Lokalt på en enhet eller hostet over nettverket.',
+                              ),
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
+                                    color: AppTheme.cream.withValues(
+                                      alpha: 0.78,
+                                    ),
+                                    height: 1.32,
+                                  ),
+                            ),
+                            const SizedBox(height: 24),
+                            _ModeChoiceCard(
+                              icon: Icons.groups,
+                              title: tr(language, 'Local', 'Lokal'),
+                              description: tr(
+                                language,
+                                'Play together on one device.',
+                                'Spill sammen på en enhet.',
+                              ),
+                              onTap: onSelectLocal,
+                            ),
+                            const SizedBox(height: 12),
+                            _ModeChoiceCard(
+                              icon: Icons.hub,
+                              title: tr(language, 'Hosted', 'Hostet'),
+                              description: tr(
+                                language,
+                                'Host or join a game over your network.',
+                                'Host eller bli med over nettverket.',
+                              ),
+                              onTap: onSelectHosted,
+                            ),
+                            const SizedBox(height: 18),
+                            AppSurfaceCard(
+                              padding: const EdgeInsets.all(8),
+                              child: Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                alignment: WrapAlignment.center,
+                                children: <Widget>[
+                                  OutlinedButton.icon(
+                                    onPressed: onOpenRules,
+                                    icon: const Icon(Icons.menu_book_outlined),
+                                    label: Text(
+                                      tr(
+                                        language,
+                                        'How to play',
+                                        'Hvordan spille',
+                                      ),
+                                    ),
+                                  ),
+                                  FilledButton.tonalIcon(
+                                    onPressed: onOpenIntro,
+                                    icon: const Icon(Icons.slideshow),
+                                    label: Text(
+                                      tr(language, 'Quick intro', 'Rask intro'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: FilledButton.tonalIcon(
-                          onPressed: onOpenIntro,
-                          icon: const Icon(Icons.slideshow),
-                          label: Text(
-                            tr(language, 'Quick intro', 'Rask intro'),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                    ),
+                  );
+                },
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ModeChoiceCard extends StatelessWidget {
+  const _ModeChoiceCard({
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String description;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: AppSurfaceCard(
+          tone: AppSurfaceTone.accent,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+          child: Row(
+            children: <Widget>[
+              Icon(icon, color: AppTheme.gold, size: 38),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      description,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.cream.withValues(alpha: 0.78),
+                        height: 1.25,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(Icons.chevron_right, color: AppTheme.cream),
+            ],
           ),
         ),
       ),
@@ -856,7 +931,7 @@ class _LanguageMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton<AppLanguage>(
-      tooltip: tr(language, 'Language', 'Sprak'),
+      tooltip: tr(language, 'Language', 'Språk'),
       onSelected: onSelected,
       itemBuilder: (BuildContext context) => <PopupMenuEntry<AppLanguage>>[
         PopupMenuItem<AppLanguage>(
