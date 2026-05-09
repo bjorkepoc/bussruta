@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -5,8 +8,27 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    FileInputStream(keystorePropertiesFile).use { input ->
+        keystoreProperties.load(input)
+    }
+}
+
+val isReleaseBuild = gradle.startParameter.taskNames.any {
+    it.contains("Release", ignoreCase = true)
+}
+if (isReleaseBuild && !keystorePropertiesFile.exists()) {
+    error("Missing android/key.properties. Release builds must use the real upload keystore.")
+}
+
+fun releaseKeystoreProperty(name: String): String =
+    keystoreProperties.getProperty(name)
+        ?: error("Missing '$name' in android/key.properties.")
+
 android {
-    namespace = "com.bjork.bussruta_app"
+    namespace = "com.bjork.bussruta"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -20,8 +42,7 @@ android {
     }
 
     defaultConfig {
-        // Confirm the final application ID before publishing. See docs/release_readiness.md.
-        applicationId = "com.bjork.bussruta_app"
+        applicationId = "com.bjork.bussruta"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -30,11 +51,20 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            if (keystorePropertiesFile.exists()) {
+                keyAlias = releaseKeystoreProperty("keyAlias")
+                keyPassword = releaseKeystoreProperty("keyPassword")
+                storeFile = rootProject.file(releaseKeystoreProperty("storeFile"))
+                storePassword = releaseKeystoreProperty("storePassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // Configure real release signing before publishing. See docs/release_readiness.md.
-            // Debug signing remains here so `flutter run --release` works locally.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }

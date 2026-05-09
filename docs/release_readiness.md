@@ -7,18 +7,31 @@ This project is in a LAN-first hardening phase. The automated Dart/Flutter check
 - Local mode and hosted LAN mode are implemented.
 - Hosted LAN uses UDP discovery on port `45878` and TCP session traffic on port `45879`.
 - Hosted sessions are host-authoritative and send per-player projections so clients only receive their own private hand.
-- Internet room-key play is not implemented yet. It requires a backend relay/signaling service.
+- A minimal internet relay backend exists at `tool/internet_relay.dart`, but Flutter-side internet room UI/transport is not wired yet.
 - Bluetooth is deferred unless offline play without Wi-Fi becomes a required product goal.
 
 ## Required Before Release
 
-- Complete the manual QA checklist in `docs/manual_qa_checklist.md` on at least one Android emulator and two physical phones on the same Wi-Fi.
+- Complete the manual QA checklist in `docs/manual_qa_checklist.md` on two physical phones on the same Wi-Fi.
+- Record manual QA evidence in `docs/manual_qa_results.md`.
 - Confirm hosted LAN discovery, direct address join, reconnect, host shutdown, drink assignment, and bus-route authority on real devices.
-- Replace any placeholder app identity and decide the final Android package/application ID.
-- Configure Android release signing with a real keystore. The current Gradle release block still uses debug signing so release-mode local runs work.
-- Confirm the iOS bundle identifier, signing team, and local-network permission copy before App Store/TestFlight distribution.
+- Android application ID is `com.bjork.bussruta`.
+- iOS bundle identifier is `com.bjork.bussruta`.
+- Keep `android/key.properties` and `android/app/upload-keystore.jks` backed up outside git. They are intentionally ignored.
+- Confirm the iOS signing team before App Store/TestFlight distribution.
 - Decide the user-facing app name, icon, screenshots, privacy text, and store description.
 - Decide whether version `1.0.0+1` in `pubspec.yaml` is the first release version or should be reset before publishing.
+
+## Local Signing Setup
+
+Android release signing reads ignored local secrets from:
+
+```text
+android/key.properties
+android/app/upload-keystore.jks
+```
+
+Use `android/key.properties.example` as the committed template. Release builds fail if `android/key.properties` is absent; debug/profile developer builds do not need the keystore.
 
 ## Recommended Release Gate
 

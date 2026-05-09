@@ -1,0 +1,4 @@
+storePassword=replace-with-pkcs12-password
+keyPassword=replace-with-pkcs12-password
+keyAlias=upload
+storeFile=app/upload-keystore.jks

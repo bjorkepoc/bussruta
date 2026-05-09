@@ -1,6 +1,7 @@
 # Manual QA Checklist
 
 This checklist is for manual validation on real devices before release.
+Record dated runs and blockers in `docs/manual_qa_results.md`.
 
 ## Test setup
 

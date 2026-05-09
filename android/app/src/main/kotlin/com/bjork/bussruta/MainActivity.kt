@@ -1,4 +1,4 @@
-package com.bjork.bussruta_app
+package com.bjork.bussruta
 
 import io.flutter.embedding.android.FlutterActivity
 
