@@ -20,7 +20,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        // Confirm the final application ID before publishing. See docs/release_readiness.md.
         applicationId = "com.bjork.bussruta_app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
@@ -32,8 +32,8 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // Configure real release signing before publishing. See docs/release_readiness.md.
+            // Debug signing remains here so `flutter run --release` works locally.
             signingConfig = signingConfigs.getByName("debug")
         }
     }
