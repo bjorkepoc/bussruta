@@ -7,7 +7,8 @@
   - LAN discovery (same Wi-Fi)
   - PIN-based join
   - direct host address + PIN
-- No external backend or Bluetooth plugin is added yet.
+- A minimal Dart WebSocket relay exists at `tool/internet_relay.dart`, but the Flutter UI/controller is not wired to it yet.
+- No Bluetooth plugin is added yet.
 
 ## Internet room-key support
 
@@ -23,6 +24,10 @@
   - authenticated socket session for host and players
   - host-authoritative command forwarding and snapshot fanout
 - Keep existing hosted command/projection protocol, but swap transport from LAN TCP to backend WebSocket.
+
+Current relay status:
+- `tool/internet_relay.dart` implements the first backend skeleton for room creation and host/client message forwarding.
+- Flutter-side internet room transport and UI are still future work.
 
 ### Tradeoffs
 
