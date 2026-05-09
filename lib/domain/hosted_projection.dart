@@ -45,9 +45,13 @@ HostedProjectedView projectHostedView({
       warmupRound: session.gameState.warmupRound,
       pyramidCards: session.gameState.pyramidCards,
       pyramidRevealIndex: session.gameState.pyramidRevealIndex,
-      tieBreak: session.gameState.tieBreak,
+      tieBreak: session.gameState.tieBreak == null
+          ? null
+          : HostedPublicTieBreakState.fromTieBreak(session.gameState.tieBreak!),
       busRunnerPlayerId: busRunnerPlayerId,
-      busRoute: session.gameState.busRoute,
+      busRoute: session.gameState.busRoute == null
+          ? null
+          : HostedPublicBusRouteState.fromBusRoute(session.gameState.busRoute!),
       banner: session.gameState.banner,
       bannerTone: session.gameState.bannerTone,
       pendingDrinkDistribution: session.pendingDrinkDistribution,

@@ -1698,7 +1698,7 @@ class _HostedSessionViewState extends State<HostedSessionView>
   }
 
   Widget _tieBreakPanel({
-    required TieBreakState? tieBreak,
+    required HostedPublicTieBreakState? tieBreak,
     required VoidCallback? onRunRound,
   }) {
     if (tieBreak == null) {
@@ -1798,7 +1798,7 @@ class _HostedSessionViewState extends State<HostedSessionView>
   }
 
   Widget _busRouteBoard({
-    required BusRouteState route,
+    required HostedPublicBusRouteState route,
     required bool canControl,
     required GamePhase phase,
     required List<HostedPublicPlayer> players,
@@ -1845,8 +1845,8 @@ class _HostedSessionViewState extends State<HostedSessionView>
                   Text(
                     tr(
                       widget.language,
-                      'Deck: ${route.deck.length}',
-                      'Stokk: ${route.deck.length}',
+                      'Deck: ${route.deckCount}',
+                      'Stokk: ${route.deckCount}',
                     ),
                     style: const TextStyle(
                       color: Color(0xFFF2E7D7),
@@ -2011,7 +2011,7 @@ class _HostedSessionViewState extends State<HostedSessionView>
   }
 
   Widget _busRouteView({
-    required BusRouteState route,
+    required HostedPublicBusRouteState route,
     required bool canControl,
     required GamePhase phase,
     required List<HostedPublicPlayer> players,

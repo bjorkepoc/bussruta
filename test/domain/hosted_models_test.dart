@@ -11,6 +11,7 @@ void main() {
 
       expect(parsed.publicView.pyramidCards.length, 15);
       expect(parsed.publicView.busRoute?.progress, 0);
+      expect(parsed.publicView.busRoute?.deckCount, 1);
     });
 
     test('rejects hosted projections with short pyramid card lists', () {
@@ -91,33 +92,35 @@ Map<String, dynamic> _validProjectionJson() {
   ).toJson();
 }
 
-BusRouteState _busRoute({required int progress}) {
-  return BusRouteState(
-    routeCards: <PlayingCard>[
-      _card(Suit.clubs, 4),
-      _card(Suit.hearts, 6),
-      _card(Suit.spades, 8),
-      _card(Suit.diamonds, 10),
-      _card(Suit.clubs, 12),
-    ],
-    deck: <PlayingCard>[_card(Suit.hearts, 2)],
-    overlays: List<BusZoneStack>.generate(
-      5,
-      (_) => const BusZoneStack(
-        high: <PlayingCard>[],
-        low: <PlayingCard>[],
-        same: <PlayingCard>[],
+HostedPublicBusRouteState _busRoute({required int progress}) {
+  return HostedPublicBusRouteState.fromBusRoute(
+    BusRouteState(
+      routeCards: <PlayingCard>[
+        _card(Suit.clubs, 4),
+        _card(Suit.hearts, 6),
+        _card(Suit.spades, 8),
+        _card(Suit.diamonds, 10),
+        _card(Suit.clubs, 12),
+      ],
+      deck: <PlayingCard>[_card(Suit.hearts, 2)],
+      overlays: List<BusZoneStack>.generate(
+        5,
+        (_) => const BusZoneStack(
+          high: <PlayingCard>[],
+          low: <PlayingCard>[],
+          same: <PlayingCard>[],
+        ),
       ),
+      zoneTone: List<BusZoneTone>.generate(
+        5,
+        (_) => const BusZoneTone(high: null, low: null, same: null),
+      ),
+      startSide: BusStartSide.left,
+      order: const <int>[0, 1, 2, 3, 4],
+      progress: progress,
+      firstTry: true,
+      history: const <BusHistoryEntry>[],
     ),
-    zoneTone: List<BusZoneTone>.generate(
-      5,
-      (_) => const BusZoneTone(high: null, low: null, same: null),
-    ),
-    startSide: BusStartSide.left,
-    order: const <int>[0, 1, 2, 3, 4],
-    progress: progress,
-    firstTry: true,
-    history: const <BusHistoryEntry>[],
   );
 }
 

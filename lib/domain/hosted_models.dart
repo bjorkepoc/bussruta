@@ -372,6 +372,166 @@ class HostedPublicPlayer {
   }
 }
 
+class HostedPublicTieBreakState {
+  const HostedPublicTieBreakState({
+    required this.contenders,
+    required this.deckCount,
+    required this.round,
+    required this.lastDraws,
+  });
+
+  factory HostedPublicTieBreakState.fromTieBreak(TieBreakState tieBreak) {
+    return HostedPublicTieBreakState(
+      contenders: List<int>.from(tieBreak.contenders),
+      deckCount: tieBreak.deck.length,
+      round: tieBreak.round,
+      lastDraws: List<TieBreakDraw>.from(tieBreak.lastDraws),
+    );
+  }
+
+  final List<int> contenders;
+  final int deckCount;
+  final int round;
+  final List<TieBreakDraw> lastDraws;
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'contenders': contenders,
+      'deckCount': deckCount,
+      'round': round,
+      'lastDraws': lastDraws.map((TieBreakDraw draw) => draw.toJson()).toList(),
+    };
+  }
+
+  static HostedPublicTieBreakState fromJson(Map<String, dynamic> json) {
+    final List<dynamic> rawLastDraws = json['lastDraws'] as List<dynamic>;
+    final int deckCount =
+        json['deckCount'] as int? ??
+        (json['deck'] as List<dynamic>? ?? const <dynamic>[]).length;
+    if (deckCount < 0) {
+      throw ArgumentError('tieBreak deckCount must be non-negative.');
+    }
+    return HostedPublicTieBreakState(
+      contenders: (json['contenders'] as List<dynamic>).cast<int>(),
+      deckCount: deckCount,
+      round: json['round'] as int,
+      lastDraws: rawLastDraws
+          .map(
+            (dynamic item) =>
+                TieBreakDraw.fromJson(item as Map<String, dynamic>),
+          )
+          .toList(),
+    );
+  }
+}
+
+class HostedPublicBusRouteState {
+  const HostedPublicBusRouteState({
+    required this.routeCards,
+    required this.deckCount,
+    required this.overlays,
+    required this.zoneTone,
+    required this.startSide,
+    required this.order,
+    required this.progress,
+    required this.firstTry,
+    required this.history,
+  });
+
+  factory HostedPublicBusRouteState.fromBusRoute(BusRouteState busRoute) {
+    return HostedPublicBusRouteState(
+      routeCards: List<PlayingCard>.from(busRoute.routeCards),
+      deckCount: busRoute.deck.length,
+      overlays: List<BusZoneStack>.from(busRoute.overlays),
+      zoneTone: List<BusZoneTone>.from(busRoute.zoneTone),
+      startSide: busRoute.startSide,
+      order: List<int>.from(busRoute.order),
+      progress: busRoute.progress,
+      firstTry: busRoute.firstTry,
+      history: List<BusHistoryEntry>.from(busRoute.history),
+    );
+  }
+
+  final List<PlayingCard> routeCards;
+  final int deckCount;
+  final List<BusZoneStack> overlays;
+  final List<BusZoneTone> zoneTone;
+  final BusStartSide? startSide;
+  final List<int> order;
+  final int progress;
+  final bool firstTry;
+  final List<BusHistoryEntry> history;
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'routeCards': routeCards
+          .map((PlayingCard card) => card.toJson())
+          .toList(),
+      'deckCount': deckCount,
+      'overlays': overlays.map((BusZoneStack stack) => stack.toJson()).toList(),
+      'zoneTone': zoneTone.map((BusZoneTone tone) => tone.toJson()).toList(),
+      'startSide': startSide?.name,
+      'order': order,
+      'progress': progress,
+      'firstTry': firstTry,
+      'history': history
+          .map((BusHistoryEntry entry) => entry.toJson())
+          .toList(),
+    };
+  }
+
+  static HostedPublicBusRouteState fromJson(Map<String, dynamic> json) {
+    List<PlayingCard> parseCardList(String key) {
+      final List<dynamic> raw = json[key] as List<dynamic>;
+      return raw
+          .map(
+            (dynamic item) =>
+                PlayingCard.fromJson(item as Map<String, dynamic>),
+          )
+          .toList();
+    }
+
+    final List<dynamic> rawOverlays = json['overlays'] as List<dynamic>;
+    final List<dynamic> rawZoneTone = json['zoneTone'] as List<dynamic>;
+    final List<dynamic> rawHistory = json['history'] as List<dynamic>;
+    final int deckCount =
+        json['deckCount'] as int? ??
+        (json['deck'] as List<dynamic>? ?? const <dynamic>[]).length;
+    if (deckCount < 0) {
+      throw ArgumentError('busRoute deckCount must be non-negative.');
+    }
+
+    return HostedPublicBusRouteState(
+      routeCards: parseCardList('routeCards'),
+      deckCount: deckCount,
+      overlays: rawOverlays
+          .map(
+            (dynamic item) =>
+                BusZoneStack.fromJson(item as Map<String, dynamic>),
+          )
+          .toList(),
+      zoneTone: rawZoneTone
+          .map(
+            (dynamic item) =>
+                BusZoneTone.fromJson(item as Map<String, dynamic>),
+          )
+          .toList(),
+      startSide: json['startSide'] == null
+          ? null
+          : BusStartSide.values.byName(json['startSide'] as String),
+      order: (json['order'] as List<dynamic>).cast<int>(),
+      progress: json['progress'] as int,
+      firstTry: json['firstTry'] as bool,
+      history: rawHistory
+          .map(
+            (dynamic item) =>
+                BusHistoryEntry.fromJson(item as Map<String, dynamic>),
+          )
+          .toList(),
+    );
+  }
+}
+
 class HostedPublicView {
   const HostedPublicView({
     required this.sessionPin,
@@ -402,9 +562,9 @@ class HostedPublicView {
   final int warmupRound;
   final List<PlayingCard?> pyramidCards;
   final int pyramidRevealIndex;
-  final TieBreakState? tieBreak;
+  final HostedPublicTieBreakState? tieBreak;
   final int? busRunnerPlayerId;
-  final BusRouteState? busRoute;
+  final HostedPublicBusRouteState? busRoute;
   final String banner;
   final BannerTone bannerTone;
   final HostedPendingDrinkDistribution? pendingDrinkDistribution;
@@ -451,9 +611,11 @@ class HostedPublicView {
         'pyramidCards must contain $_hostedPyramidCardCount entries.',
       );
     }
-    final BusRouteState? busRoute = json['busRoute'] == null
+    final HostedPublicBusRouteState? busRoute = json['busRoute'] == null
         ? null
-        : BusRouteState.fromJson(json['busRoute'] as Map<String, dynamic>);
+        : HostedPublicBusRouteState.fromJson(
+            json['busRoute'] as Map<String, dynamic>,
+          );
     if (busRoute != null) {
       _validateHostedBusRoute(busRoute);
     }
@@ -474,7 +636,9 @@ class HostedPublicView {
       pyramidRevealIndex: json['pyramidRevealIndex'] as int,
       tieBreak: json['tieBreak'] == null
           ? null
-          : TieBreakState.fromJson(json['tieBreak'] as Map<String, dynamic>),
+          : HostedPublicTieBreakState.fromJson(
+              json['tieBreak'] as Map<String, dynamic>,
+            ),
       busRunnerPlayerId: json['busRunnerPlayerId'] as int?,
       busRoute: busRoute,
       banner: json['banner'] as String,
@@ -490,7 +654,7 @@ class HostedPublicView {
   }
 }
 
-void _validateHostedBusRoute(BusRouteState route) {
+void _validateHostedBusRoute(HostedPublicBusRouteState route) {
   if (route.progress < 0) {
     throw ArgumentError('busRoute progress must be non-negative.');
   }

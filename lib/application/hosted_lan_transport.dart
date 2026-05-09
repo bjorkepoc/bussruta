@@ -168,7 +168,7 @@ class HostedLanDiscovery {
       InternetAddress.anyIPv4,
       hostedDiscoveryPort,
       reuseAddress: true,
-      reusePort: !Platform.isWindows,
+      reusePort: !(Platform.isWindows || Platform.isAndroid),
     );
     _socket!.listen(_onSocketEvent);
     _cleanupTimer = Timer.periodic(

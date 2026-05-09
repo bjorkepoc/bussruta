@@ -76,6 +76,39 @@ void main() {
       expect(otherView.publicView.busRoute, isNotNull);
       expect(otherView.publicView.busRoute!.routeCards.length, 5);
     });
+
+    test('does not expose future tie-break or bus-route deck cards', () {
+      final HostedSessionState session = _sessionState().copyWith(
+        gameState: _sessionState().gameState.copyWith(
+          phase: GamePhase.bus,
+          tieBreak: TieBreakState(
+            contenders: const <int>[0, 1],
+            deck: <PlayingCard>[card(Suit.spades, 13)],
+            round: 1,
+            lastDraws: const <TieBreakDraw>[],
+          ),
+          busRunnerIndex: 0,
+          busRoute: _busRoute(),
+        ),
+        clearPendingDrinkDistribution: true,
+      );
+
+      final HostedProjectedView guestView = projectHostedView(
+        session: session,
+        viewerPlayerId: 102,
+      );
+      final Map<String, dynamic> publicJson =
+          guestView.toJson()['publicView'] as Map<String, dynamic>;
+      final Map<String, dynamic> tieBreakJson =
+          publicJson['tieBreak'] as Map<String, dynamic>;
+      final Map<String, dynamic> busRouteJson =
+          publicJson['busRoute'] as Map<String, dynamic>;
+
+      expect(tieBreakJson.containsKey('deck'), isFalse);
+      expect(tieBreakJson['deckCount'], 1);
+      expect(busRouteJson.containsKey('deck'), isFalse);
+      expect(busRouteJson['deckCount'], 1);
+    });
   });
 }
 
