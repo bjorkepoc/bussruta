@@ -10,6 +10,9 @@ import 'package:bussruta_app/domain/hosted_projection.dart';
 const int hostedDiscoveryPort = 45878;
 const int hostedSessionPort = 45879;
 const String _announcementType = 'bussruta-host-v1';
+const int _maxHostedLanMessageBytes = 64 * 1024;
+const int _lineFeed = 10;
+const int _carriageReturn = 13;
 
 enum HostedClientIssueCode {
   genericError,
@@ -67,6 +70,77 @@ class HostedDiscoveryEntry {
   }
 }
 
+StreamSubscription<List<int>> _listenForHostedLanLines({
+  required Socket socket,
+  required void Function(String line) onLine,
+  required void Function(Object error) onError,
+  required void Function() onDone,
+}) {
+  final List<int> pending = <int>[];
+  bool closed = false;
+
+  void closeForInvalidFrame() {
+    if (closed) {
+      return;
+    }
+    closed = true;
+    onDone();
+    socket.destroy();
+  }
+
+  return socket.cast<List<int>>().listen(
+    (List<int> chunk) {
+      if (closed) {
+        return;
+      }
+      pending.addAll(chunk);
+      while (!closed) {
+        final int newlineIndex = pending.indexOf(_lineFeed);
+        if (newlineIndex < 0) {
+          if (pending.length > _maxHostedLanMessageBytes) {
+            closeForInvalidFrame();
+          }
+          return;
+        }
+        if (newlineIndex > _maxHostedLanMessageBytes) {
+          closeForInvalidFrame();
+          return;
+        }
+        final List<int> lineBytes = pending.sublist(0, newlineIndex);
+        pending.removeRange(0, newlineIndex + 1);
+        if (lineBytes.isNotEmpty && lineBytes.last == _carriageReturn) {
+          lineBytes.removeLast();
+        }
+        try {
+          onLine(utf8.decode(lineBytes, allowMalformed: false));
+        } catch (error) {
+          if (!closed) {
+            closed = true;
+            onError(error);
+            socket.destroy();
+          }
+          return;
+        }
+      }
+    },
+    onError: (Object error) {
+      if (closed) {
+        return;
+      }
+      closed = true;
+      onError(error);
+    },
+    onDone: () {
+      if (closed) {
+        return;
+      }
+      closed = true;
+      onDone();
+    },
+    cancelOnError: true,
+  );
+}
+
 class HostedLanDiscovery {
   RawDatagramSocket? _socket;
   Timer? _cleanupTimer;
@@ -94,7 +168,7 @@ class HostedLanDiscovery {
       InternetAddress.anyIPv4,
       hostedDiscoveryPort,
       reuseAddress: true,
-      reusePort: true,
+      reusePort: !Platform.isWindows,
     );
     _socket!.listen(_onSocketEvent);
     _cleanupTimer = Timer.periodic(
@@ -131,11 +205,7 @@ class HostedLanDiscovery {
       }
       final String pin = (json['pin'] as String? ?? '').trim();
       final int port = json['port'] as int? ?? 0;
-      final String announcedAddress = (json['hostAddress'] as String? ?? '')
-          .trim();
-      final String hostAddress = announcedAddress.isNotEmpty
-          ? announcedAddress
-          : datagram.address.address;
+      final String hostAddress = datagram.address.address.trim();
       if (pin.isEmpty || port <= 0 || hostAddress.isEmpty) {
         return null;
       }
@@ -244,16 +314,12 @@ class HostedLanHostServer {
   }
 
   void _handleSocket(Socket socket) {
-    socket
-        .cast<List<int>>()
-        .transform(utf8.decoder)
-        .transform(const LineSplitter())
-        .listen(
-          (String line) => _handleClientLine(socket, line),
-          onError: (_) => _handleDisconnect(socket),
-          onDone: () => _handleDisconnect(socket),
-          cancelOnError: true,
-        );
+    _listenForHostedLanLines(
+      socket: socket,
+      onLine: (String line) => _handleClientLine(socket, line),
+      onError: (_) => _handleDisconnect(socket),
+      onDone: () => _handleDisconnect(socket),
+    );
   }
 
   void _handleClientLine(Socket socket, String line) {
@@ -653,7 +719,7 @@ class HostedLanClientConnection {
   String? _playerToken;
   bool _sessionClosedReceived = false;
   bool _closingLocally = false;
-  StreamSubscription<String>? _socketSub;
+  StreamSubscription<List<int>>? _socketSub;
 
   Stream<HostedProjectedView> get projectionUpdates =>
       _projectionUpdates.stream;
@@ -690,50 +756,46 @@ class HostedLanClientConnection {
   }
 
   void _listen() {
-    _socketSub = _socket
-        .cast<List<int>>()
-        .transform(utf8.decoder)
-        .transform(const LineSplitter())
-        .listen(
-          _handleLine,
-          onError: (Object error) {
-            if (_closingLocally) {
-              return;
-            }
-            final bool joinPending = !_joined.isCompleted;
-            final String details = error.toString();
-            _emitIssue(
-              HostedClientIssue(
-                code: joinPending
-                    ? HostedClientIssueCode.hostUnavailable
-                    : HostedClientIssueCode.disconnected,
-                message: joinPending
-                    ? 'Could not connect to host: $details'
-                    : 'Connection error: $details',
-              ),
-            );
-            if (joinPending) {
-              _joined.completeError('Connection error: $details');
-            }
-          },
-          onDone: () {
-            if (_sessionClosedReceived || _closingLocally) {
-              return;
-            }
-            _emitIssue(
-              const HostedClientIssue(
-                code: HostedClientIssueCode.disconnected,
-                message: 'Disconnected from host.',
-              ),
-            );
-            if (!_joined.isCompleted) {
-              _joined.completeError(
-                'Disconnected from host before join completed.',
-              );
-            }
-          },
-          cancelOnError: true,
+    _socketSub = _listenForHostedLanLines(
+      socket: _socket,
+      onLine: _handleLine,
+      onError: (Object error) {
+        if (_closingLocally) {
+          return;
+        }
+        final bool joinPending = !_joined.isCompleted;
+        final String details = error.toString();
+        _emitIssue(
+          HostedClientIssue(
+            code: joinPending
+                ? HostedClientIssueCode.hostUnavailable
+                : HostedClientIssueCode.disconnected,
+            message: joinPending
+                ? 'Could not connect to host: $details'
+                : 'Connection error: $details',
+          ),
         );
+        if (joinPending) {
+          _joined.completeError('Connection error: $details');
+        }
+      },
+      onDone: () {
+        if (_sessionClosedReceived || _closingLocally) {
+          return;
+        }
+        _emitIssue(
+          const HostedClientIssue(
+            code: HostedClientIssueCode.disconnected,
+            message: 'Disconnected from host.',
+          ),
+        );
+        if (!_joined.isCompleted) {
+          _joined.completeError(
+            'Disconnected from host before join completed.',
+          );
+        }
+      },
+    );
   }
 
   void _sendJoin() {
@@ -771,8 +833,15 @@ class HostedLanClientConnection {
         final Map<String, dynamic>? projectionMap =
             envelope['projection'] as Map<String, dynamic>?;
         if (projectionMap != null) {
-          _projection = HostedProjectedView.fromJson(projectionMap);
-          _emitProjection(_projection!);
+          final HostedProjectedView? projection = _parseProjection(
+            projectionMap,
+            joinPending: true,
+          );
+          if (projection == null) {
+            return;
+          }
+          _projection = projection;
+          _emitProjection(projection);
         }
         if (!_joined.isCompleted) {
           _joined.complete();
@@ -784,8 +853,15 @@ class HostedLanClientConnection {
         if (projectionMap == null) {
           break;
         }
-        _projection = HostedProjectedView.fromJson(projectionMap);
-        _emitProjection(_projection!);
+        final HostedProjectedView? projection = _parseProjection(
+          projectionMap,
+          joinPending: false,
+        );
+        if (projection == null) {
+          break;
+        }
+        _projection = projection;
+        _emitProjection(projection);
         break;
       case 'error':
         final String message = envelope['message'] as String? ?? 'Host error.';
@@ -822,6 +898,31 @@ class HostedLanClientConnection {
         break;
       default:
         break;
+    }
+  }
+
+  HostedProjectedView? _parseProjection(
+    Map<String, dynamic> projectionMap, {
+    required bool joinPending,
+  }) {
+    try {
+      return HostedProjectedView.fromJson(projectionMap);
+    } catch (_) {
+      const String message = 'Invalid projection from host.';
+      _emitIssue(
+        HostedClientIssue(
+          code: joinPending
+              ? HostedClientIssueCode.hostUnavailable
+              : HostedClientIssueCode.genericError,
+          message: message,
+        ),
+      );
+      if (joinPending && !_joined.isCompleted) {
+        _joined.completeError(message);
+        _closingLocally = true;
+        _socket.destroy();
+      }
+      return null;
     }
   }
 

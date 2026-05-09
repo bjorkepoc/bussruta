@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:bussruta_app/domain/game_models.dart';
 
+const int _hostedPyramidCardCount = 15;
+
 enum HostedSessionStage { lobby, inGame, finished }
 
 enum HostedCommandType {
@@ -438,6 +440,23 @@ class HostedPublicView {
   static HostedPublicView fromJson(Map<String, dynamic> json) {
     final List<dynamic> rawPlayers = json['players'] as List<dynamic>;
     final List<dynamic> rawPyramidCards = json['pyramidCards'] as List<dynamic>;
+    final List<PlayingCard?> pyramidCards = rawPyramidCards.map((dynamic item) {
+      if (item == null) {
+        return null;
+      }
+      return PlayingCard.fromJson(item as Map<String, dynamic>);
+    }).toList();
+    if (pyramidCards.length != _hostedPyramidCardCount) {
+      throw ArgumentError(
+        'pyramidCards must contain $_hostedPyramidCardCount entries.',
+      );
+    }
+    final BusRouteState? busRoute = json['busRoute'] == null
+        ? null
+        : BusRouteState.fromJson(json['busRoute'] as Map<String, dynamic>);
+    if (busRoute != null) {
+      _validateHostedBusRoute(busRoute);
+    }
     return HostedPublicView(
       sessionPin: json['sessionPin'] as String,
       stage: HostedSessionStage.values.byName(json['stage'] as String),
@@ -451,20 +470,13 @@ class HostedPublicView {
           .toList(),
       currentTurnPlayerId: json['currentTurnPlayerId'] as int?,
       warmupRound: json['warmupRound'] as int,
-      pyramidCards: rawPyramidCards.map((dynamic item) {
-        if (item == null) {
-          return null;
-        }
-        return PlayingCard.fromJson(item as Map<String, dynamic>);
-      }).toList(),
+      pyramidCards: pyramidCards,
       pyramidRevealIndex: json['pyramidRevealIndex'] as int,
       tieBreak: json['tieBreak'] == null
           ? null
           : TieBreakState.fromJson(json['tieBreak'] as Map<String, dynamic>),
       busRunnerPlayerId: json['busRunnerPlayerId'] as int?,
-      busRoute: json['busRoute'] == null
-          ? null
-          : BusRouteState.fromJson(json['busRoute'] as Map<String, dynamic>),
+      busRoute: busRoute,
       banner: json['banner'] as String,
       bannerTone: BannerTone.values.byName(json['bannerTone'] as String),
       pendingDrinkDistribution: json['pendingDrinkDistribution'] == null
@@ -475,6 +487,15 @@ class HostedPublicView {
       autoPlayEnabled: json['autoPlayEnabled'] as bool? ?? false,
       autoPlayDelayMs: json['autoPlayDelayMs'] as int? ?? 1500,
     );
+  }
+}
+
+void _validateHostedBusRoute(BusRouteState route) {
+  if (route.progress < 0) {
+    throw ArgumentError('busRoute progress must be non-negative.');
+  }
+  if (route.progress > route.order.length) {
+    throw ArgumentError('busRoute progress cannot exceed route order length.');
   }
 }
 
