@@ -23,6 +23,9 @@ class _BussrutaAppState extends State<BussrutaApp> {
   String _lastBanner = '';
   _AppMode? _selectedMode;
   bool _onboardingLaunchQueued = false;
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey =
+      GlobalKey<ScaffoldMessengerState>();
   late final HostedSessionController _hostedController =
       HostedSessionController();
 
@@ -59,6 +62,8 @@ class _BussrutaAppState extends State<BussrutaApp> {
         return MaterialApp(
           title: 'Bussruta',
           debugShowCheckedModeBanner: false,
+          navigatorKey: _navigatorKey,
+          scaffoldMessengerKey: _scaffoldMessengerKey,
           theme: ThemeData(
             useMaterial3: true,
             colorScheme: ColorScheme.fromSeed(
@@ -147,15 +152,19 @@ class _BussrutaAppState extends State<BussrutaApp> {
         if (!mounted) {
           return;
         }
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(error)));
+        _scaffoldMessengerKey.currentState?.showSnackBar(
+          SnackBar(content: Text(error)),
+        );
       });
     }
   }
 
   Future<void> _openRules({required AppLanguage language}) async {
-    await Navigator.of(context).push<void>(
+    final NavigatorState? navigator = _navigatorKey.currentState;
+    if (navigator == null) {
+      return;
+    }
+    await navigator.push<void>(
       MaterialPageRoute<void>(
         builder: (BuildContext context) {
           return RulesHelpScreen(
@@ -176,7 +185,11 @@ class _BussrutaAppState extends State<BussrutaApp> {
     if (!mounted) {
       return;
     }
-    final bool? completed = await Navigator.of(context).push<bool>(
+    final NavigatorState? navigator = _navigatorKey.currentState;
+    if (navigator == null) {
+      return;
+    }
+    final bool? completed = await navigator.push<bool>(
       MaterialPageRoute<bool>(
         builder: (BuildContext context) =>
             OnboardingIntroScreen(language: language),

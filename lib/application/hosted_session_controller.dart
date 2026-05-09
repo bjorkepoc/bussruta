@@ -744,7 +744,9 @@ class HostedSessionController extends ChangeNotifier {
     _reconnectAttempt = 0;
     _networkDiagnostic = null;
     _sessionCloseInProgress = false;
-    notifyListeners();
+    if (!_disposed) {
+      notifyListeners();
+    }
   }
 
   void _resetReconnectIdentity() {
@@ -913,6 +915,17 @@ List<String> hostedJoinAddressCandidates(String hostAddress) {
     addresses.add('10.0.2.2');
   }
   return addresses;
+}
+
+String hostedEmulatorForwardCommand(int port) {
+  if (port < 1 || port > 65535) {
+    throw ArgumentError.value(
+      port,
+      'port',
+      'Port must be between 1 and 65535.',
+    );
+  }
+  return 'adb -s <host-emulator> forward tcp:$port tcp:$port';
 }
 
 bool hostedAddressLooksLikeEmulatorNat(String address) {

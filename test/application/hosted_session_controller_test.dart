@@ -50,5 +50,15 @@ void main() {
     test('does not duplicate emulator fallback when already 10.0.2.2', () {
       expect(hostedJoinAddressCandidates('10.0.2.2'), <String>['10.0.2.2']);
     });
+
+    test(
+      'formats emulator adb forward command for the hosted session port',
+      () {
+        expect(
+          hostedEmulatorForwardCommand(45879),
+          'adb -s <host-emulator> forward tcp:45879 tcp:45879',
+        );
+      },
+    );
   });
 }

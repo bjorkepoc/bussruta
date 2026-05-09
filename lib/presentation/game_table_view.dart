@@ -2841,10 +2841,13 @@ class _CardBack extends StatelessWidget {
         Center(
           child: Transform.translate(
             offset: Offset(0, size == _CardVisualSize.extraSmall ? 0 : -1),
-            child: Icon(
-              Icons.directions_bus_filled_rounded,
-              color: const Color(0xFFFFD155),
-              size: iconSize,
+            child: RotatedBox(
+              quarterTurns: 1,
+              child: Icon(
+                Icons.directions_bus_filled_rounded,
+                color: const Color(0xFFFFD155),
+                size: iconSize,
+              ),
             ),
           ),
         ),

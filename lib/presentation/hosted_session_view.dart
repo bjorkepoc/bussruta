@@ -7,6 +7,7 @@ import 'package:bussruta_app/domain/game_models.dart';
 import 'package:bussruta_app/domain/hosted_models.dart';
 import 'package:bussruta_app/presentation/strings.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class HostedSessionView extends StatefulWidget {
   const HostedSessionView({
@@ -33,6 +34,8 @@ class _HostedSessionViewState extends State<HostedSessionView>
   final TextEditingController _host = TextEditingController();
   Map<int, int> _draftTargets = <int, int>{};
   int? _draftSource;
+  bool _emulatorCommandCopied = false;
+  Timer? _copyFeedbackTimer;
   late final AnimationController _flash = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 620),
@@ -58,6 +61,7 @@ class _HostedSessionViewState extends State<HostedSessionView>
     _name.dispose();
     _pin.dispose();
     _host.dispose();
+    _copyFeedbackTimer?.cancel();
     _flash.dispose();
     super.dispose();
   }
@@ -350,6 +354,10 @@ class _HostedSessionViewState extends State<HostedSessionView>
         .length;
     final String? hostAddress = widget.controller.hostAddress;
     final int? hostPort = widget.controller.hostPort;
+    final int joinPort = hostPort ?? hostedSessionPort;
+    final String emulatorForwardCommand = hostedEmulatorForwardCommand(
+      joinPort,
+    );
     final bool emulatorAddress = hostAddress != null
         ? hostedAddressLooksLikeEmulatorNat(hostAddress)
         : false;
@@ -450,7 +458,7 @@ class _HostedSessionViewState extends State<HostedSessionView>
                               ),
                               const SizedBox(height: 6),
                               SelectableText(
-                                '$hostAddress:${hostPort ?? 0}',
+                                '$hostAddress:$joinPort',
                                 style: const TextStyle(
                                   color: Color(0xFFFFD06A),
                                   fontSize: 18,
@@ -463,8 +471,8 @@ class _HostedSessionViewState extends State<HostedSessionView>
                                 Text(
                                   tr(
                                     language,
-                                    'Emulator fallback target (after adb forward): 10.0.2.2:${hostPort ?? hostedSessionPort}',
-                                    'Emulator-fallback (etter adb forward): 10.0.2.2:${hostPort ?? hostedSessionPort}',
+                                    'Emulator fallback target (after adb forward): 10.0.2.2:$joinPort',
+                                    'Emulator-fallback (etter adb forward): 10.0.2.2:$joinPort',
                                   ),
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(
@@ -474,13 +482,49 @@ class _HostedSessionViewState extends State<HostedSessionView>
                                 ),
                                 const SizedBox(height: 6),
                                 SelectableText(
-                                  'adb -s <host-emulator> forward tcp:${hostPort ?? hostedSessionPort} tcp:${hostPort ?? hostedSessionPort}',
+                                  emulatorForwardCommand,
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(
                                     color: Color(0xFFFFD06A),
                                     fontFamily: 'monospace',
                                     fontSize: 12,
                                     fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                OutlinedButton.icon(
+                                  onPressed: () {
+                                    unawaited(
+                                      Clipboard.setData(
+                                        ClipboardData(
+                                          text: emulatorForwardCommand,
+                                        ),
+                                      ),
+                                    );
+                                    _markEmulatorCommandCopied();
+                                  },
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: const Color(0xFFF4E8D6),
+                                    side: BorderSide(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.65,
+                                      ),
+                                    ),
+                                  ),
+                                  icon: Icon(
+                                    _emulatorCommandCopied
+                                        ? Icons.check
+                                        : Icons.copy,
+                                    size: 18,
+                                  ),
+                                  label: Text(
+                                    _emulatorCommandCopied
+                                        ? tr(language, 'Copied', 'Kopiert')
+                                        : tr(
+                                            language,
+                                            'Copy adb command',
+                                            'Kopier adb-kommando',
+                                          ),
                                   ),
                                 ),
                               ],
@@ -572,6 +616,21 @@ class _HostedSessionViewState extends State<HostedSessionView>
         ),
       ),
     );
+  }
+
+  void _markEmulatorCommandCopied() {
+    _copyFeedbackTimer?.cancel();
+    setState(() {
+      _emulatorCommandCopied = true;
+    });
+    _copyFeedbackTimer = Timer(const Duration(seconds: 2), () {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _emulatorCommandCopied = false;
+      });
+    });
   }
 
   Widget _buildGame(HostedProjectedView projection) {
@@ -2130,9 +2189,9 @@ class _HostedSessionViewState extends State<HostedSessionView>
               ),
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: const Color(0x22000000).withValues(
-              alpha: emphasized ? 0.2 : 0.13,
-            ),
+            color: const Color(
+              0x22000000,
+            ).withValues(alpha: emphasized ? 0.2 : 0.13),
             blurRadius: emphasized ? 12 : 9,
             offset: const Offset(0, 5),
           ),
@@ -2244,9 +2303,7 @@ class _HostedSessionViewState extends State<HostedSessionView>
             child: DecoratedBox(
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.white.withValues(alpha: 0.26)),
-                borderRadius: BorderRadius.circular(
-                  math.max(2, radius - 1.4),
-                ),
+                borderRadius: BorderRadius.circular(math.max(2, radius - 1.4)),
               ),
             ),
           ),
