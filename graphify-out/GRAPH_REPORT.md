@@ -1,16 +1,16 @@
 # Graph Report - bussruta  (2026-05-09)
 
 ## Corpus Check
-- 59 files · ~63,188 words
+- 59 files · ~63,475 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 824 nodes · 1089 edges · 46 communities (36 shown, 10 thin omitted)
+- 825 nodes · 1090 edges · 46 communities (37 shown, 9 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `e46e78dc`
+- Built from commit: `a2a6c2c0`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -71,7 +71,7 @@
 ## Surprising Connections (you probably didn't know these)
 - None detected - all connections are within the same source files.
 
-## Communities (46 total, 10 thin omitted)
+## Communities (46 total, 9 thin omitted)
 
 ### Community 0 - "Community 0"
 Cohesion: 0.06
@@ -91,7 +91,7 @@ Nodes (45): GameStorage, SharedPrefsGameStorage, busGuessLabel, languageName, ph
 
 ### Community 4 - "Community 4"
 Cohesion: 0.05
-Nodes (40): Duration, expectLater, Function, HostedProjectedView, main, StateError, _waitFor, Duration (+32 more)
+Nodes (41): Duration, expectLater, Function, HostedProjectedView, main, StateError, _waitFor, Duration (+33 more)
 
 ### Community 5 - "Community 5"
 Cohesion: 0.05
@@ -111,15 +111,15 @@ Nodes (33): AnimatedBuilder, AppBanner, AppSurfaceCard, _BannerCard, build, _bui
 
 ### Community 9 - "Community 9"
 Cohesion: 0.07
-Nodes (28): applyLocalCommand, _broadcastSnapshots, _emitError, _emitIssue, _emitProjection, _emitState, _ensureTokenForPlayer, _handleClientDisconnect (+20 more)
+Nodes (27): addPlayer, beginBusRoute, _cancelPendingSetupPersist, didChangeAppLifecycleState, dispose, _emit, GameController, hardResetSetup (+19 more)
 
 ### Community 10 - "Community 10"
 Cohesion: 0.07
-Nodes (27): addPlayer, beginBusRoute, _cancelPendingSetupPersist, didChangeAppLifecycleState, dispose, _emit, GameController, hardResetSetup (+19 more)
+Nodes (27): addParticipant, _appendDrinkDistributionLog, applyCommand, _autoExpirePromptCommand, _compare, _expireStaleDrinkPrompts, _handleAcknowledgeDrinks, _handleAssignDrinks (+19 more)
 
 ### Community 11 - "Community 11"
 Cohesion: 0.07
-Nodes (27): addParticipant, _appendDrinkDistributionLog, applyCommand, _autoExpirePromptCommand, _compare, _expireStaleDrinkPrompts, _handleAcknowledgeDrinks, _handleAssignDrinks (+19 more)
+Nodes (27): applyLocalCommand, _broadcastSnapshots, _emitError, _emitIssue, _emitProjection, _emitState, _ensureTokenForPlayer, _handleClientDisconnect (+19 more)
 
 ### Community 12 - "Community 12"
 Cohesion: 0.11
@@ -193,22 +193,26 @@ Nodes (4): code:bash (python -m http.server 8000), Game flow implemented, Run lo
 Cohesion: 0.5
 Nodes (3): copyWith, HostedClientIssue, HostedDiscoveryEntry
 
+### Community 33 - "Community 33"
+Cohesion: 0.5
+Nodes (3): 2026-05-09 QA Findings Fix Pass, 2026-05-09 Release Smoke, Manual QA Results
+
 ## Knowledge Gaps
-- **608 isolated node(s):** `MainActivity`, `SUITS`, `RANK_LABELS`, `PYRAMID_ROWS`, `state` (+603 more)
+- **609 isolated node(s):** `MainActivity`, `SUITS`, `RANK_LABELS`, `PYRAMID_ROWS`, `state` (+604 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **10 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **9 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `package:bussruta_app/domain/game_models.dart` connect `Community 3` to `Community 1`, `Community 2`, `Community 4`, `Community 5`, `Community 7`, `Community 8`, `Community 10`, `Community 11`, `Community 13`, `Community 16`, `Community 22`, `Community 23`, `Community 27`?**
+- **Why does `package:bussruta_app/domain/game_models.dart` connect `Community 3` to `Community 1`, `Community 2`, `Community 4`, `Community 5`, `Community 7`, `Community 8`, `Community 9`, `Community 10`, `Community 13`, `Community 16`, `Community 22`, `Community 23`, `Community 27`?**
   _High betweenness centrality (0.178) - this node is a cross-community bridge._
-- **Why does `dart:async` connect `Community 4` to `Community 1`, `Community 2`, `Community 5`, `Community 6`, `Community 8`, `Community 9`, `Community 10`, `Community 21`?**
+- **Why does `dart:async` connect `Community 4` to `Community 1`, `Community 2`, `Community 5`, `Community 6`, `Community 8`, `Community 9`, `Community 11`, `Community 21`?**
   _High betweenness centrality (0.088) - this node is a cross-community bridge._
-- **Why does `dart:math` connect `Community 9` to `Community 1`, `Community 2`, `Community 4`, `Community 5`, `Community 6`, `Community 7`?**
+- **Why does `dart:math` connect `Community 4` to `Community 1`, `Community 2`, `Community 5`, `Community 6`, `Community 7`, `Community 11`?**
   _High betweenness centrality (0.054) - this node is a cross-community bridge._
 - **What connects `MainActivity`, `SUITS`, `RANK_LABELS` to the rest of the system?**
-  _608 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _609 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
   _Cohesion score 0.06 - nodes in this community are weakly interconnected._
 - **Should `Community 1` be split into smaller, more focused modules?**

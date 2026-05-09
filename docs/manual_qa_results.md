@@ -30,3 +30,36 @@ Release implication:
 
 - Emulator smoke is good enough for package/signing/startup confidence.
 - Real release readiness still requires the physical-device hosted LAN checklist in `docs/manual_qa_checklist.md`.
+
+## 2026-05-09 QA Findings Fix Pass
+
+Environment:
+
+- Host: Windows, Flutter debug APK built from `codex/ui-refresh-premium-card-table`.
+- Device: Android emulator `emulator-5554`, package `com.bjork.bussruta`, `1080x2400`.
+- Physical devices: blocked. This pass intentionally documents the release gate instead of closing it.
+
+Verified:
+
+- Installed `build/app/outputs/flutter-apk/app-debug.apk`, cleared app data, and launched `com.bjork.bussruta/.MainActivity`.
+- First-run intro opened; skipped intro to mode chooser.
+- Switched language from EN to NO and verified Norwegian mode labels.
+- Opened `Hvordan spille`, captured the help screen, and returned to mode chooser.
+- Opened local setup, verified `Tilbake til valg` and `Fjern spiller N` accessible labels in the UI tree, then used Android Back to return to mode chooser.
+- Started a local game, reached warmup, used autoplay through warmup and pyramid, selected bus route start, resumed autoplay, reached finished state, and used `Nytt spill` to return to setup.
+- Opened hosted mode, hosted a LAN session, verified lobby/PIN/status, started hosted game, made a warmup choice, verified pending drink assignment blocks choices, verified plus/minus drink buttons have explicit Norwegian labels, sent drink distribution, acknowledged the drink, and used Android Back to leave the hosted game back to mode chooser.
+- Checked app PID logcat and Android crash buffer for Flutter exceptions, RenderFlex overflow, and app crashes; no matching entries were present.
+
+Still blocked:
+
+- Physical two-phone LAN discovery.
+- Direct host-address join from another real device.
+- Reconnect after Wi-Fi interruption.
+- Host shutdown behavior on real clients.
+- Cross-device private-hand verification.
+- Real-device drink distribution and loser-only bus-route authority.
+
+Release implication:
+
+- Local mode and single-emulator hosted host flow passed this QA fix smoke.
+- Hosted LAN remains release-blocked until the physical-device checklist is run on at least two Android phones on the same Wi-Fi.
