@@ -1,10 +1,17 @@
 import 'package:bussruta_app/application/game_controller.dart';
 import 'package:bussruta_app/application/game_storage.dart';
+import 'package:bussruta_app/application/hosted_session_controller.dart';
 import 'package:bussruta_app/domain/game_engine.dart';
 import 'package:bussruta_app/domain/game_models.dart';
+import 'package:bussruta_app/domain/hosted_models.dart';
+import 'package:bussruta_app/domain/hosted_projection.dart';
 import 'package:bussruta_app/presentation/bussruta_app.dart';
+import 'package:bussruta_app/presentation/hosted_session_view.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../tool/internet_relay.dart';
 
 void main() {
   testWidgets(
@@ -224,6 +231,42 @@ void main() {
     expect(find.text('Join by PIN'), findsOneWidget);
   });
 
+  testWidgets('hosted entry leaves default player name for role fallback', (
+    WidgetTester tester,
+  ) async {
+    await _pumpApp(tester);
+
+    await tester.tap(find.text('Hosted'));
+    await tester.pumpAndSettle();
+
+    final TextField nameField = tester.widget<TextField>(
+      find.widgetWithText(TextField, 'Your name'),
+    );
+    expect(nameField.controller?.text, isEmpty);
+    expect(nameField.decoration?.hintText, 'Host or Player 2');
+  });
+
+  test('hosted relay default can be prefilled from app link', () {
+    expect(
+      defaultHostedRelayUrl(
+        Uri.parse(
+          'http://192.168.10.104:8091/?relayUrl=ws%3A%2F%2F192.168.10.104%3A8090%2Fws',
+        ),
+      ),
+      'ws://192.168.10.104:8090/ws',
+    );
+
+    expect(
+      defaultHostedRelayUrl(Uri.parse('http://192.168.10.104:8081/')),
+      'ws://192.168.10.104:8080/ws',
+    );
+
+    expect(
+      defaultHostedRelayUrl(Uri.parse('https://play.example.com/')),
+      'wss://play.example.com:8080/ws',
+    );
+  });
+
   testWidgets('hosted entry system back returns to mode chooser', (
     WidgetTester tester,
   ) async {
@@ -239,6 +282,449 @@ void main() {
     expect(find.text('Local'), findsOneWidget);
     expect(find.text('Hosted'), findsOneWidget);
   });
+
+  testWidgets('relay lobby exposes copyable join details', (
+    WidgetTester tester,
+  ) async {
+    final InternetRelayServer relay = InternetRelayServer();
+    await tester.runAsync(relay.start);
+
+    final HostedSessionController controller = HostedSessionController(
+      enableLanDiscovery: false,
+    );
+    try {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: HostedSessionView(
+            controller: controller,
+            language: AppLanguage.en,
+            onBackToModeChooser: () {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.runAsync(
+        () => controller.startRelayHosting(
+          hostName: 'Host',
+          relayUrl: relay.uri.toString(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Relay join details'), findsOneWidget);
+
+      await tester.tap(find.text('Relay join details'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Copy join details'), findsOneWidget);
+      expect(find.text(relay.uri.toString()), findsOneWidget);
+      expect(find.text(controller.relayRoomKey!), findsWidgets);
+
+      String? clipboardText;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (MethodCall methodCall) async {
+          if (methodCall.method == 'Clipboard.setData') {
+            final Object? text =
+                (methodCall.arguments as Map<dynamic, dynamic>)['text'];
+            clipboardText = text as String?;
+          }
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+
+      await tester.tap(find.text('Copy join details'));
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Copied'), findsOneWidget);
+      expect(clipboardText, contains('Relay URL: ${relay.uri}'));
+      expect(clipboardText, contains('Room key: ${controller.relayRoomKey}'));
+    } finally {
+      controller.dispose();
+      await tester.runAsync(relay.close);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+    }
+  });
+
+  testWidgets('relay copy failure keeps error state instead of copied', (
+    WidgetTester tester,
+  ) async {
+    final InternetRelayServer relay = InternetRelayServer();
+    await tester.runAsync(relay.start);
+
+    final HostedSessionController controller = HostedSessionController(
+      enableLanDiscovery: false,
+    );
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (MethodCall methodCall) async {
+        if (methodCall.method == 'Clipboard.setData') {
+          throw PlatformException(code: 'clipboard-denied');
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+
+    try {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: HostedSessionView(
+            controller: controller,
+            language: AppLanguage.en,
+            onBackToModeChooser: () {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.runAsync(
+        () => controller.startRelayHosting(
+          hostName: 'Host',
+          relayUrl: relay.uri.toString(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Relay join details'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Copy join details'));
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Copied'), findsNothing);
+      expect(find.text('Copy failed'), findsOneWidget);
+    } finally {
+      controller.dispose();
+      await tester.runAsync(relay.close);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+    }
+  });
+
+  testWidgets('hosted lobby distinguishes generic fallback player names', (
+    WidgetTester tester,
+  ) async {
+    final _FakeHostedSessionController controller =
+        _FakeHostedSessionController(
+          _hostedProjection(
+            stage: HostedSessionStage.lobby,
+            phase: GamePhase.setup,
+            players: const <HostedParticipant>[
+              HostedParticipant(
+                playerId: 1,
+                name: 'Player',
+                isHost: true,
+                connected: true,
+              ),
+              HostedParticipant(
+                playerId: 2,
+                name: 'Player',
+                isHost: false,
+                connected: true,
+              ),
+            ],
+            viewerPlayerId: 1,
+            pendingDrinkDistribution: null,
+          ),
+        );
+
+    try {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: HostedSessionView(
+            controller: controller,
+            language: AppLanguage.en,
+            onBackToModeChooser: () {},
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Host'), findsWidgets);
+      expect(find.text('Player 2'), findsWidgets);
+      expect(find.text('Player'), findsNothing);
+    } finally {
+      controller.dispose();
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+    }
+  });
+
+  testWidgets('pending drink source sees assignment status', (
+    WidgetTester tester,
+  ) async {
+    final _FakeHostedSessionController controller =
+        _FakeHostedSessionController(
+          _hostedProjection(
+            phase: GamePhase.warmup,
+            currentPlayerIndex: 0,
+            viewerPlayerId: 2,
+            players: const <HostedParticipant>[
+              HostedParticipant(
+                playerId: 1,
+                name: 'Player',
+                isHost: true,
+                connected: true,
+              ),
+              HostedParticipant(
+                playerId: 2,
+                name: 'Player',
+                isHost: false,
+                connected: true,
+              ),
+            ],
+            pendingDrinkDistribution: const HostedPendingDrinkDistribution(
+              sourcePlayerId: 2,
+              totalDrinks: 1,
+              assignedDrinksByTarget: <int, int>{},
+              reason: 'Warmup round 1',
+            ),
+          ),
+        );
+
+    try {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: HostedSessionView(
+            controller: controller,
+            language: AppLanguage.en,
+            onBackToModeChooser: () {},
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Assign drinks'), findsWidgets);
+      expect(find.text('Waiting for Player'), findsNothing);
+      expect(find.text('You are Player 2.'), findsOneWidget);
+    } finally {
+      controller.dispose();
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+    }
+  });
+
+  testWidgets('pending drink distribution blocks your-turn status', (
+    WidgetTester tester,
+  ) async {
+    final _FakeHostedSessionController controller =
+        _FakeHostedSessionController(
+          _hostedProjection(
+            phase: GamePhase.warmup,
+            currentPlayerIndex: 1,
+            viewerPlayerId: 2,
+            pendingDrinkDistribution: const HostedPendingDrinkDistribution(
+              sourcePlayerId: 1,
+              totalDrinks: 1,
+              assignedDrinksByTarget: <int, int>{},
+              reason: 'Warmup round 1',
+            ),
+          ),
+        );
+
+    try {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: HostedSessionView(
+            controller: controller,
+            language: AppLanguage.en,
+            onBackToModeChooser: () {},
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Your turn'), findsNothing);
+      expect(
+        find.text('Waiting for another player to distribute drinks.'),
+        findsOneWidget,
+      );
+    } finally {
+      controller.dispose();
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+    }
+  });
+
+  testWidgets('drink assignment action stays in first viewport at 1280x720', (
+    WidgetTester tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final _FakeHostedSessionController controller =
+        _FakeHostedSessionController(
+          _hostedProjection(
+            phase: GamePhase.warmup,
+            currentPlayerIndex: 0,
+            viewerPlayerId: 1,
+            players: const <HostedParticipant>[
+              HostedParticipant(
+                playerId: 1,
+                name: 'Host',
+                isHost: true,
+                connected: true,
+              ),
+              HostedParticipant(
+                playerId: 2,
+                name: 'Player 2',
+                isHost: false,
+                connected: true,
+              ),
+              HostedParticipant(
+                playerId: 3,
+                name: 'Player 3',
+                isHost: false,
+                connected: true,
+              ),
+              HostedParticipant(
+                playerId: 4,
+                name: 'Player 4',
+                isHost: false,
+                connected: true,
+              ),
+            ],
+            pendingDrinkDistribution: const HostedPendingDrinkDistribution(
+              sourcePlayerId: 1,
+              totalDrinks: 4,
+              assignedDrinksByTarget: <int, int>{},
+              reason: 'Warmup round 1',
+            ),
+            banner: 'Player drew KS. Correct, give out 4 drinks.',
+            bannerTone: BannerTone.success,
+          ),
+        );
+
+    try {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: HostedSessionView(
+            controller: controller,
+            language: AppLanguage.en,
+            onBackToModeChooser: () {},
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.byTooltip('Add one drink to Host', skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(find.text('Send assignment', skipOffstage: false), findsOneWidget);
+      final Rect sendButtonRect = tester.getRect(find.text('Send assignment'));
+      expect(sendButtonRect.bottom, lessThanOrEqualTo(720));
+      final Rect publicTableRect = tester.getRect(find.text('Public table'));
+      expect(sendButtonRect.top, lessThan(publicTableRect.top));
+    } finally {
+      controller.dispose();
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+    }
+  });
+}
+
+HostedProjectedView _hostedProjection({
+  HostedSessionStage stage = HostedSessionStage.inGame,
+  GamePhase phase = GamePhase.warmup,
+  int currentPlayerIndex = 0,
+  int viewerPlayerId = 1,
+  List<HostedParticipant> players = const <HostedParticipant>[
+    HostedParticipant(playerId: 1, name: 'Host', isHost: true, connected: true),
+    HostedParticipant(
+      playerId: 2,
+      name: 'Guest',
+      isHost: false,
+      connected: true,
+    ),
+  ],
+  HostedPendingDrinkDistribution? pendingDrinkDistribution,
+  String banner = '',
+  BannerTone bannerTone = BannerTone.info,
+}) {
+  final GameState gameState = GameState.initial().copyWith(
+    phase: phase,
+    currentPlayerIndex: currentPlayerIndex,
+    banner: banner,
+    bannerTone: bannerTone,
+    players: players
+        .map(
+          (HostedParticipant player) =>
+              PlayerState(name: player.name, hand: const <PlayingCard>[]),
+        )
+        .toList(),
+  );
+  final HostedSessionState session = HostedSessionState(
+    sessionPin: '1234',
+    hostPlayerId: 1,
+    stage: stage,
+    participants: players,
+    playerOrder: players
+        .map((HostedParticipant player) => player.playerId)
+        .toList(),
+    gameState: gameState,
+    pendingDrinkDistribution: pendingDrinkDistribution,
+    queuedDrinkDistributions: const <HostedPendingDrinkDistribution>[],
+    pendingDrinkPenaltyByPlayer: const <int, int>{},
+    lastError: null,
+  );
+  return projectHostedView(session: session, viewerPlayerId: viewerPlayerId);
+}
+
+class _FakeHostedSessionController extends HostedSessionController {
+  _FakeHostedSessionController(this._projection)
+    : super(enableLanDiscovery: false);
+
+  final HostedProjectedView _projection;
+  Map<int, int>? assignedTargets;
+
+  @override
+  HostedConnectionStatus get connectionStatus =>
+      HostedConnectionStatus.connected;
+
+  @override
+  bool get hasActiveSession => true;
+
+  @override
+  bool get isHost => _projection.isHost;
+
+  @override
+  int? get localPlayerId => _projection.viewerPlayerId;
+
+  @override
+  HostedProjectedView? get projection => _projection;
+
+  @override
+  Future<void> initialize({required AppLanguage language}) async {}
+
+  @override
+  void assignDrinks(Map<int, int> targets) {
+    assignedTargets = Map<int, int>.from(targets);
+  }
 }
 
 Future<GameController> _pumpApp(WidgetTester tester) async {

@@ -1,6 +1,8 @@
 import 'package:bussruta_app/application/hosted_session_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../tool/internet_relay.dart';
+
 void main() {
   group('HostedSessionController manual target parsing', () {
     test('accepts host only input', () {
@@ -71,5 +73,72 @@ void main() {
         'wss://relay.example/ws',
       );
     });
+
+    test('formats relay share details for browser players', () {
+      expect(
+        hostedRelayShareText(
+          appUrl: 'http://192.168.1.20:8081/',
+          relayUrl: 'ws://192.168.1.20:8080/ws',
+          roomKey: '1234',
+        ),
+        [
+          'Open: http://192.168.1.20:8081/',
+          'Relay URL: ws://192.168.1.20:8080/ws',
+          'Room key: 1234',
+        ].join('\n'),
+      );
+    });
+
+    test('uses entered room key when starting relay host room', () async {
+      final InternetRelayServer relay = InternetRelayServer();
+      await relay.start();
+      final HostedSessionController controller = HostedSessionController(
+        enableLanDiscovery: false,
+      );
+
+      try {
+        await controller.startRelayHosting(
+          hostName: 'Host',
+          relayUrl: relay.uri.toString(),
+          roomKey: '4242',
+        );
+
+        expect(controller.connectionStatus, HostedConnectionStatus.connected);
+        expect(controller.relayRoomKey, '4242');
+        expect(controller.sessionPin, '4242');
+      } finally {
+        await controller.leaveSession();
+        controller.dispose();
+        await relay.close();
+      }
+    });
+
+    test(
+      'generates non-trivial relay room key when host leaves key blank',
+      () async {
+        final InternetRelayServer relay = InternetRelayServer();
+        await relay.start();
+        final HostedSessionController controller = HostedSessionController(
+          enableLanDiscovery: false,
+        );
+
+        try {
+          await controller.startRelayHosting(
+            hostName: 'Host',
+            relayUrl: relay.uri.toString(),
+          );
+
+          expect(controller.connectionStatus, HostedConnectionStatus.connected);
+          expect(controller.relayRoomKey, isNotNull);
+          expect(controller.relayRoomKey, isNot(matches(RegExp(r'^\d{4}$'))));
+          expect(controller.relayRoomKey!.length, greaterThanOrEqualTo(6));
+          expect(controller.sessionPin, controller.relayRoomKey);
+        } finally {
+          await controller.leaveSession();
+          controller.dispose();
+          await relay.close();
+        }
+      },
+    );
   });
 }

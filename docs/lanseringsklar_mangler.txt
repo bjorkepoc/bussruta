@@ -1,0 +1,107 @@
+Lanseringsmål for Bussruta
+Oppdatert: 2026-06-03
+
+Appen kan regnes som lanseringsklar først når alle punktene under er lukket, eller eksplisitt flyttet til "ikke med i første release".
+
+1. Fullfør fysisk to-telefon QA på samme Wi-Fi
+- [ ] Test minst to ekte telefoner på samme Wi-Fi, ikke bare emulator.
+- [ ] Verifiser Hosted LAN discovery-join fra klienttelefon.
+- [ ] Verifiser direkte host-adresse + PIN-join fra klienttelefon.
+- [ ] Verifiser reconnect: slå av Wi-Fi på klient kort, slå på igjen, og bekreft at samme sete tas tilbake.
+- [ ] Verifiser host shutdown: stopp host-app eller host-session og bekreft tydelig feilmelding/session closed hos klient.
+- [ ] Verifiser at hver klient bare ser egen private hånd og offentlig bordstatus.
+- [ ] Verifiser at host kan bruke host-verktøy, autoplay og logg uten å ødelegge vanlig spilling.
+- [ ] Verifiser at ikke-host ikke kan utføre host-only handlinger som pyramidereveal/tie-break styring.
+- [ ] Verifiser drink distribution på ekte enheter: pending prompt blokkerer andre handlinger, kilde-spiller kan splitte drikker, og mottakere/host ser riktig status.
+- [ ] Verifiser bus route authority: bare taperen kan styre bussruta, andre ser bare offentlig/spectator-state.
+- [ ] Verifiser at lokal modus fortsatt fungerer etter hosted session: gå ut av hosted, start lokal game på nytt.
+
+2. Fullfør lokal spillflyt-QA på fysisk enhet
+- [ ] Test EN og NO språkvalg minst én gang i flytene.
+- [ ] Test Local setup med 2, 4 og 7 spillere, navneendring og reverse pyramid.
+- [ ] Test warmup runde 1-4: deal order, valgalternativer, kort/hender uten clipping.
+- [ ] Test pyramid: skjulte slots, reveal order, drink prompts og layout uten overlapp.
+- [ ] Test tie-break med minst to contenders: facedown cards, samtidig reveal, klar vinner/taper-melding.
+- [ ] Test bus route + finish: active card highlight, Same-knapp, små skjermer, New game tilbake til setup.
+
+3. Fullfør same-network browser relay QA
+- [ ] Kjør `powershell -ExecutionPolicy Bypass -File tool\start_lan_web.ps1` på host-PC.
+- [ ] Åpne printed app URL på host-PC og host et relay room med printed Relay URL.
+- [ ] Åpne samme app URL på minst én annen PC-nettleser på samme Wi-Fi/LAN.
+- [ ] Join med samme Relay URL og room key.
+- [ ] Bruk `Copy join details` og bekreft at den inkluderer app URL, Relay URL og room key.
+- [ ] Start spillet og fullfør minst én warmup command fra joined browser.
+- [ ] Bekreft at begge browsere holder seg synkronisert og at host-only controls forblir host-only.
+- [ ] Stopp helper med `powershell -ExecutionPolicy Bypass -File tool\start_lan_web.ps1 -Stop`.
+- [ ] Hvis Windows Firewall blokkerer join, rerun fra administrator PowerShell med `-OpenFirewall` på privat nettverk og logg dette.
+
+4. Logg QA-bevis i repoet
+- [ ] Oppdater `docs/manual_qa_results.md` med en datert test-run for fysisk to-telefon QA.
+- [ ] Oppdater `docs/manual_qa_results.md` med en datert test-run for browser relay QA.
+- [ ] Logg device-modeller, OS-versjoner, app-versjon/build, nettverkstype, host-adresse/relay URL-type, retries, feil og workaround.
+- [ ] Marker hvert kritiske punkt som PASS, FAIL eller BLOCKED.
+- [ ] Ikke kall appen release-klar før alle release-blokkerende QA-punkter er PASS eller produktmessig fjernet fra release scope.
+
+5. Kjør teknisk release gate
+- [ ] Kjør `dart format --output=none --set-exit-if-changed .`.
+- [ ] Kjør `flutter analyze`.
+- [ ] Kjør `flutter test`.
+- [ ] Bygg signert Android release artefakt og verifiser at release signing fungerer med lokal keystore.
+- [ ] Bekreft at `android/key.properties` og `android/app/upload-keystore.jks` er sikkerhetskopiert utenfor git.
+- [ ] Bekreft iOS signing team før TestFlight/App Store-distribusjon.
+
+6. Lukk store/release metadata
+- [ ] Bestem endelig brukervendt appnavn.
+- [ ] Bestem endelig ikon.
+- [ ] Ta endelige screenshots etter bestått fysisk QA: mode chooser, local setup, warmup, pyramid/drink assignment, hosted lobby, hosted player view, bus route/finish.
+- [ ] Ferdigstill short description, full description og keywords for Google Play/App Store.
+- [ ] Fullfør age rating/content questionnaires ærlig for drinking-game tema, multiplayer/user interaction og ingen real-money gambling.
+- [ ] Bestem om `1.0.0+1` er korrekt første release-versjon, eller juster før publisering.
+
+7. Ferdigstill privacy policy og butikkdisclosures
+- [ ] Fyll inn developer/controller i `docs/privacy_policy.md`.
+- [ ] Fyll inn privacy contact email i `docs/privacy_policy.md`.
+- [ ] Host privacy policy på en offentlig non-PDF URL.
+- [ ] Legg privacy policy URL inn i app/store metadata.
+- [ ] Fullfør `docs/store_disclosures.md` for eksakt release-arkitektur.
+- [ ] Bekreft Google Play Data Safety-svar for nåværende build.
+- [ ] Bekreft Apple App Privacy-svar for nåværende build.
+- [ ] Sørg for at policy, store labels og faktisk appfunksjonalitet sier det samme.
+
+8. Avklar offentlig internet relay
+- [ ] Bestem om offentlig internet relay er med i første release: ja eller nei.
+- [ ] Hvis nei: behold relay som trusted LAN/dev/same-network funksjon og ikke markedsfør offentlig internettspill.
+- [ ] Hvis ja: legg til TLS/WSS, auth/session controls, rate limiting, abuse controls, logging/retention policy, deployment controls og produksjonsmonitorering.
+- [ ] Hvis ja: oppdater privacy policy, store disclosures og QA checklist for developer-operated backend.
+- [ ] Avklar backend deployment style hvis offentlig relay skal bygges: managed PaaS eller self-hosted server.
+- [ ] Avklar host-migration policy for internet sessions: ikke støttet eller støttet.
+
+9. Avklar ads, betaling og fremtidige inntektsfunksjoner
+- [ ] Bestem om ads er med i første release: ja eller nei.
+- [ ] Hvis ads er med: integrer nødvendig samtykkeflyt for EEA/UK/Switzerland, oppdater privacy policy, Google Play Data Safety og Apple App Privacy.
+- [ ] Hvis ads er med og tracking brukes: vurder Apple ATT-krav og store disclosures.
+- [ ] Bestem om paid features/subscriptions er med i første release: ja eller nei.
+- [ ] Hvis betaling er med: bruk relevant app-store billing der det kreves, og oppdater policy/disclosures for purchase/payment data.
+- [ ] Hvis ads/betaling ikke er med: skriv dem eksplisitt som deferred i release notes/produktbeslutning.
+
+10. Avklar Bluetooth
+- [ ] Bestem om Bluetooth er med i første release: ja eller nei.
+- [ ] Hvis nei: dokumenter Bluetooth som deferred.
+- [ ] Hvis ja: legg til plugin/permissions, implementer flow, og utvid fysisk QA med Android/iOS device-specific Bluetooth testing.
+
+11. Rydd repo før endelig release
+- [ ] Review alle ucommittede endringer i README, docs, graphify-out, lib, test og tool.
+- [ ] Avklar om nye `docs/privacy_policy.md`, `docs/store_disclosures.md` og `tool/start_lan_web.ps1` skal inn i release-commit.
+- [ ] Avklar om graphify cache/output-endringer skal committes eller ryddes etter prosjektets praksis.
+- [ ] Kjør `graphify update .` etter eventuelle siste kodeendringer.
+- [ ] Stage og commit release-klare endringer.
+- [ ] Sørg for at ingen hemmeligheter som keystore, key.properties eller private credentials ligger i git.
+
+12. Endelig go/no-go
+- [ ] Alle automatiske tester er grønne.
+- [ ] Alle manuelle release-blokkere er PASS i `docs/manual_qa_results.md`.
+- [ ] Privacy policy URL fungerer offentlig.
+- [ ] Store metadata og disclosures er ferdige.
+- [ ] Signing og release artefakter er bekreftet.
+- [ ] Offentlig relay, ads, betaling og Bluetooth er enten produksjonsklare eller eksplisitt utsatt.
+- [ ] Repoet er ryddig, reviewet og committet.

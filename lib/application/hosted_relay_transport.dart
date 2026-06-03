@@ -8,6 +8,8 @@ import 'package:bussruta_app/domain/hosted_models.dart';
 import 'package:bussruta_app/domain/hosted_projection.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+const int _playerTokenRandomMax = 0x100000000;
+
 class HostedRelayHostConnection {
   HostedRelayHostConnection._({
     required WebSocketChannel channel,
@@ -356,9 +358,9 @@ class HostedRelayHostConnection {
   }
 
   String _newPlayerToken() {
-    final int a = _random.nextInt(1 << 32);
-    final int b = _random.nextInt(1 << 32);
-    final int c = _random.nextInt(1 << 32);
+    final int a = _random.nextInt(_playerTokenRandomMax);
+    final int b = _random.nextInt(_playerTokenRandomMax);
+    final int c = _random.nextInt(_playerTokenRandomMax);
     return '$a-$b-$c';
   }
 

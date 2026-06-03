@@ -39,6 +39,9 @@ class _HostedSessionViewState extends State<HostedSessionView>
   Map<int, int> _draftTargets = <int, int>{};
   int? _draftSource;
   bool _emulatorCommandCopied = false;
+  bool _emulatorCommandCopyFailed = false;
+  bool _relayDetailsCopied = false;
+  bool _relayDetailsCopyFailed = false;
   Timer? _copyFeedbackTimer;
   AnimationController? _flash;
 
@@ -50,8 +53,7 @@ class _HostedSessionViewState extends State<HostedSessionView>
   @override
   void initState() {
     super.initState();
-    _name.text = widget.language == AppLanguage.no ? 'Spiller' : 'Player';
-    _relayUrl.text = _defaultRelayUrl();
+    _relayUrl.text = defaultHostedRelayUrl(Uri.base);
     unawaited(widget.controller.initialize(language: widget.language));
   }
 
@@ -75,14 +77,15 @@ class _HostedSessionViewState extends State<HostedSessionView>
     super.dispose();
   }
 
-  String _defaultRelayUrl() {
+  String? _browserAppUrl() {
     final Uri base = Uri.base;
-    if (base.host.isNotEmpty &&
-        base.host != 'localhost' &&
-        base.host != '127.0.0.1') {
-      return 'ws://${base.host}:8080/ws';
+    if ((base.scheme != 'http' && base.scheme != 'https') ||
+        base.host.isEmpty ||
+        base.host == 'localhost' ||
+        base.host == '127.0.0.1') {
+      return null;
     }
-    return 'ws://127.0.0.1:8080/ws';
+    return base.toString();
   }
 
   @override
@@ -227,6 +230,11 @@ class _HostedSessionViewState extends State<HostedSessionView>
                     controller: _name,
                     decoration: InputDecoration(
                       labelText: tr(language, 'Your name', 'Ditt navn'),
+                      hintText: tr(
+                        language,
+                        'Host or Player 2',
+                        'Vert eller Spiller 2',
+                      ),
                       border: const OutlineInputBorder(),
                     ),
                   ),
@@ -283,6 +291,7 @@ class _HostedSessionViewState extends State<HostedSessionView>
                                   : () => widget.controller.startRelayHosting(
                                       hostName: _name.text,
                                       relayUrl: _relayUrl.text,
+                                      roomKey: _relayRoom.text,
                                     ),
                               icon: const Icon(Icons.public),
                               label: Text(
@@ -487,6 +496,14 @@ class _HostedSessionViewState extends State<HostedSessionView>
         : false;
     final String? relayUrl = widget.controller.relayUrl;
     final String? relayRoomKey = widget.controller.relayRoomKey;
+    final String? browserAppUrl = _browserAppUrl();
+    final String relayShareText = relayUrl != null && relayRoomKey != null
+        ? hostedRelayShareText(
+            appUrl: browserAppUrl,
+            relayUrl: relayUrl,
+            roomKey: relayRoomKey,
+          )
+        : '';
 
     return _withTopLevelBack(
       onBack: _leaveSessionAndReturnToModes,
@@ -672,14 +689,10 @@ class _HostedSessionViewState extends State<HostedSessionView>
                                         const SizedBox(height: 8),
                                         OutlinedButton.icon(
                                           onPressed: () {
-                                            unawaited(
-                                              Clipboard.setData(
-                                                ClipboardData(
-                                                  text: emulatorForwardCommand,
-                                                ),
-                                              ),
+                                            _copyText(
+                                              emulatorForwardCommand,
+                                              emulator: true,
                                             );
-                                            _markEmulatorCommandCopied();
                                           },
                                           icon: Icon(
                                             _emulatorCommandCopied
@@ -688,7 +701,13 @@ class _HostedSessionViewState extends State<HostedSessionView>
                                             size: 18,
                                           ),
                                           label: Text(
-                                            _emulatorCommandCopied
+                                            _emulatorCommandCopyFailed
+                                                ? tr(
+                                                    widget.language,
+                                                    'Copy failed',
+                                                    'Kopiering feilet',
+                                                  )
+                                                : _emulatorCommandCopied
                                                 ? tr(
                                                     widget.language,
                                                     'Copied',
@@ -754,6 +773,28 @@ class _HostedSessionViewState extends State<HostedSessionView>
                                   ),
                                   child: Column(
                                     children: <Widget>[
+                                      if (browserAppUrl != null) ...<Widget>[
+                                        Text(
+                                          tr(language, 'App URL', 'App-URL'),
+                                          style: TextStyle(
+                                            color: AppTheme.cream.withValues(
+                                              alpha: 0.68,
+                                            ),
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        SelectableText(
+                                          browserAppUrl,
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(
+                                            color: AppTheme.gold,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w900,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                      ],
                                       Text(
                                         tr(language, 'Relay URL', 'Relay-URL'),
                                         style: TextStyle(
@@ -793,6 +834,48 @@ class _HostedSessionViewState extends State<HostedSessionView>
                                           fontWeight: FontWeight.w900,
                                         ),
                                       ),
+                                      const SizedBox(height: 8),
+                                      Semantics(
+                                        button: true,
+                                        label: tr(
+                                          widget.language,
+                                          'Copy relay join details',
+                                          'Kopier relay-detaljer',
+                                        ),
+                                        child: OutlinedButton.icon(
+                                          onPressed: () {
+                                            _copyText(
+                                              relayShareText,
+                                              relay: true,
+                                            );
+                                          },
+                                          icon: Icon(
+                                            _relayDetailsCopied
+                                                ? Icons.check
+                                                : Icons.copy,
+                                            size: 18,
+                                          ),
+                                          label: Text(
+                                            _relayDetailsCopyFailed
+                                                ? tr(
+                                                    widget.language,
+                                                    'Copy failed',
+                                                    'Kopiering feilet',
+                                                  )
+                                                : _relayDetailsCopied
+                                                ? tr(
+                                                    widget.language,
+                                                    'Copied',
+                                                    'Kopiert',
+                                                  )
+                                                : tr(
+                                                    widget.language,
+                                                    'Copy join details',
+                                                    'Kopier join-detaljer',
+                                                  ),
+                                          ),
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -830,6 +913,10 @@ class _HostedSessionViewState extends State<HostedSessionView>
                         MapEntry<int, HostedPublicPlayer> entry,
                       ) {
                         final HostedPublicPlayer player = entry.value;
+                        final String playerName = _displayNameForPlayer(
+                          view.players,
+                          player,
+                        );
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 8),
                           child: DecoratedBox(
@@ -862,7 +949,7 @@ class _HostedSessionViewState extends State<HostedSessionView>
                                           CrossAxisAlignment.start,
                                       children: <Widget>[
                                         Text(
-                                          player.name,
+                                          playerName,
                                           overflow: TextOverflow.ellipsis,
                                           style: const TextStyle(
                                             color: AppTheme.cream,
@@ -957,10 +1044,13 @@ class _HostedSessionViewState extends State<HostedSessionView>
     );
   }
 
-  void _markEmulatorCommandCopied() {
+  void _markCopied({bool emulator = false, bool relay = false}) {
     _copyFeedbackTimer?.cancel();
     setState(() {
-      _emulatorCommandCopied = true;
+      _emulatorCommandCopied = emulator;
+      _emulatorCommandCopyFailed = false;
+      _relayDetailsCopied = relay;
+      _relayDetailsCopyFailed = false;
     });
     _copyFeedbackTimer = Timer(const Duration(seconds: 4), () {
       if (!mounted) {
@@ -968,6 +1058,47 @@ class _HostedSessionViewState extends State<HostedSessionView>
       }
       setState(() {
         _emulatorCommandCopied = false;
+        _emulatorCommandCopyFailed = false;
+        _relayDetailsCopied = false;
+        _relayDetailsCopyFailed = false;
+      });
+    });
+  }
+
+  Future<void> _copyText(
+    String text, {
+    bool emulator = false,
+    bool relay = false,
+  }) async {
+    try {
+      await Clipboard.setData(ClipboardData(text: text));
+      if (!mounted) {
+        return;
+      }
+      _markCopied(emulator: emulator, relay: relay);
+    } on Object {
+      if (!mounted) {
+        return;
+      }
+      _markCopyFailed(emulator: emulator, relay: relay);
+    }
+  }
+
+  void _markCopyFailed({bool emulator = false, bool relay = false}) {
+    _copyFeedbackTimer?.cancel();
+    setState(() {
+      _emulatorCommandCopied = false;
+      _emulatorCommandCopyFailed = emulator;
+      _relayDetailsCopied = false;
+      _relayDetailsCopyFailed = relay;
+    });
+    _copyFeedbackTimer = Timer(const Duration(seconds: 4), () {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _emulatorCommandCopyFailed = false;
+        _relayDetailsCopyFailed = false;
       });
     });
   }
@@ -1064,7 +1195,8 @@ class _HostedSessionViewState extends State<HostedSessionView>
                                       language: language,
                                       view: view,
                                       myTurn: myTurn,
-                                      viewerName: projection.viewerName,
+                                      viewerPlayerId: projection.viewerPlayerId,
+                                      pending: pending,
                                     ),
                                   ),
                                   _phaseChip(
@@ -1077,8 +1209,8 @@ class _HostedSessionViewState extends State<HostedSessionView>
                               Text(
                                 tr(
                                   widget.language,
-                                  'You are ${projection.viewerName}.',
-                                  'Du er ${projection.viewerName}.',
+                                  'You are ${_nameForPlayer(view.players, projection.viewerPlayerId)}.',
+                                  'Du er ${_nameForPlayer(view.players, projection.viewerPlayerId)}.',
                                 ),
                                 style: TextStyle(
                                   color: AppTheme.cream.withValues(alpha: 0.72),
@@ -1116,14 +1248,12 @@ class _HostedSessionViewState extends State<HostedSessionView>
                           const SizedBox(height: 8),
                           _bannerCard(view.banner, view.bannerTone),
                         ],
-                        const SizedBox(height: 10),
-                        _tablePanel(
-                          projection: projection,
-                          connected: connected,
-                          blocked: blocked,
-                          myTurn: myTurn,
-                        ),
-                        if (projection.giveOutPromptDrinks > 0) ...<Widget>[
+                        if (isPendingSource) ...<Widget>[
+                          const SizedBox(height: 8),
+                          _distributionCard(pending, view.players, connected),
+                        ],
+                        if (projection.giveOutPromptDrinks > 0 &&
+                            !isPendingSource) ...<Widget>[
                           const SizedBox(height: 8),
                           _promptCard(
                             label: tr(
@@ -1147,10 +1277,6 @@ class _HostedSessionViewState extends State<HostedSessionView>
                                 : null,
                           ),
                         ],
-                        if (isPendingSource) ...<Widget>[
-                          const SizedBox(height: 8),
-                          _distributionCard(pending, view.players, connected),
-                        ],
                         if (blocked && !isPendingSource) ...<Widget>[
                           const SizedBox(height: 8),
                           _surfaceCard(
@@ -1167,6 +1293,13 @@ class _HostedSessionViewState extends State<HostedSessionView>
                             ),
                           ),
                         ],
+                        const SizedBox(height: 10),
+                        _tablePanel(
+                          projection: projection,
+                          connected: connected,
+                          blocked: blocked,
+                          myTurn: myTurn,
+                        ),
                         if (view.phase != GamePhase.finished) ...<Widget>[
                           const SizedBox(height: 10),
                           _ownHandPanel(projection.ownHand),
@@ -1408,8 +1541,9 @@ class _HostedSessionViewState extends State<HostedSessionView>
             : (activeTurn || isViewer)
             ? AppTheme.charcoal
             : AppTheme.cream;
+        final String playerName = _displayNameForPlayer(players, player);
         final String label =
-            '${player.name} - ${player.handCount} ${tr(widget.language, 'cards', 'kort')}';
+            '$playerName - ${player.handCount} ${tr(widget.language, 'cards', 'kort')}';
         return DecoratedBox(
           decoration: BoxDecoration(
             color: color,
@@ -1624,146 +1758,187 @@ class _HostedSessionViewState extends State<HostedSessionView>
     }
     final int remain = pending.remainingDrinks - draftTotal;
 
-    return _surfaceCard(
-      color: AppTheme.surface,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            tr(
-              widget.language,
-              'Assign drinks (${pending.remainingDrinks} left)',
-              'Fordel drikker (${pending.remainingDrinks} igjen)',
+    final int maxVisibleRows = targets.length > 2 ? 2 : targets.length;
+    final double listMaxHeight = math.max(0, maxVisibleRows) * 44.0;
+
+    return Semantics(
+      container: true,
+      label: tr(
+        widget.language,
+        'Drink assignment panel',
+        'Panel for drikkefordeling',
+      ),
+      child: _surfaceCard(
+        color: AppTheme.surface,
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              tr(
+                widget.language,
+                'Assign drinks (${pending.remainingDrinks} left)',
+                'Fordel drikker (${pending.remainingDrinks} igjen)',
+              ),
+              style: const TextStyle(
+                fontWeight: FontWeight.w900,
+                color: AppTheme.cream,
+              ),
             ),
-            style: const TextStyle(
-              fontWeight: FontWeight.w900,
-              color: AppTheme.cream,
+            const SizedBox(height: 4),
+            Text(
+              pending.reason,
+              style: TextStyle(
+                color: AppTheme.cream.withValues(alpha: 0.66),
+                fontWeight: FontWeight.w600,
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            pending.reason,
-            style: TextStyle(
-              color: AppTheme.cream.withValues(alpha: 0.66),
-              fontWeight: FontWeight.w600,
+            const SizedBox(height: 6),
+            _tag(
+              tr(widget.language, '$remain unassigned', '$remain ufordelt'),
+              remain == 0 ? AppTheme.success : AppTheme.gold,
             ),
-          ),
-          const SizedBox(height: 6),
-          _tag(
-            tr(widget.language, '$remain unassigned', '$remain ufordelt'),
-            remain == 0 ? AppTheme.success : AppTheme.gold,
-          ),
-          const SizedBox(height: 8),
-          for (final HostedPublicPlayer player in targets)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: AppTheme.surfaceHigh,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: AppTheme.gold.withValues(alpha: 0.14),
-                  ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 6,
-                  ),
-                  child: Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: Text(
-                          player.name,
-                          style: const TextStyle(
-                            color: AppTheme.cream,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
+            const SizedBox(height: 6),
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: listMaxHeight),
+              child: Scrollbar(
+                child: ListView.builder(
+                  primary: false,
+                  shrinkWrap: true,
+                  itemCount: targets.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    final HostedPublicPlayer player = targets[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: _drinkTargetRow(
+                        players: players,
+                        player: player,
+                        enabled: enabled,
+                        remain: remain,
                       ),
-                      IconButton(
-                        tooltip: tr(
-                          widget.language,
-                          'Remove one drink from ${player.name}',
-                          'Fjern én drikk fra ${player.name}',
-                        ),
-                        onPressed: !enabled
-                            ? null
-                            : () {
-                                final int current =
-                                    _draftTargets[player.playerId] ?? 0;
-                                if (current <= 0) {
-                                  return;
-                                }
-                                final Map<int, int> next = Map<int, int>.from(
-                                  _draftTargets,
-                                );
-                                if (current == 1) {
-                                  next.remove(player.playerId);
-                                } else {
-                                  next[player.playerId] = current - 1;
-                                }
-                                setState(() {
-                                  _draftTargets = next;
-                                });
-                              },
-                        icon: const Icon(Icons.remove_circle_outline),
-                        color: AppTheme.gold,
-                      ),
-                      Text(
-                        '${_draftTargets[player.playerId] ?? 0}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w800,
-                          color: AppTheme.cream,
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: tr(
-                          widget.language,
-                          'Add one drink to ${player.name}',
-                          'Legg én drikk til ${player.name}',
-                        ),
-                        onPressed: !enabled || remain <= 0
-                            ? null
-                            : () {
-                                final Map<int, int> next = Map<int, int>.from(
-                                  _draftTargets,
-                                );
-                                next[player.playerId] =
-                                    (next[player.playerId] ?? 0) + 1;
-                                setState(() {
-                                  _draftTargets = next;
-                                });
-                              },
-                        icon: const Icon(Icons.add_circle_outline),
-                        color: AppTheme.gold,
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
               ),
             ),
-          const SizedBox(height: 6),
-          FilledButton.icon(
-            onPressed: !enabled || draftTotal <= 0
-                ? null
-                : () {
-                    widget.controller.assignDrinks(_draftTargets);
-                    setState(() {
-                      _draftTargets = <int, int>{};
-                    });
-                  },
-            style: FilledButton.styleFrom(
-              backgroundColor: AppTheme.gold,
-              foregroundColor: AppTheme.charcoal,
-              padding: const EdgeInsets.symmetric(vertical: 14),
+            const SizedBox(height: 6),
+            FilledButton.icon(
+              onPressed: !enabled || draftTotal <= 0
+                  ? null
+                  : () {
+                      widget.controller.assignDrinks(_draftTargets);
+                      setState(() {
+                        _draftTargets = <int, int>{};
+                      });
+                    },
+              style: FilledButton.styleFrom(
+                backgroundColor: AppTheme.gold,
+                foregroundColor: AppTheme.charcoal,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+              ),
+              icon: const Icon(Icons.send),
+              label: Text(
+                tr(widget.language, 'Send assignment', 'Send fordeling'),
+              ),
             ),
-            icon: const Icon(Icons.send),
-            label: Text(
-              tr(widget.language, 'Send assignment', 'Send fordeling'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _drinkTargetRow({
+    required List<HostedPublicPlayer> players,
+    required HostedPublicPlayer player,
+    required bool enabled,
+    required int remain,
+  }) {
+    final String playerName = _displayNameForPlayer(players, player);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceHigh,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppTheme.gold.withValues(alpha: 0.14)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              child: Text(
+                playerName,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: AppTheme.cream,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
             ),
-          ),
-        ],
+            IconButton(
+              tooltip: tr(
+                widget.language,
+                'Remove one drink from $playerName',
+                'Fjern én drikk fra $playerName',
+              ),
+              constraints: const BoxConstraints.tightFor(width: 36, height: 36),
+              padding: EdgeInsets.zero,
+              onPressed: !enabled
+                  ? null
+                  : () {
+                      final int current = _draftTargets[player.playerId] ?? 0;
+                      if (current <= 0) {
+                        return;
+                      }
+                      final Map<int, int> next = Map<int, int>.from(
+                        _draftTargets,
+                      );
+                      if (current == 1) {
+                        next.remove(player.playerId);
+                      } else {
+                        next[player.playerId] = current - 1;
+                      }
+                      setState(() {
+                        _draftTargets = next;
+                      });
+                    },
+              icon: const Icon(Icons.remove_circle_outline),
+              color: AppTheme.gold,
+            ),
+            SizedBox(
+              width: 24,
+              child: Text(
+                '${_draftTargets[player.playerId] ?? 0}',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.cream,
+                ),
+              ),
+            ),
+            IconButton(
+              tooltip: tr(
+                widget.language,
+                'Add one drink to $playerName',
+                'Legg én drikk til $playerName',
+              ),
+              constraints: const BoxConstraints.tightFor(width: 36, height: 36),
+              padding: EdgeInsets.zero,
+              onPressed: !enabled || remain <= 0
+                  ? null
+                  : () {
+                      final Map<int, int> next = Map<int, int>.from(
+                        _draftTargets,
+                      );
+                      next[player.playerId] = (next[player.playerId] ?? 0) + 1;
+                      setState(() {
+                        _draftTargets = next;
+                      });
+                    },
+              icon: const Icon(Icons.add_circle_outline),
+              color: AppTheme.gold,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2842,8 +3017,26 @@ class _HostedSessionViewState extends State<HostedSessionView>
     required AppLanguage language,
     required HostedPublicView view,
     required bool myTurn,
-    required String viewerName,
+    required int viewerPlayerId,
+    required HostedPendingDrinkDistribution? pending,
   }) {
+    if (pending != null) {
+      if (pending.sourcePlayerId == viewerPlayerId) {
+        return tr(language, 'Assign drinks', 'Fordel drikker');
+      }
+      final String source = _nameForPlayer(
+        view.players,
+        pending.sourcePlayerId,
+      );
+      if (source.isNotEmpty) {
+        return tr(language, 'Waiting for $source', 'Venter på $source');
+      }
+      return tr(
+        language,
+        'Waiting for drink assignment',
+        'Venter på drikkefordeling',
+      );
+    }
     if (myTurn) {
       return tr(language, 'Your turn', 'Din tur');
     }
@@ -2864,10 +3057,57 @@ class _HostedSessionViewState extends State<HostedSessionView>
     }
     for (final HostedPublicPlayer player in players) {
       if (player.playerId == playerId) {
-        return player.name;
+        return _displayNameForPlayer(players, player);
       }
     }
     return 'Player $playerId';
+  }
+
+  String _displayNameForPlayer(
+    List<HostedPublicPlayer> players,
+    HostedPublicPlayer player,
+  ) {
+    final String trimmed = player.name.trim();
+    final bool generic = _isGenericFallbackName(trimmed);
+    final bool duplicate =
+        trimmed.isNotEmpty && _hasDuplicateName(players, trimmed);
+    if (player.isHost && (generic || duplicate || trimmed.isEmpty)) {
+      return tr(widget.language, 'Host', 'Vert');
+    }
+    if (generic || trimmed.isEmpty) {
+      return tr(
+        widget.language,
+        'Player ${player.playerId}',
+        'Spiller ${player.playerId}',
+      );
+    }
+    if (duplicate) {
+      return tr(
+        widget.language,
+        '$trimmed (Player ${player.playerId})',
+        '$trimmed (Spiller ${player.playerId})',
+      );
+    }
+    return trimmed;
+  }
+
+  bool _hasDuplicateName(List<HostedPublicPlayer> players, String name) {
+    final String normalized = name.trim().toLowerCase();
+    if (normalized.isEmpty) {
+      return false;
+    }
+    int count = 0;
+    for (final HostedPublicPlayer player in players) {
+      if (player.name.trim().toLowerCase() == normalized) {
+        count += 1;
+      }
+    }
+    return count > 1;
+  }
+
+  bool _isGenericFallbackName(String name) {
+    final String normalized = name.trim().toLowerCase();
+    return normalized == 'player' || normalized == 'spiller';
   }
 
   _ConnectionVisual _connectionVisual(HostedConnectionStatus status) {
@@ -3068,6 +3308,21 @@ class _HostedSessionViewState extends State<HostedSessionView>
       },
     );
   }
+}
+
+String defaultHostedRelayUrl(Uri base) {
+  final String? explicitRelay =
+      base.queryParameters['relayUrl'] ?? base.queryParameters['relay'];
+  if (explicitRelay != null && explicitRelay.trim().isNotEmpty) {
+    return explicitRelay.trim();
+  }
+  if (base.host.isNotEmpty &&
+      base.host != 'localhost' &&
+      base.host != '127.0.0.1') {
+    final String relayScheme = base.scheme == 'https' ? 'wss' : 'ws';
+    return '$relayScheme://${base.host}:8080/ws';
+  }
+  return 'ws://127.0.0.1:8080/ws';
 }
 
 class _ConnectionVisual {

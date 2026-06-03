@@ -47,7 +47,7 @@ void main() {
     });
 
     test('binds discovery entries to the UDP source address', () async {
-      final HostedLanDiscovery discovery = HostedLanDiscovery();
+      final HostedLanDiscovery discovery = HostedLanDiscovery(discoveryPort: 0);
       addTearDown(discovery.stop);
       await discovery.start();
 
@@ -74,7 +74,7 @@ void main() {
           }),
         ),
         InternetAddress.loopbackIPv4,
-        hostedDiscoveryPort,
+        discovery.port,
       );
 
       final List<HostedDiscoveryEntry> entries = await update.timeout(

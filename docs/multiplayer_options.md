@@ -68,9 +68,10 @@ Current relay status:
 
 ## Current product decision
 
-- Polish LAN + PIN first before starting the internet relay.
-- Treat manual real-device QA as the release gate for the current phase.
+- Keep LAN + PIN and same-network relay rooms as the current baseline.
+- Treat manual real-device QA and same-network PC browser QA as the release gate for the current phase.
 - Use relay rooms for browser/mobile/PC play on the same trusted network, then revisit public internet deployment after hosted LAN join, reconnect, privacy, and bus-route authority have been validated on real devices.
+- Use `tool/start_lan_web.ps1` on Windows to start the local relay and web server for browser QA.
 
 ## Decisions needed from product owner
 

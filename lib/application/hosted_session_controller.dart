@@ -23,12 +23,14 @@ enum HostedConnectionStatus {
 }
 
 class HostedSessionController extends ChangeNotifier {
-  HostedSessionController({GameEngine? engine})
-    : _engine = engine ?? GameEngine();
+  HostedSessionController({GameEngine? engine, bool enableLanDiscovery = true})
+    : _engine = engine ?? GameEngine(),
+      _enableLanDiscovery = enableLanDiscovery;
 
   final GameEngine _engine;
+  final bool _enableLanDiscovery;
   final HostedLanDiscovery _discovery = HostedLanDiscovery();
-  final Random _random = Random();
+  final Random _random = Random.secure();
 
   HostedFlowState _flowState = HostedFlowState.idle;
   HostedConnectionStatus _connectionStatus = HostedConnectionStatus.idle;
@@ -109,6 +111,11 @@ class HostedSessionController extends ChangeNotifier {
       await _discovery.stop();
       return;
     }
+    if (!_enableLanDiscovery) {
+      _discoveries = const <HostedDiscoveryEntry>[];
+      notifyListeners();
+      return;
+    }
     await _discovery.start();
     if (_disposed) {
       await _discovery.stop();
@@ -137,9 +144,10 @@ class HostedSessionController extends ChangeNotifier {
   Future<void> startHosting({required String hostName}) async {
     await leaveSession();
     final String pin = _generatePin();
+    final String resolvedHostName = _resolveHostName(hostName);
     final HostedParticipant host = HostedParticipant(
       playerId: 1,
-      name: hostName.trim().isEmpty ? _fallbackHostName() : hostName.trim(),
+      name: resolvedHostName,
       isHost: true,
       connected: true,
     );
@@ -194,6 +202,7 @@ class HostedSessionController extends ChangeNotifier {
   Future<void> startRelayHosting({
     required String hostName,
     required String relayUrl,
+    String? roomKey,
   }) async {
     final Uri relayUri;
     try {
@@ -208,10 +217,14 @@ class HostedSessionController extends ChangeNotifier {
       return;
     }
     await leaveSession();
-    final String pin = _generatePin();
+    final String requestedRoomKey = roomKey?.trim() ?? '';
+    final String pin = requestedRoomKey.isEmpty
+        ? _generateRelayRoomKey()
+        : requestedRoomKey;
+    final String resolvedHostName = _resolveHostName(hostName);
     final HostedParticipant host = HostedParticipant(
       playerId: 1,
-      name: hostName.trim().isEmpty ? _fallbackHostName() : hostName.trim(),
+      name: resolvedHostName,
       isHost: true,
       connected: true,
     );
@@ -382,9 +395,7 @@ class HostedSessionController extends ChangeNotifier {
     _flowState = HostedFlowState.joiningLobby;
     _connectionStatus = HostedConnectionStatus.joining;
     notifyListeners();
-    final String resolvedName = playerName.trim().isEmpty
-        ? _fallbackGuestName()
-        : playerName.trim();
+    final String resolvedName = _resolveGuestName(playerName);
     final List<String> addressCandidates = hostedJoinAddressCandidates(
       target.host,
     );
@@ -413,7 +424,7 @@ class HostedSessionController extends ChangeNotifier {
         _lastHostAddress = candidateAddress;
         _lastHostPort = targetPort;
         _lastPin = pin;
-        _lastPlayerName = resolvedName;
+        _lastPlayerName = _projection!.viewerName;
         _lastPlayerToken = client.playerToken;
         _lastPlayerId = client.playerId;
         _lastRelayUri = null;
@@ -477,9 +488,7 @@ class HostedSessionController extends ChangeNotifier {
     _networkDiagnostic =
         'Connecting to relay room $normalizedRoomKey at $relayUri';
     notifyListeners();
-    final String resolvedName = playerName.trim().isEmpty
-        ? _fallbackGuestName()
-        : playerName.trim();
+    final String resolvedName = _resolveGuestName(playerName);
 
     try {
       final HostedRelayClientConnection client =
@@ -501,7 +510,7 @@ class HostedSessionController extends ChangeNotifier {
       _lastHostAddress = null;
       _lastHostPort = null;
       _lastPin = normalizedRoomKey;
-      _lastPlayerName = resolvedName;
+      _lastPlayerName = _projection!.viewerName;
       _lastPlayerToken = client.playerToken;
       _lastPlayerId = client.playerId;
       _lastRelayUri = relayUri;
@@ -1064,12 +1073,38 @@ class HostedSessionController extends ChangeNotifier {
     return value.toString();
   }
 
+  String _generateRelayRoomKey() {
+    const String alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    return List<String>.generate(
+      8,
+      (_) => alphabet[_random.nextInt(alphabet.length)],
+    ).join();
+  }
+
   String _fallbackHostName() {
     return _tr('Host', 'Vert');
   }
 
-  String _fallbackGuestName() {
-    return _tr('Player', 'Spiller');
+  String _resolveHostName(String raw) {
+    final String normalized = _normalizeTypedName(raw);
+    return normalized.isEmpty ? _fallbackHostName() : normalized;
+  }
+
+  String _resolveGuestName(String raw) {
+    return _normalizeTypedName(raw);
+  }
+
+  String _normalizeTypedName(String raw) {
+    final String trimmed = raw.trim();
+    if (_isGenericFallbackName(trimmed)) {
+      return '';
+    }
+    return trimmed;
+  }
+
+  bool _isGenericFallbackName(String raw) {
+    final String lower = raw.trim().toLowerCase();
+    return lower == 'player' || lower == 'spiller';
   }
 
   String _tr(String en, String no) {
@@ -1259,6 +1294,22 @@ Uri parseHostedRelayUri(String raw) {
     throw const FormatException('Relay URL must use ws or wss.');
   }
   return uri.path.isEmpty ? uri.replace(path: '/ws') : uri;
+}
+
+String hostedRelayShareText({
+  String? appUrl,
+  required String relayUrl,
+  required String roomKey,
+}) {
+  final List<String> lines = <String>[];
+  final String? normalizedAppUrl = appUrl?.trim();
+  if (normalizedAppUrl != null && normalizedAppUrl.isNotEmpty) {
+    lines.add('Open: $normalizedAppUrl');
+  }
+  lines
+    ..add('Relay URL: ${relayUrl.trim()}')
+    ..add('Room key: ${roomKey.trim()}');
+  return lines.join('\n');
 }
 
 class HostedJoinHostInput {

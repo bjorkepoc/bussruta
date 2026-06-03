@@ -14,6 +14,7 @@ const String _announcementType = 'bussruta-host-v1';
 const int _maxHostedLanMessageBytes = 64 * 1024;
 const int _lineFeed = 10;
 const int _carriageReturn = 13;
+const int _playerTokenRandomMax = 0x100000000;
 
 StreamSubscription<List<int>> _listenForHostedLanLines({
   required Socket socket,
@@ -87,6 +88,10 @@ StreamSubscription<List<int>> _listenForHostedLanLines({
 }
 
 class HostedLanDiscovery {
+  HostedLanDiscovery({int discoveryPort = hostedDiscoveryPort})
+    : _discoveryPort = discoveryPort;
+
+  final int _discoveryPort;
   RawDatagramSocket? _socket;
   Timer? _cleanupTimer;
   final Map<String, HostedDiscoveryEntry> _entriesByKey =
@@ -95,6 +100,8 @@ class HostedLanDiscovery {
       StreamController<List<HostedDiscoveryEntry>>.broadcast();
 
   Stream<List<HostedDiscoveryEntry>> get updates => _updates.stream;
+
+  int get port => _socket?.port ?? _discoveryPort;
 
   List<HostedDiscoveryEntry> get entries {
     final List<HostedDiscoveryEntry> list = _entriesByKey.values.toList();
@@ -111,7 +118,7 @@ class HostedLanDiscovery {
     }
     _socket = await RawDatagramSocket.bind(
       InternetAddress.anyIPv4,
-      hostedDiscoveryPort,
+      _discoveryPort,
       reuseAddress: true,
       reusePort: !(Platform.isWindows || Platform.isAndroid),
     );
@@ -496,9 +503,9 @@ class HostedLanHostServer {
   }
 
   String _newPlayerToken() {
-    final int a = _random.nextInt(1 << 32);
-    final int b = _random.nextInt(1 << 32);
-    final int c = _random.nextInt(1 << 32);
+    final int a = _random.nextInt(_playerTokenRandomMax);
+    final int b = _random.nextInt(_playerTokenRandomMax);
+    final int c = _random.nextInt(_playerTokenRandomMax);
     return '$a-$b-$c';
   }
 

@@ -110,6 +110,25 @@ Expected:
 - Source player can split allocation across targets.
 - Only loser can control bus route actions; others see public/spectator state.
 
+## Hosted browser relay mode
+
+### PC browser on same network
+
+- [ ] On the host PC, run `powershell -ExecutionPolicy Bypass -File tool\start_lan_web.ps1`.
+- [ ] Open the printed app URL on the host PC and choose `Hosted`.
+- [ ] Host a relay room with the printed Relay URL.
+- [ ] Open the same app URL on a second PC browser on the same Wi-Fi/LAN.
+- [ ] Join with the same Relay URL and room key.
+- [ ] Use `Copy join details` in the host lobby and confirm it includes app URL, Relay URL, and room key.
+- [ ] Start the game and complete at least one warmup command from the joined browser.
+- [ ] Stop the helper with `powershell -ExecutionPolicy Bypass -File tool\start_lan_web.ps1 -Stop`.
+
+Expected:
+- Both browsers stay in sync through the relay.
+- Host-only controls remain host-only.
+- Join details are copyable and enough for another PC on the same network.
+- If Windows Firewall blocks joining, rerun the helper from administrator PowerShell with `-OpenFirewall` on a private network.
+
 ## Quick regression smoke
 
 - [ ] Leave hosted session and return to local mode.

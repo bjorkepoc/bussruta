@@ -32,22 +32,48 @@ flutter test
 
 ## Browser Play On The Same Network
 
-Run the relay on the PC that should coordinate the room:
+On Windows, the quickest path is:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tool\start_lan_web.ps1
+```
+
+If Windows Firewall blocks other PCs on the same private network, rerun
+PowerShell as administrator and add:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tool\start_lan_web.ps1 -OpenFirewall
+```
+
+The script prints the app URL and relay URL to use. The printed app URL includes
+the relay URL as a query parameter, so Hosted mode is prefilled even when you run
+the helper on non-default ports. Stop the local listeners later with:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tool\start_lan_web.ps1 -Stop
+```
+
+Manual startup uses the same two services. Run the relay on the PC that should
+coordinate the room:
 
 ```bash
 dart run tool/internet_relay.dart --port 8080
 ```
 
-Run the Flutter web app so other devices on the same Wi-Fi can open it:
+Build and serve the Flutter web app so other devices on the same Wi-Fi can open
+it:
 
 ```bash
-flutter run -d web-server --web-hostname 0.0.0.0 --web-port 8081
+flutter build web
+python -m http.server 8081 --bind 0.0.0.0 --directory build/web
 ```
 
 Open `http://<pc-lan-ip>:8081` from the PC browser, another PC, or a phone on
 the same network. In Hosted mode, use `ws://<pc-lan-ip>:8080/ws` as the Relay
 URL. The host creates a room and shares the shown room key; other players join
-with the same Relay URL and room key.
+with the same Relay URL and room key. In the relay lobby, use `Copy join
+details` to copy the app URL, Relay URL, and room key together when the app is
+served from a LAN address.
 
 ## Hosted LAN Testing
 
@@ -56,6 +82,8 @@ For real devices, put the host and clients on the same Wi-Fi. Start a hosted ses
 Android emulators need an ADB port-forwarding workaround because each emulator has its own virtual network. See [docs/emulator_hosted_join_workflow.md](docs/emulator_hosted_join_workflow.md).
 
 Manual release checks live in [docs/manual_qa_checklist.md](docs/manual_qa_checklist.md).
+
+Privacy and store-readiness drafts live in [docs/privacy_policy.md](docs/privacy_policy.md) and [docs/store_disclosures.md](docs/store_disclosures.md). Fill the policy placeholders and host it at a public non-PDF URL before store submission.
 
 ## Project Layout
 
@@ -77,4 +105,4 @@ graphify update .
 
 ## Release Readiness
 
-The app is not release-ready until manual device QA, app identity, signing, and store metadata are completed. See [docs/release_readiness.md](docs/release_readiness.md).
+The app is not release-ready until manual device QA, final app identity assets, signing, public privacy-policy hosting, and store disclosures are completed. See [docs/release_readiness.md](docs/release_readiness.md).

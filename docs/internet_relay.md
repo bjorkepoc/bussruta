@@ -12,6 +12,19 @@ It is intentionally host-authoritative:
 
 ## Run Locally
 
+On Windows, this repo includes a helper that builds the web app, then starts
+both the relay and a static web server for same-network browser play:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tool\start_lan_web.ps1
+```
+
+Use `-OpenFirewall` from an administrator PowerShell when other PCs on the same
+private network cannot reach the app or relay. Use `-Stop` to stop the local
+listeners.
+
+Manual relay startup:
+
 ```bash
 dart run tool/internet_relay.dart --port 8080
 ```
@@ -29,15 +42,18 @@ LAN IP from every device:
 ws://<pc-lan-ip>:8080/ws
 ```
 
-Then run the Flutter web app on the network:
+Then build and serve the Flutter web app on the network:
 
 ```bash
-flutter run -d web-server --web-hostname 0.0.0.0 --web-port 8081
+flutter build web
+python -m http.server 8081 --bind 0.0.0.0 --directory build/web
 ```
 
-Open `http://<pc-lan-ip>:8081`, choose Hosted mode, and use the relay URL above.
-The host creates a room and shares the room key with phones or other PCs on the
-same network.
+Open the app URL printed by the helper. It includes the relay URL as a query
+parameter so Hosted mode is prefilled, including when custom ports are used.
+The host creates a room and shares the room key with other PCs on the same
+network. The lobby can copy the app URL, Relay URL, and room key together from
+`Copy join details` when the web app is served from a LAN address.
 
 ## Relay Messages
 

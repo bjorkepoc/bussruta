@@ -1,366 +1,507 @@
 {
   "C:\\Users\\bjork\\dev\\bussruta\\android\\build.gradle.kts": {
     "mtime": 1773335256.264042,
-    "hash": "0be80ea97a9d674e007d056c9b84ed4c"
+    "ast_hash": "0be80ea97a9d674e007d056c9b84ed4c",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\android\\gradlew": {
     "mtime": 1773420883.741822,
-    "hash": "7f1cd7eb3f75a1dc85cd37753972a6e2"
+    "ast_hash": "7f1cd7eb3f75a1dc85cd37753972a6e2",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\android\\settings.gradle.kts": {
     "mtime": 1773335256.2650461,
-    "hash": "723bf1964220418391e2513e9aa13d4e"
+    "ast_hash": "723bf1964220418391e2513e9aa13d4e",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\android\\app\\build.gradle.kts": {
     "mtime": 1778329054.970808,
-    "hash": "623aee58cbd345bec330b95d0404a99e"
+    "ast_hash": "623aee58cbd345bec330b95d0404a99e",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\android\\app\\src\\main\\java\\io\\flutter\\plugins\\GeneratedPluginRegistrant.java": {
     "mtime": 1773337205.2957158,
-    "hash": "0ac8af6f4fde2f8ff393d86a2098ec5d"
+    "ast_hash": "0ac8af6f4fde2f8ff393d86a2098ec5d",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\android\\app\\src\\main\\kotlin\\com\\bjork\\bussruta\\MainActivity.kt": {
     "mtime": 1778329054.9728084,
-    "hash": "c4e08ada056dfbee82f1ebc66c920fec"
+    "ast_hash": "c4e08ada056dfbee82f1ebc66c920fec",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\BusRoute_web_app\\app.js": {
     "mtime": 1773335256.256042,
-    "hash": "371dd0abd74fe27186cc05f04e0c631e"
+    "ast_hash": "371dd0abd74fe27186cc05f04e0c631e",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\BusRoute_web_app\\bussruta.py": {
     "mtime": 1773335256.256042,
-    "hash": "1fda74d7672dfa97ca99056b1970c038"
+    "ast_hash": "1fda74d7672dfa97ca99056b1970c038",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\BusRoute_web_app\\b\u00e6sso.py": {
     "mtime": 1773335256.256042,
-    "hash": "595f76534892dec024aec38c9bc542ef"
+    "ast_hash": "595f76534892dec024aec38c9bc542ef",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\ios\\Flutter\\ephemeral\\flutter_lldb_helper.py": {
     "mtime": 1773421284.0695436,
-    "hash": "98fc75412162af387e2e3461e4e58094"
+    "ast_hash": "98fc75412162af387e2e3461e4e58094",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\ios\\Runner\\AppDelegate.swift": {
     "mtime": 1773335256.2690454,
-    "hash": "e277c49e98c9f80e9e71c0524a5cb60f"
+    "ast_hash": "e277c49e98c9f80e9e71c0524a5cb60f",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\ios\\Runner\\GeneratedPluginRegistrant.h": {
     "mtime": 1773337205.2977276,
-    "hash": "decb9041b5e91a07e66f4664e5dac408"
+    "ast_hash": "decb9041b5e91a07e66f4664e5dac408",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\ios\\Runner\\GeneratedPluginRegistrant.m": {
     "mtime": 1773337205.2997284,
-    "hash": "fcb57f0675a16b205b0a9a62ffd593b2"
+    "ast_hash": "fcb57f0675a16b205b0a9a62ffd593b2",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\ios\\Runner\\Runner-Bridging-Header.h": {
     "mtime": 1773335256.2760446,
-    "hash": "7ad7b5cea096132de13ba526b2b9efbe"
+    "ast_hash": "7ad7b5cea096132de13ba526b2b9efbe",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\ios\\RunnerTests\\RunnerTests.swift": {
     "mtime": 1773335256.2760446,
-    "hash": "24e5d095048eb86c30423f4e04b6e57b"
+    "ast_hash": "24e5d095048eb86c30423f4e04b6e57b",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\lib\\main.dart": {
     "mtime": 1773336075.5291698,
-    "hash": "f2eaba4e8e4a1247f3281a6a1110bf13"
+    "ast_hash": "f2eaba4e8e4a1247f3281a6a1110bf13",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\lib\\application\\game_controller.dart": {
     "mtime": 1778361593.8882563,
-    "hash": "c42a68f92d4d6d965efb8c3c53b7bd01"
+    "ast_hash": "c42a68f92d4d6d965efb8c3c53b7bd01",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\lib\\application\\game_storage.dart": {
     "mtime": 1778361593.8882563,
-    "hash": "bd9b01b8fb1942803068b0ef6e00c34c"
+    "ast_hash": "bd9b01b8fb1942803068b0ef6e00c34c",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\lib\\application\\hosted_lan_transport.dart": {
-    "mtime": 1778361593.8892553,
-    "hash": "3a56d8d8a25a5a507451dfdaca909e39"
+    "mtime": 1778367268.2196465,
+    "ast_hash": "60d8ceaf726a59c3bf203ac0dfe0356e",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\lib\\application\\hosted_lan_transport_platform.dart": {
     "mtime": 1778361593.8892553,
-    "hash": "615140e885a68eea4de553086850915a"
+    "ast_hash": "615140e885a68eea4de553086850915a",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\lib\\application\\hosted_lan_transport_stub.dart": {
     "mtime": 1778361593.8902543,
-    "hash": "b2390591db6243e25f6a4e6adf17c42c"
+    "ast_hash": "b2390591db6243e25f6a4e6adf17c42c",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\lib\\application\\hosted_relay_transport.dart": {
-    "mtime": 1778361593.8902543,
-    "hash": "8e5cd293c59c05a65b4c6a60a5d1de87"
+    "mtime": 1778367268.2276497,
+    "ast_hash": "27c88403a8230c8fb466d5b9dafafca6",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\lib\\application\\hosted_session_controller.dart": {
-    "mtime": 1778361593.8902543,
-    "hash": "77c06bbdcf5962ed6f45c8a0e130e77f"
+    "mtime": 1780520688.9056685,
+    "ast_hash": "c3e946b4c0b8c88cbfe93ccdc3095d2e",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\lib\\application\\hosted_session_runtime.dart": {
     "mtime": 1778361593.8912563,
-    "hash": "cde9cd7f7b8302bba9a294f3ffe0c05c"
+    "ast_hash": "cde9cd7f7b8302bba9a294f3ffe0c05c",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\lib\\application\\hosted_transport_models.dart": {
     "mtime": 1778361593.8912563,
-    "hash": "f5f9045f5d4a00a0b20caa0ba3578456"
+    "ast_hash": "f5f9045f5d4a00a0b20caa0ba3578456",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\lib\\domain\\game_engine.dart": {
     "mtime": 1778361593.8912563,
-    "hash": "dfaae4f115fa6ba7eb4e25d833c1cd5b"
+    "ast_hash": "dfaae4f115fa6ba7eb4e25d833c1cd5b",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\lib\\domain\\game_models.dart": {
     "mtime": 1773336075.5291698,
-    "hash": "2f2c812fdad6e644f13b1ae1e5260580"
+    "ast_hash": "2f2c812fdad6e644f13b1ae1e5260580",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\lib\\domain\\hosted_models.dart": {
     "mtime": 1778361593.8927598,
-    "hash": "5ab5290de927b2ddd21c39ef868c581f"
+    "ast_hash": "5ab5290de927b2ddd21c39ef868c581f",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\lib\\domain\\hosted_projection.dart": {
     "mtime": 1778361593.8927598,
-    "hash": "c5ba7b432639a66f8f1d81bfcadd62c4"
+    "ast_hash": "c5ba7b432639a66f8f1d81bfcadd62c4",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\lib\\presentation\\app_theme.dart": {
     "mtime": 1778361593.8927598,
-    "hash": "cd4ca530898d5524ebd09ef52c3c92b3"
+    "ast_hash": "cd4ca530898d5524ebd09ef52c3c92b3",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\lib\\presentation\\bussruta_app.dart": {
     "mtime": 1778361593.893764,
-    "hash": "76f3dd368fed7841a801d765deb820d0"
+    "ast_hash": "76f3dd368fed7841a801d765deb820d0",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\lib\\presentation\\game_table_view.dart": {
     "mtime": 1778361593.8947637,
-    "hash": "17706ed6dc03d8587c62587f13acb223"
+    "ast_hash": "17706ed6dc03d8587c62587f13acb223",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\lib\\presentation\\help_view.dart": {
     "mtime": 1778361593.895766,
-    "hash": "9291e23db1fe3c390f844945d20c734d"
+    "ast_hash": "9291e23db1fe3c390f844945d20c734d",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\lib\\presentation\\hosted_session_view.dart": {
-    "mtime": 1778361593.895766,
-    "hash": "f31e34bb17bfde726925e6f023716ea2"
+    "mtime": 1780520689.102482,
+    "ast_hash": "0c2e2ea2d05482f24001d71dc304cc18",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\lib\\presentation\\strings.dart": {
     "mtime": 1778361593.8967648,
-    "hash": "e0f096308cf6070de581e1c4bd497593"
+    "ast_hash": "e0f096308cf6070de581e1c4bd497593",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\test\\application\\game_controller_onboarding_test.dart": {
     "mtime": 1773442195.0467768,
-    "hash": "18c6e01a67cf12762ce08e05bbb95bbf"
+    "ast_hash": "18c6e01a67cf12762ce08e05bbb95bbf",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\test\\application\\game_controller_setup_test.dart": {
     "mtime": 1778361593.8967648,
-    "hash": "8f0658fa94efe57ba286ef5270e2c124"
+    "ast_hash": "8f0658fa94efe57ba286ef5270e2c124",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\test\\application\\game_storage_test.dart": {
     "mtime": 1778361593.8982687,
-    "hash": "0de49f7b23ccb02d75eccfee3950fba0"
+    "ast_hash": "0de49f7b23ccb02d75eccfee3950fba0",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\test\\application\\hosted_lan_transport_test.dart": {
-    "mtime": 1778361593.8982687,
-    "hash": "f7be546a37b1d7dfafe6d09defc7d15a"
+    "mtime": 1778364340.541323,
+    "ast_hash": "c676766dca29367bab5bf82d26c77d83",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\test\\application\\hosted_relay_transport_test.dart": {
     "mtime": 1778361593.8982687,
-    "hash": "a606353fc0bc99510ec2ab232a7f9c4b"
+    "ast_hash": "a606353fc0bc99510ec2ab232a7f9c4b",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\test\\application\\hosted_session_controller_test.dart": {
-    "mtime": 1778361593.899273,
-    "hash": "7c1ac7fc8b8946879e4bcdbba23e659e"
+    "mtime": 1780520689.1185224,
+    "ast_hash": "ad85158ea896afd2cc7b3e734322b153",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\test\\application\\hosted_session_runtime_test.dart": {
     "mtime": 1773446984.8468945,
-    "hash": "7abd11063671e18fa73d29c2274e86d3"
+    "ast_hash": "7abd11063671e18fa73d29c2274e86d3",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\test\\domain\\game_engine_test.dart": {
     "mtime": 1778361593.899273,
-    "hash": "a58e738086a32c1265dcca985f1c3923"
+    "ast_hash": "a58e738086a32c1265dcca985f1c3923",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\test\\domain\\hosted_models_test.dart": {
     "mtime": 1778329055.026404,
-    "hash": "0be8117bcf0005be28df9408d48e0ed2"
+    "ast_hash": "0be8117bcf0005be28df9408d48e0ed2",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\test\\domain\\hosted_projection_test.dart": {
     "mtime": 1778361593.9002726,
-    "hash": "978e881bb3515cc76abea1ebbc7e0bd3"
+    "ast_hash": "978e881bb3515cc76abea1ebbc7e0bd3",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\test\\presentation\\bussruta_app_onboarding_test.dart": {
     "mtime": 1778329055.0274036,
-    "hash": "a75fdf7f0a62ffcd69b9307b890ccb03"
+    "ast_hash": "a75fdf7f0a62ffcd69b9307b890ccb03",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\test\\presentation\\bussruta_app_ui_smoke_test.dart": {
-    "mtime": 1778361593.9002726,
-    "hash": "a83db75007598e80f12fa5b57c1ef4d8"
+    "mtime": 1780520449.2322955,
+    "ast_hash": "47e80daf8600e1b1ed861472dbe2919c",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\test\\tool\\internet_relay_test.dart": {
     "mtime": 1778329055.0274036,
-    "hash": "d3ff9937a56022c9c8af6b100296c287"
+    "ast_hash": "d3ff9937a56022c9c8af6b100296c287",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\tool\\internet_relay.dart": {
     "mtime": 1778329055.028404,
-    "hash": "2fd8c269c09512436da85b290a99cc19"
+    "ast_hash": "2fd8c269c09512436da85b290a99cc19",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\bjork\\dev\\bussruta\\tool\\start_lan_web.ps1": {
+    "mtime": 1780520624.4892943,
+    "ast_hash": "9894be397bf558e418f5d18acb8fa6ed",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\AGENTS.md": {
     "mtime": 1778329054.9698074,
-    "hash": "747e73a5e1af4b72c0d65c9169c23199"
+    "ast_hash": "747e73a5e1af4b72c0d65c9169c23199",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\analysis_options.yaml": {
     "mtime": 1773335256.2570426,
-    "hash": "9e65f4b9beebb674c0dc252f70a5c177"
+    "ast_hash": "9e65f4b9beebb674c0dc252f70a5c177",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\pubspec.yaml": {
     "mtime": 1778361593.8967648,
-    "hash": "616cb5f2b1780a64ea53c422fce1fbe6"
+    "ast_hash": "616cb5f2b1780a64ea53c422fce1fbe6",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\README.md": {
-    "mtime": 1778361593.8512244,
-    "hash": "a1850e4c0ecfa5ede8935704b5260bf4"
+    "mtime": 1780488729.9327278,
+    "ast_hash": "1460daca16c4e7d172c798004eaf7e10",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\BusRoute_web_app\\index.html": {
     "mtime": 1773335256.256042,
-    "hash": "04fd742c81b33a8ececbe4687865a25a"
+    "ast_hash": "04fd742c81b33a8ececbe4687865a25a",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\BusRoute_web_app\\README.md": {
     "mtime": 1773335256.2550418,
-    "hash": "e9e52eed4dcd36124e67bfb94dbc163a"
+    "ast_hash": "e9e52eed4dcd36124e67bfb94dbc163a",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\docs\\emulator_hosted_join_workflow.md": {
     "mtime": 1773444919.1401484,
-    "hash": "60067e66b6db59de9d6cdf7f811366ce"
+    "ast_hash": "60067e66b6db59de9d6cdf7f811366ce",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\docs\\internet_relay.md": {
-    "mtime": 1778361593.8512244,
-    "hash": "abd5b67786ef37726b48bb1b6da70e1d"
+    "mtime": 1780488729.9327278,
+    "ast_hash": "6630372dbed32a32447c41bde49dd113",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\docs\\manual_qa_checklist.md": {
-    "mtime": 1778329054.97381,
-    "hash": "68e2baf2c4b331ff9ea5f2b055e716ac"
+    "mtime": 1778363704.526413,
+    "ast_hash": "d2ea00c4973629fb8d482ea502ab510b",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\docs\\manual_qa_results.md": {
-    "mtime": 1778361662.0493703,
-    "hash": "edf298fff02b9b67427542b296fec150"
+    "mtime": 1780489864.521328,
+    "ast_hash": "3d7910566429067da01b3c237bf66b56",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\docs\\multiplayer_options.md": {
-    "mtime": 1778361593.8512244,
-    "hash": "fff408293c458068dbc5d455bb2167df"
+    "mtime": 1778363709.737789,
+    "ast_hash": "c98bfab3b589573d0dac3abd107b8097",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\docs\\release_readiness.md": {
-    "mtime": 1778329054.9748082,
-    "hash": "2b70c98170170b1475d64d884a5b1efb"
+    "mtime": 1780489088.363988,
+    "ast_hash": "d6fa84e84c19532f2f3b883e7cbf6970",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\ios\\Runner\\Assets.xcassets\\LaunchImage.imageset\\README.md": {
     "mtime": 1773335256.2740443,
-    "hash": "f7ee1b402881509d197f34963e569927"
+    "ast_hash": "f7ee1b402881509d197f34963e569927",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\web\\index.html": {
     "mtime": 1778361593.9032784,
-    "hash": "09321dda8918826d1b93916e57a0ae76"
+    "ast_hash": "09321dda8918826d1b93916e57a0ae76",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\android\\app\\src\\main\\res\\mipmap-hdpi\\ic_launcher.png": {
     "mtime": 1773335256.261042,
-    "hash": "13e9c72ec37fac220397aa819fa1ef2d"
+    "ast_hash": "13e9c72ec37fac220397aa819fa1ef2d",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\android\\app\\src\\main\\res\\mipmap-mdpi\\ic_launcher.png": {
     "mtime": 1773335256.261042,
-    "hash": "6270344430679711b81476e29878caa7"
+    "ast_hash": "6270344430679711b81476e29878caa7",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\android\\app\\src\\main\\res\\mipmap-xhdpi\\ic_launcher.png": {
     "mtime": 1773335256.2620418,
-    "hash": "a0a8db5985280b3679d99a820ae2db79"
+    "ast_hash": "a0a8db5985280b3679d99a820ae2db79",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\android\\app\\src\\main\\res\\mipmap-xxhdpi\\ic_launcher.png": {
     "mtime": 1773335256.2620418,
-    "hash": "afe1b655b9f32da22f9a4301bb8e6ba8"
+    "ast_hash": "afe1b655b9f32da22f9a4301bb8e6ba8",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\android\\app\\src\\main\\res\\mipmap-xxxhdpi\\ic_launcher.png": {
     "mtime": 1773335256.2620418,
-    "hash": "57838d52c318faff743130c3fcfae0c6"
+    "ast_hash": "57838d52c318faff743130c3fcfae0c6",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\ios\\Runner\\Assets.xcassets\\AppIcon.appiconset\\Icon-App-1024x1024@1x.png": {
     "mtime": 1773335256.2700458,
-    "hash": "c785f8932297af4acd5f5ccb7630f01c"
+    "ast_hash": "c785f8932297af4acd5f5ccb7630f01c",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\ios\\Runner\\Assets.xcassets\\AppIcon.appiconset\\Icon-App-20x20@1x.png": {
     "mtime": 1773335256.2700458,
-    "hash": "a2f8558fb1d42514111fbbb19fb67314"
+    "ast_hash": "a2f8558fb1d42514111fbbb19fb67314",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\ios\\Runner\\Assets.xcassets\\AppIcon.appiconset\\Icon-App-20x20@2x.png": {
     "mtime": 1773335256.2700458,
-    "hash": "2247a840b6ee72b8a069208af170e5b1"
+    "ast_hash": "2247a840b6ee72b8a069208af170e5b1",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\ios\\Runner\\Assets.xcassets\\AppIcon.appiconset\\Icon-App-20x20@3x.png": {
     "mtime": 1773335256.2710454,
-    "hash": "1b3b1538136316263c7092951e923e9d"
+    "ast_hash": "1b3b1538136316263c7092951e923e9d",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\ios\\Runner\\Assets.xcassets\\AppIcon.appiconset\\Icon-App-29x29@1x.png": {
     "mtime": 1773335256.2710454,
-    "hash": "be8887071dd7ec39cb754d236aa9584f"
+    "ast_hash": "be8887071dd7ec39cb754d236aa9584f",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\ios\\Runner\\Assets.xcassets\\AppIcon.appiconset\\Icon-App-29x29@2x.png": {
     "mtime": 1773335256.2710454,
-    "hash": "043119ef4faa026ff82bd03f241e5338"
+    "ast_hash": "043119ef4faa026ff82bd03f241e5338",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\ios\\Runner\\Assets.xcassets\\AppIcon.appiconset\\Icon-App-29x29@3x.png": {
     "mtime": 1773335256.2710454,
-    "hash": "2b1452c4c1bda6177b4fbbb832df217f"
+    "ast_hash": "2b1452c4c1bda6177b4fbbb832df217f",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\ios\\Runner\\Assets.xcassets\\AppIcon.appiconset\\Icon-App-40x40@1x.png": {
     "mtime": 1773335256.2720444,
-    "hash": "2247a840b6ee72b8a069208af170e5b1"
+    "ast_hash": "2247a840b6ee72b8a069208af170e5b1",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\ios\\Runner\\Assets.xcassets\\AppIcon.appiconset\\Icon-App-40x40@2x.png": {
     "mtime": 1773335256.2720444,
-    "hash": "8245359312aea1b0d2412f79a07b0ca5"
+    "ast_hash": "8245359312aea1b0d2412f79a07b0ca5",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\ios\\Runner\\Assets.xcassets\\AppIcon.appiconset\\Icon-App-40x40@3x.png": {
     "mtime": 1773335256.2720444,
-    "hash": "5b3c0902200ce596e9848f22e1f0fe0e"
+    "ast_hash": "5b3c0902200ce596e9848f22e1f0fe0e",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\ios\\Runner\\Assets.xcassets\\AppIcon.appiconset\\Icon-App-60x60@2x.png": {
     "mtime": 1773335256.2720444,
-    "hash": "5b3c0902200ce596e9848f22e1f0fe0e"
+    "ast_hash": "5b3c0902200ce596e9848f22e1f0fe0e",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\ios\\Runner\\Assets.xcassets\\AppIcon.appiconset\\Icon-App-60x60@3x.png": {
     "mtime": 1773335256.2720444,
-    "hash": "e419d22a37bc40ba185aca1acb6d4ac6"
+    "ast_hash": "e419d22a37bc40ba185aca1acb6d4ac6",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\ios\\Runner\\Assets.xcassets\\AppIcon.appiconset\\Icon-App-76x76@1x.png": {
     "mtime": 1773335256.273044,
-    "hash": "36c0d7a7132bdde18898ffdfcfcdc4d2"
+    "ast_hash": "36c0d7a7132bdde18898ffdfcfcdc4d2",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\ios\\Runner\\Assets.xcassets\\AppIcon.appiconset\\Icon-App-76x76@2x.png": {
     "mtime": 1773335256.273044,
-    "hash": "643842917530acf4c5159ae851b0baf2"
+    "ast_hash": "643842917530acf4c5159ae851b0baf2",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\ios\\Runner\\Assets.xcassets\\AppIcon.appiconset\\Icon-App-83.5x83.5@2x.png": {
     "mtime": 1773335256.273044,
-    "hash": "665cb5e3c5729da6d639d26eff47a503"
+    "ast_hash": "665cb5e3c5729da6d639d26eff47a503",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\ios\\Runner\\Assets.xcassets\\LaunchImage.imageset\\LaunchImage.png": {
     "mtime": 1773335256.2740443,
-    "hash": "978c1bee49d7ad5fc1a4d81099b13e18"
+    "ast_hash": "978c1bee49d7ad5fc1a4d81099b13e18",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\ios\\Runner\\Assets.xcassets\\LaunchImage.imageset\\LaunchImage@2x.png": {
     "mtime": 1773335256.2740443,
-    "hash": "978c1bee49d7ad5fc1a4d81099b13e18"
+    "ast_hash": "978c1bee49d7ad5fc1a4d81099b13e18",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\ios\\Runner\\Assets.xcassets\\LaunchImage.imageset\\LaunchImage@3x.png": {
     "mtime": 1773335256.2740443,
-    "hash": "978c1bee49d7ad5fc1a4d81099b13e18"
+    "ast_hash": "978c1bee49d7ad5fc1a4d81099b13e18",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\web\\favicon.png": {
     "mtime": 1778361593.9002726,
-    "hash": "5dcef449791fa27946b3d35ad8803796"
+    "ast_hash": "5dcef449791fa27946b3d35ad8803796",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\web\\icons\\Icon-192.png": {
     "mtime": 1778361593.9012742,
-    "hash": "ac9a721a12bbc803b44f645561ecb1e1"
+    "ast_hash": "ac9a721a12bbc803b44f645561ecb1e1",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\web\\icons\\Icon-512.png": {
     "mtime": 1778361593.9012742,
-    "hash": "96e752610906ba2a93c65f8abe1645f1"
+    "ast_hash": "96e752610906ba2a93c65f8abe1645f1",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\web\\icons\\Icon-maskable-192.png": {
     "mtime": 1778361593.9022737,
-    "hash": "c457ef57daa1d16f64b27b786ec2ea3c"
+    "ast_hash": "c457ef57daa1d16f64b27b786ec2ea3c",
+    "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\web\\icons\\Icon-maskable-512.png": {
     "mtime": 1778361593.9022737,
-    "hash": "301a7604d45b3e739efc881eb04896ea"
+    "ast_hash": "301a7604d45b3e739efc881eb04896ea",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\bjork\\dev\\bussruta\\ios\\Flutter\\flutter_export_environment.sh": {
+    "mtime": 1773421284.0745444,
+    "ast_hash": "5466cb0a318291ec449dcf002b31fa16",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\bjork\\dev\\bussruta\\ios\\Runner\\Assets.xcassets\\AppIcon.appiconset\\Contents.json": {
+    "mtime": 1773335256.2700458,
+    "ast_hash": "31a08e429403e265cabfb31b3d65f049",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\bjork\\dev\\bussruta\\ios\\Runner\\Assets.xcassets\\LaunchImage.imageset\\Contents.json": {
+    "mtime": 1773335256.273044,
+    "ast_hash": "b9e927ac17345f2d5f052fe68a3487f9",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\bjork\\dev\\bussruta\\web\\manifest.json": {
+    "mtime": 1778361593.9032784,
+    "ast_hash": "8dc6b60cbad132cd01370264be2b6cdc",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\bjork\\dev\\bussruta\\.github\\workflows\\flutter.yml": {
+    "mtime": 1778329054.9688106,
+    "ast_hash": "2a6db9b9260980123ce9f54d253dc673",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\bjork\\dev\\bussruta\\docs\\lanseringsklar_mangler.txt": {
+    "mtime": 1780442171.687123,
+    "ast_hash": "d5b5a24f5ae55ba44b2cacf1b138a794",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\bjork\\dev\\bussruta\\docs\\privacy_policy.md": {
+    "mtime": 1780441755.3271801,
+    "ast_hash": "2762d28af04c01a023f0fcf6361d6227",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\bjork\\dev\\bussruta\\docs\\store_disclosures.md": {
+    "mtime": 1780441755.3271801,
+    "ast_hash": "0936ed134bcac825907b2ffa536489f6",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\bjork\\dev\\bussruta\\test\\tool\\start_lan_web_script_test.dart": {
+    "mtime": 1780520689.1475306,
+    "ast_hash": "7061b8a50e06d0d670d4c183a7664f90",
+    "semantic_hash": ""
   }
 }
