@@ -105,8 +105,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\lib\\application\\hosted_relay_transport.dart": {
-    "mtime": 1778367268.2276497,
-    "ast_hash": "27c88403a8230c8fb466d5b9dafafca6",
+    "mtime": 1780523230.4899602,
+    "ast_hash": "411edaac16128937bb789cb5503f90f3",
     "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\lib\\application\\hosted_session_controller.dart": {
@@ -165,8 +165,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\lib\\presentation\\hosted_session_view.dart": {
-    "mtime": 1780520689.102482,
-    "ast_hash": "0c2e2ea2d05482f24001d71dc304cc18",
+    "mtime": 1780523230.7968104,
+    "ast_hash": "9ef9d1fafc196042c30772f63e15a5f2",
     "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\lib\\presentation\\strings.dart": {
@@ -195,8 +195,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\test\\application\\hosted_relay_transport_test.dart": {
-    "mtime": 1778361593.8982687,
-    "ast_hash": "a606353fc0bc99510ec2ab232a7f9c4b",
+    "mtime": 1780523230.822634,
+    "ast_hash": "edc113a68bf56291a3632b328d546d9d",
     "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\test\\application\\hosted_session_controller_test.dart": {
@@ -230,8 +230,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\test\\presentation\\bussruta_app_ui_smoke_test.dart": {
-    "mtime": 1780520449.2322955,
-    "ast_hash": "47e80daf8600e1b1ed861472dbe2919c",
+    "mtime": 1780523057.3334432,
+    "ast_hash": "56674b8e2fe9766491d036a05bb21ff9",
     "semantic_hash": ""
   },
   "C:\\Users\\bjork\\dev\\bussruta\\test\\tool\\internet_relay_test.dart": {

@@ -246,7 +246,7 @@ class HostedRelayHostConnection {
       'projection': projectionForPlayer(playerId).toJson(),
     });
     _emitState();
-    _broadcastSnapshots();
+    _broadcastSnapshots(exceptPlayerId: playerId);
   }
 
   void _handleCommand(String clientId, Map<String, dynamic> envelope) {
@@ -343,7 +343,7 @@ class HostedRelayHostConnection {
       'projection': projectionForPlayer(playerId).toJson(),
     });
     _emitState();
-    _broadcastSnapshots();
+    _broadcastSnapshots(exceptPlayerId: playerId);
   }
 
   String _ensureTokenForPlayer(int playerId) {
@@ -364,10 +364,13 @@ class HostedRelayHostConnection {
     return '$a-$b-$c';
   }
 
-  void _broadcastSnapshots() {
+  void _broadcastSnapshots({int? exceptPlayerId}) {
     final List<MapEntry<int, String>> entries = _clientIdByPlayerId.entries
         .toList(growable: false);
     for (final MapEntry<int, String> entry in entries) {
+      if (entry.key == exceptPlayerId) {
+        continue;
+      }
       _sendToClient(entry.value, <String, dynamic>{
         'type': 'snapshot',
         'projection': projectionForPlayer(entry.key).toJson(),

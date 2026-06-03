@@ -1,16 +1,16 @@
 # Graph Report - bussruta  (2026-06-03)
 
 ## Corpus Check
-- 67 files · ~71,503 words
+- 67 files · ~71,653 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2163 nodes · 2874 edges · 97 communities (86 shown, 11 thin omitted)
+- 2166 nodes · 2877 edges · 94 communities (83 shown, 11 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `ee1884d7`
+- Built from commit: `18724c81`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -82,7 +82,6 @@
 - [[_COMMUNITY_Community 69|Community 69]]
 - [[_COMMUNITY_Community 70|Community 70]]
 - [[_COMMUNITY_Community 71|Community 71]]
-- [[_COMMUNITY_Community 72|Community 72]]
 - [[_COMMUNITY_Community 73|Community 73]]
 - [[_COMMUNITY_Community 74|Community 74]]
 - [[_COMMUNITY_Community 75|Community 75]]
@@ -91,7 +90,6 @@
 - [[_COMMUNITY_Community 78|Community 78]]
 - [[_COMMUNITY_Community 79|Community 79]]
 - [[_COMMUNITY_Community 80|Community 80]]
-- [[_COMMUNITY_Community 81|Community 81]]
 - [[_COMMUNITY_Community 82|Community 82]]
 - [[_COMMUNITY_Community 83|Community 83]]
 - [[_COMMUNITY_Community 84|Community 84]]
@@ -102,7 +100,6 @@
 - [[_COMMUNITY_Community 93|Community 93]]
 - [[_COMMUNITY_Community 94|Community 94]]
 - [[_COMMUNITY_Community 97|Community 97]]
-- [[_COMMUNITY_Community 99|Community 99]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `_` - 37 edges
@@ -131,7 +128,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (97 total, 11 thin omitted)
+## Communities (94 total, 11 thin omitted)
 
 ### Community 0 - "Community 0"
 Cohesion: 0.08
@@ -150,8 +147,8 @@ Cohesion: 0.04
 Nodes (47): acknowledgeDrinks, _applyHostAuthorityCommand, _applyHostStateToController, assignDrinks, _attemptReconnect, beginBusRoute, _bindClient, _bindHostServer (+39 more)
 
 ### Community 4 - "Community 4"
-Cohesion: 0.11
-Nodes (18): _broadcastHostMessage, _closeHostRoom, _forwardClientMessage, _forwardHostMessage, Function, _handleMessage, _handlePeerClosed, InternetRelayServer (+10 more)
+Cohesion: 0.08
+Nodes (29): Duration, main, _next, StateError, _broadcastHostMessage, _closeHostRoom, _forwardClientMessage, _forwardHostMessage (+21 more)
 
 ### Community 5 - "Community 5"
 Cohesion: 0.05
@@ -190,12 +187,12 @@ Cohesion: 0.11
 Nodes (17): Bus route + finish, Drink distribution + bus control, Gameplay authority + privacy, Host + join, Hosted browser relay mode, Hosted LAN mode, Known manual-only checks, Local mode (+9 more)
 
 ### Community 14 - "Community 14"
-Cohesion: 0.10
-Nodes (24): _FakeStorage, main, _FakeStorage, main, assignDrinks, _FakeHostedSessionController, _FakeStorage, _hostedProjection (+16 more)
+Cohesion: 0.15
+Nodes (12): assignDrinks, _FakeHostedSessionController, _FakeStorage, _hostedProjection, main, PlatformException, projectHostedView, _pumpApp (+4 more)
 
 ### Community 15 - "Community 15"
-Cohesion: 0.12
-Nodes (16): ArgumentError, copyWith, decode, encode, fromJson, HostedParticipant, HostedPendingDrinkDistribution, HostedProjectedView (+8 more)
+Cohesion: 0.40
+Nodes (5): GameController, HostedSessionController, ChangeNotifier, _FakeHostedSessionController, WidgetsBindingObserver
 
 ### Community 16 - "Community 16"
 Cohesion: 0.32
@@ -230,16 +227,16 @@ Cohesion: 0.18
 Nodes (10): applyLocalCommand, HostedLanClientConnection, HostedLanDiscovery, HostedLanHostServer, projectHostedView, projectionForHost, projectionForPlayer, sendCommand (+2 more)
 
 ### Community 24 - "Community 24"
-Cohesion: 0.33
-Nodes (5): busState, card, main, PlayerState, PlayingCard
+Cohesion: 0.12
+Nodes (13): GameStorage, SharedPrefsGameStorage, busGuessLabel, languageName, phaseLabel, tr, warmupGuessLabel, busState (+5 more)
 
 ### Community 25 - "Community 25"
-Cohesion: 0.10
-Nodes (20): _backend, clear, clearWithParameters, _CountingPreferencesStore, getAll, getAllWithParameters, main, remove (+12 more)
+Cohesion: 0.04
+Nodes (45): clearGameState, _gameStateKey, _instance, _lastSavedGameStatePayload, loadGameState, loadOnboardingSeen, _onboardingSeenKey, _prefs (+37 more)
 
 ### Community 26 - "Community 26"
-Cohesion: 0.09
-Nodes (21): HostedProjectedView, HostedPublicView, projectHostedPublicView, projectHostedView, _busRoute, BusRouteState, card, HostedSessionState (+13 more)
+Cohesion: 0.11
+Nodes (16): _busRoute, BusRouteState, card, HostedSessionState, main, PlayingCard, _sessionState, _busRoute (+8 more)
 
 ### Community 27 - "Community 27"
 Cohesion: 0.26
@@ -263,8 +260,8 @@ Cohesion: 0.25
 Nodes (6): code:powershell (adb -s emulator-5554 forward tcp:45879 tcp:45879), code:powershell (adb -s emulator-5554 forward --remove tcp:45879), Hosted LAN Testing On Android Emulators, Real-device expectation, Recommended emulator workflow, Why join fails by default
 
 ### Community 32 - "Community 32"
-Cohesion: 0.14
-Nodes (12): main, ArgumentError, main, _busRoute, _card, fromBusRoute, main, rank (+4 more)
+Cohesion: 0.13
+Nodes (13): ArgumentError, HostedProjectedView, HostedPublicView, projectHostedPublicView, projectHostedView, _busRoute, _card, fromBusRoute (+5 more)
 
 ### Community 33 - "Community 33"
 Cohesion: 0.02
@@ -299,8 +296,8 @@ Cohesion: 0.02
 Nodes (81): _announcementType, applyLocalCommand, _beaconSocket, _beaconTimer, _broadcastSnapshots, _carriageReturn, _cleanupTimer, close (+73 more)
 
 ### Community 53 - "Community 53"
-Cohesion: 0.03
-Nodes (79): AnimationController?, AnimationController get, Color, _bannerCard, _browserAppUrl, build, _buildEntry, _buildGame (+71 more)
+Cohesion: 0.02
+Nodes (81): AnimationController?, AnimationController get, Color, _bannerCard, _browserAppUrl, build, _buildEntry, _buildGame (+73 more)
 
 ### Community 54 - "Community 54"
 Cohesion: 0.03
@@ -327,8 +324,9 @@ Cohesion: 0.05
 Nodes (43): Completer, HttpServer?, Map, StreamSubscription, _broadcastHostMessage, cancel, client, clientId (+35 more)
 
 ### Community 60 - "Community 60"
-Cohesion: 0.04
-Nodes (45): GameController, HostedSessionController, BannerTone, ChangeNotifier, GamePhase, HostedProjectedView, HostedSessionStage, HostedConnectionStatus get (+37 more)
+Cohesion: 0.05
+Nodes (40): BannerTone, GamePhase, HostedProjectedView, HostedSessionStage, HostedConnectionStatus get, HostedPendingDrinkDistribution? pendingDrinkDistribution,
+  String, assignDrinks, assignedTargets (+32 more)
 
 ### Community 61 - "Community 61"
 Cohesion: 0.05
@@ -347,16 +345,16 @@ Cohesion: 0.06
 Nodes (31): applyLocalCommand, close, connect, entries, errors, hostAddress, HostedLanClientConnection, HostedLanDiscovery (+23 more)
 
 ### Community 65 - "Community 65"
-Cohesion: 0.15
-Nodes (12): deadline, hasNext, main, _messages, _next, runtime, start, _startRelayHost (+4 more)
+Cohesion: 0.14
+Nodes (13): deadline, hasNext, main, _messages, _next, _nextOrNull, runtime, start (+5 more)
 
 ### Community 66 - "Community 66"
 Cohesion: 0.09
 Nodes (23): _BannerCard, _GameScreen, _LanguageMenu, _ModeChoiceCard, _SetupScreen, _StartModeScreen, _StatusStrip, _BusBase (+15 more)
 
 ### Community 67 - "Community 67"
-Cohesion: 0.11
-Nodes (18): Duration, expectLater, Function, HostedProjectedView, main, StateError, _waitFor, Duration (+10 more)
+Cohesion: 0.22
+Nodes (8): Duration, expectLater, Function, HostedProjectedView, main, StateError, _waitFor, package:bussruta_app/application/hosted_lan_transport.dart
 
 ### Community 68 - "Community 68"
 Cohesion: 0.09
@@ -374,10 +372,6 @@ Nodes (17): Ads And Payments Planned For The Future, Changes, Children, Hosted L
 Cohesion: 0.13
 Nodes (14): code, copyWith, hostAddress, HostedClientIssue, HostedClientIssueCode, HostedDiscoveryEntry, hostedDiscoveryPort, hostedSessionPort (+6 more)
 
-### Community 72 - "Community 72"
-Cohesion: 0.15
-Nodes (12): clearGameState, _gameStateKey, _instance, _lastSavedGameStatePayload, loadGameState, loadOnboardingSeen, _onboardingSeenKey, _prefs (+4 more)
-
 ### Community 73 - "Community 73"
 Cohesion: 0.24
 Nodes (11): BussrutaApp, _BussrutaAppState, GameTableView, _GameTableViewState, OnboardingIntroScreen, _OnboardingIntroScreenState, HostedSessionView, _HostedSessionViewState (+3 more)
@@ -387,16 +381,16 @@ Cohesion: 0.18
 Nodes (10): background_color, description, display, icons, name, orientation, prefer_related_applications, short_name (+2 more)
 
 ### Community 75 - "Community 75"
-Cohesion: 0.20
-Nodes (9): clearGameState, loadGameState, loadOnboardingSeen, main, onboardingSeen, savedGameState, savedOnboardingSeen, saveGameState (+1 more)
+Cohesion: 0.12
+Nodes (15): clearGameState, _FakeStorage, loadGameState, loadOnboardingSeen, main, onboardingSeen, savedGameState, savedOnboardingSeen (+7 more)
 
 ### Community 76 - "Community 76"
 Cohesion: 0.20
 Nodes (9): Duration, expectLater, Function, HostedSessionCommand, main, _next, StateError, _waitFor (+1 more)
 
 ### Community 77 - "Community 77"
-Cohesion: 0.15
-Nodes (11): clearGameState, loadGameState, loadOnboardingSeen, main, savedGameStates, saveGameState, saveOnboardingSeen, main (+3 more)
+Cohesion: 0.11
+Nodes (20): clearGameState, loadGameState, loadOnboardingSeen, main, savedGameStates, saveGameState, saveOnboardingSeen, _FakeStorage (+12 more)
 
 ### Community 78 - "Community 78"
 Cohesion: 0.22
@@ -410,54 +404,46 @@ Nodes (8): Browser Play On The Same Network, Bussruta, Current Status, Graphify,
 Cohesion: 0.25
 Nodes (7): busGuessLabel, language, languageName, phaseLabel, tr, warmupGuessLabel, return
 
-### Community 81 - "Community 81"
-Cohesion: 0.33
-Nodes (6): _FakeStorage, _RecordingStorage, GameStorage, SharedPrefsGameStorage, _FakeStorage, _FakeStorage
-
 ### Community 82 - "Community 82"
 Cohesion: 0.40
 Nodes (4): images, info, author, version
 
 ### Community 83 - "Community 83"
-Cohesion: 0.22
-Nodes (8): package:bussruta_app/presentation/help_view.dart, clearGameState, loadGameState, loadOnboardingSeen, main, onboardingSeen, saveGameState, saveOnboardingSeen
+Cohesion: 0.17
+Nodes (11): _FakeStorage, main, package:bussruta_app/presentation/bussruta_app.dart, package:bussruta_app/presentation/help_view.dart, clearGameState, loadGameState, loadOnboardingSeen, main (+3 more)
 
 ### Community 84 - "Community 84"
 Cohesion: 0.40
 Nodes (4): images, info, author, version
 
 ### Community 93 - "Community 93"
-Cohesion: 0.17
-Nodes (11): _completesSoon, deadline, lastError, main, _projectionJson, _startServer, timeout, _waitFor (+3 more)
+Cohesion: 0.18
+Nodes (10): _completesSoon, deadline, lastError, main, _projectionJson, _startServer, timeout, _waitFor (+2 more)
 
 ### Community 94 - "Community 94"
 Cohesion: 0.22
 Nodes (8): _busSetupState, card, main, _pyramidState, rank, suit, _warmupState, package:bussruta_app/application/hosted_session_runtime.dart
 
 ### Community 97 - "Community 97"
-Cohesion: 0.29
-Nodes (6): _busRoute, BusRouteState, _card, HostedProjectedView, main, PlayingCard
-
-### Community 99 - "Community 99"
-Cohesion: 0.33
-Nodes (5): busGuessLabel, languageName, phaseLabel, tr, warmupGuessLabel
+Cohesion: 0.17
+Nodes (10): main, main, _busRoute, BusRouteState, _card, HostedProjectedView, main, PlayingCard (+2 more)
 
 ## Knowledge Gaps
-- **1677 isolated node(s):** `String`, `SBFrame`, `SBDebugger`, `flutter_export_environment.sh script`, `UIApplication` (+1672 more)
+- **1680 isolated node(s):** `String`, `SBFrame`, `SBDebugger`, `flutter_export_environment.sh script`, `UIApplication` (+1675 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **11 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `_` connect `Community 63` to `Community 68`, `Community 14`?**
+- **Why does `_` connect `Community 63` to `Community 68`, `Community 77`?**
   _High betweenness centrality (0.041) - this node is a cross-community bridge._
 - **Why does `AppLanguage` connect `Community 68` to `Community 33`, `Community 46`, `Community 53`, `Community 54`, `Community 55`, `Community 62`?**
   _High betweenness centrality (0.021) - this node is a cross-community bridge._
-- **Why does `HostedProjectedView` connect `Community 60` to `Community 56`, `Community 33`, `Community 52`, `Community 54`?**
+- **Why does `GameEngine` connect `Community 61` to `Community 33`, `Community 58`, `Community 57`?**
   _High betweenness centrality (0.004) - this node is a cross-community bridge._
 - **What connects `String`, `SBFrame`, `SBDebugger` to the rest of the system?**
-  _1678 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _1681 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
   _Cohesion score 0.07704367301231803 - nodes in this community are weakly interconnected._
 - **Should `Community 1` be split into smaller, more focused modules?**

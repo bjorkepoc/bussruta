@@ -3320,9 +3320,13 @@ String defaultHostedRelayUrl(Uri base) {
       base.host != 'localhost' &&
       base.host != '127.0.0.1') {
     final String relayScheme = base.scheme == 'https' ? 'wss' : 'ws';
-    return '$relayScheme://${base.host}:8080/ws';
+    return '$relayScheme://${_hostForRelayUrl(base.host)}:8080/ws';
   }
   return 'ws://127.0.0.1:8080/ws';
+}
+
+String _hostForRelayUrl(String host) {
+  return host.contains(':') ? '[$host]' : host;
 }
 
 class _ConnectionVisual {

@@ -117,6 +117,46 @@ void main() {
       expect(issue.message, 'Relay room closed.');
     });
 
+    test(
+      'join response is not followed by duplicate snapshot to same relay client',
+      () async {
+        final InternetRelayServer relay = InternetRelayServer();
+        await relay.start();
+        addTearDown(relay.close);
+
+        final HostedRelayHostConnection host = await _startRelayHost(relay.uri);
+        addTearDown(() => host.close(broadcastSessionClosed: false));
+
+        final WebSocket client = await WebSocket.connect(relay.uri.toString());
+        final StreamIterator<Map<String, dynamic>> clientMessages = _messages(
+          client,
+        );
+        addTearDown(client.close);
+        addTearDown(clientMessages.cancel);
+
+        client.add(
+          jsonEncode(<String, dynamic>{
+            'type': 'player.join',
+            'roomKey': '1234',
+            'payload': <String, dynamic>{
+              'type': 'join',
+              'pin': '1234',
+              'name': 'No duplicate',
+            },
+          }),
+        );
+
+        expect((await _next(clientMessages))['type'], 'relay.joined');
+        expect((await _next(clientMessages))['type'], 'joined');
+
+        final Map<String, dynamic>? duplicate = await _nextOrNull(
+          clientMessages,
+          timeout: const Duration(milliseconds: 250),
+        );
+        expect(duplicate, isNull);
+      },
+    );
+
     test('closes relay socket when join times out', () async {
       final InternetRelayServer relay = InternetRelayServer();
       await relay.start();
@@ -206,4 +246,15 @@ Future<Map<String, dynamic>> _next(
     throw StateError('Expected another relay message.');
   }
   return messages.current;
+}
+
+Future<Map<String, dynamic>?> _nextOrNull(
+  StreamIterator<Map<String, dynamic>> messages, {
+  required Duration timeout,
+}) async {
+  final bool hasNext = await messages.moveNext().timeout(
+    timeout,
+    onTimeout: () => false,
+  );
+  return hasNext ? messages.current : null;
 }

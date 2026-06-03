@@ -265,6 +265,11 @@ void main() {
       defaultHostedRelayUrl(Uri.parse('https://play.example.com/')),
       'wss://play.example.com:8080/ws',
     );
+
+    expect(
+      defaultHostedRelayUrl(Uri.parse('http://[2001:db8::1]:8081/')),
+      'ws://[2001:db8::1]:8080/ws',
+    );
   });
 
   testWidgets('hosted entry system back returns to mode chooser', (
